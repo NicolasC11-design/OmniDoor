@@ -1,1 +1,105 @@
-<p>login works!</p>
+<div class="od-root">
+  <div class="grid-bg"></div>
+  <div class="scan-line"></div>
+
+  <div class="od-logo">OmniDoor</div>
+  <div class="od-tagline">seguridad y control en cada acceso</div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" routerLink="/login">[ acceso ]</button>
+    <button class="tab-btn" routerLink="/register">[ registro ]</button>
+  </div>
+
+  <div class="od-panel">
+    <div class="corner c-tl"></div>
+    <div class="corner c-tr"></div>
+    <div class="corner c-bl"></div>
+    <div class="corner c-br"></div>
+
+    <div class="panel-header">
+      <div class="status-dot"></div>
+      terminal de acceso — autenticación
+    </div>
+
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+      <div class="field-group">
+        <label class="field-label" for="email">identificación / correo</label>
+        <input
+          id="email"
+          class="od-input"
+          type="text"
+          formControlName="email"
+          placeholder="usuario@institución.edu.co"
+          [class.input-error]="f['email'].invalid && f['email'].touched"
+        />
+        <span class="error-msg" *ngIf="f['email'].invalid && f['email'].touched">
+          ingresa un correo válido
+        </span>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label" for="password">contraseña</label>
+        <div class="input-wrapper">
+          <input
+            id="password"
+            class="od-input"
+            [type]="showPassword ? 'text' : 'password'"
+            formControlName="password"
+            placeholder="••••••••••••"
+            [class.input-error]="f['password'].invalid && f['password'].touched"
+          />
+          <button type="button" class="toggle-pw" (click)="togglePassword()" aria-label="Mostrar u ocultar contraseña">
+            <i class="ti" [ngClass]="showPassword ? 'ti-eye-off' : 'ti-eye'" aria-hidden="true"></i>
+          </button>
+        </div>
+        <span class="error-msg" *ngIf="f['password'].invalid && f['password'].touched">
+          contraseña requerida
+        </span>
+      </div>
+
+      <div class="divider">
+        <div class="divider-line"></div>
+        <span>o verificar con</span>
+        <div class="divider-line"></div>
+      </div>
+
+      <div class="face-scan-box" (click)="activateBiometric()" [class.scanning]="biometricActive">
+        <div class="face-frame">
+          <svg viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="4" y="4" width="12" height="2" fill="#1a8fff" opacity=".7"/>
+            <rect x="4" y="4" width="2" height="12" fill="#1a8fff" opacity=".7"/>
+            <rect x="56" y="4" width="12" height="2" fill="#1a8fff" opacity=".7"/>
+            <rect x="66" y="4" width="2" height="12" fill="#1a8fff" opacity=".7"/>
+            <rect x="4" y="66" width="12" height="2" fill="#1a8fff" opacity=".7"/>
+            <rect x="4" y="56" width="2" height="12" fill="#1a8fff" opacity=".7"/>
+            <rect x="56" y="66" width="12" height="2" fill="#1a8fff" opacity=".7"/>
+            <rect x="66" y="56" width="2" height="12" fill="#1a8fff" opacity=".7"/>
+            <circle cx="36" cy="30" r="12" stroke="#00d4aa" stroke-width="1.2" stroke-dasharray="3 3"/>
+            <circle cx="36" cy="30" r="4" fill="#00d4aa" opacity=".2"/>
+            <line x1="28" y1="27" x2="30" y2="27" stroke="#00d4aa" stroke-width="1.5"/>
+            <line x1="42" y1="27" x2="44" y2="27" stroke="#00d4aa" stroke-width="1.5"/>
+            <path d="M31 33 Q36 36 41 33" stroke="#00d4aa" stroke-width="1.2" fill="none"/>
+            <ellipse cx="36" cy="50" rx="16" ry="8" stroke="#00d4aa" stroke-width="1.2" stroke-dasharray="3 3"/>
+          </svg>
+          <div class="scan-bar"></div>
+        </div>
+        <div class="face-label">{{ biometricLabel }}</div>
+      </div>
+
+      <div class="alert-msg" *ngIf="errorMessage">
+        <i class="ti ti-alert-triangle" aria-hidden="true"></i>
+        {{ errorMessage }}
+      </div>
+
+      <button type="submit" class="od-btn" [disabled]="loading">
+        <span *ngIf="!loading">ingresar al sistema</span>
+        <span *ngIf="loading">[ verificando identidad... ]</span>
+      </button>
+    </form>
+
+    <div class="sys-msg">
+      ¿Sin acceso?
+      <a routerLink="/register">solicitar registro</a>
+    </div>
+  </div>
+</div>
