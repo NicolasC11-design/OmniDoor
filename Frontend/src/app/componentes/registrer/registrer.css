@@ -6,7 +6,7 @@
 }
 
 /* ── Variables en CSS Puro ────────────────────────────────────────── */
-:root {
+:host {
   --bg: #05090f;
   --surface: #0a1120;
   --border: #1a3a5c;

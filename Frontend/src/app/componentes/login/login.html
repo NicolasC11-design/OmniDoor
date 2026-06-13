@@ -5,11 +5,6 @@
   <div class="od-logo">OmniDoor</div>
   <div class="od-tagline">seguridad y control en cada acceso</div>
 
-  <div class="tab-bar">
-    <button class="tab-btn active" routerLink="/login">[ acceso ]</button>
-    <button class="tab-btn" routerLink="/register">[ registro ]</button>
-  </div>
-
   <div class="od-panel">
     <div class="corner c-tl"></div>
     <div class="corner c-tr"></div>
@@ -29,7 +24,7 @@
           class="od-input"
           type="text"
           formControlName="email"
-          placeholder="usuario@institución.edu.co"
+          placeholder="usuario@gmail.com"
           [class.input-error]="f['email'].invalid && f['email'].touched"
         />
         <span class="error-msg" *ngIf="f['email'].invalid && f['email'].touched">

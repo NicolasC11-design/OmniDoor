@@ -1,38 +1,38 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { AuthService } from '../../servicios/auth'; 
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule],
+  imports: [CommonModule, ReactiveFormsModule], 
   templateUrl: './login.html',
-  styleUrls: ['./login.css'],
+  styleUrls: ['./login.css']
 })
 export class Login implements OnInit {
   loginForm!: FormGroup;
+  loading = false;           
+  errorMessage: string | null = null; 
 
-  loading       = false;
-  showPassword  = false;
-  biometricActive = false;
-  biometricLabel  = 'toque para activar biometría facial';
-  errorMessage    = '';
+  showPassword = false;               
+  biometricActive = false;        
+  biometricLabel = 'Iniciar escaneo';  
 
   constructor(
     private fb: FormBuilder,
-    private router: Router,
-    //private authService: AuthService  
+    private authService: AuthService,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
     this.loginForm = this.fb.group({
-      email:    ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]],
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', [Validators.required]]
     });
   }
+
 
   get f() {
     return this.loginForm.controls;
@@ -44,31 +44,36 @@ export class Login implements OnInit {
 
   activateBiometric(): void {
     this.biometricActive = true;
-    this.biometricLabel  = 'escaneando...';
+    this.biometricLabel = 'Escaneando rostro...';
+    
     setTimeout(() => {
       this.biometricActive = false;
-      this.biometricLabel  = 'toque para activar biometría facial';
-    }, 2000);
+      this.biometricLabel = 'Rostro verificado con éxito';
+      console.log('Biometría facial ejecutada.');
+    }, 3000);
   }
 
   onSubmit(): void {
+    this.errorMessage = null; 
+
     if (this.loginForm.invalid) {
-      this.loginForm.markAllAsTouched();
+      this.loginForm.markAllAsTouched(); 
       return;
     }
 
-    this.loading      = true;
-    this.errorMessage = '';
+    this.loading = true; 
 
-    const { email, password } = this.loginForm.value;
-
-    setTimeout(() => {
-      this.loading = false;
-      if (email === 'admin@sena.edu.co' && password === 'admin123') {
-        this.router.navigate(['/dashboard']);
-      } else {
-        this.errorMessage = 'credenciales incorrectas — verifique sus datos';
+    this.authService.login(this.loginForm.value).subscribe({
+      next: (response) => {
+        this.loading = false;
+        console.log('¡Autenticación exitosa!', response);
+        this.router.navigate(['/dashboard']); 
+      },
+      error: (err) => {
+        this.loading = false;
+        this.errorMessage = err.error?.detail || 'Error de autenticación. Verifica tus credenciales.';
+        console.error('Error en el login:', err);
       }
-    }, 1500);
+    });
   }
 }
