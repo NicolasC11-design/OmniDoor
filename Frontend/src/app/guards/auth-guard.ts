@@ -1,24 +1,15 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
-import { createClient } from '@supabase/supabase-js';
-import { environment } from '../../environments/environment';
 
-export const authGuard: CanActivateFn = async (route, state) => {
+export const authGuard: CanActivateFn = (route, state) => {
   const router = inject(Router);
+  const token = localStorage.getItem('access'); 
 
-  // Forzamos el tipado como 'any' para saltar la validación estricta de TypeScript en compilación
-  const env = environment as any;
 
-  // Inicializas Supabase usando las variables inyectadas
-  const supabase = createClient(env.supabaseUrl, env.supabaseKey);
-
-  // Verificamos la sesión actual
-  const { data } = await supabase.auth.getSession();
-
-  if (data?.session) {
+  if (token) {
     return true; 
   } else {
-    console.warn('Acceso denegado a OmniDoor. Se requiere autenticación.');
+    console.warn('Acceso denegado a OmniDoor. Se requiere autenticación por Token.');
     router.navigate(['/login']); 
     return false;
   }
