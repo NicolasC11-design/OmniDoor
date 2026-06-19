@@ -60,7 +60,7 @@ export class Register implements OnInit {
     this.registerForm = this.fb.group({
       nombres: ['', [Validators.required, Validators.minLength(2)]],
       apellidos: ['', [Validators.required, Validators.minLength(2)]],
-      correo: ['', [Validators.required, Validators.email]], // Corregido: de 'email' a 'correo'
+      correo: ['', [Validators.required, Validators.email]], 
       rol: ['', Validators.required],
       placa: ['', [Validators.required, placaValidator]],
       password: ['', [Validators.required, Validators.minLength(8)]],
@@ -87,7 +87,7 @@ export class Register implements OnInit {
       next: (res) => {
         this.loading = false;
         this.successMessage = 'Registro enviado con éxito.';
-        setTimeout(() => this.router.navigate(['/login']), 2000);
+        setTimeout(() => this.router.navigate(['/registrer']), 2000);
       },
       error: (err) => {
         this.loading = false;

@@ -1,1 +1,47 @@
-<p>dashboard-administrador works!</p>
+<div class="dashboard-container">
+  <header class="dashboard-header">
+    <h1 class="dashboard-title">Panel de Administración - OmniDoor</h1>
+    <p class="dashboard-subtitle">Aprobación de solicitudes de acceso institucional</p>
+  </header>
+
+  <div *ngIf="mensajeExito" class="alert-success">
+    {{ mensajeExito }}
+  </div>
+
+  <div class="card-table">
+    <h2 class="table-title">Cuentas en espera de verificación</h2>
+
+    <div *ngIf="loading" class="loading-status">
+      Consultando base de datos de PostgreSQL...
+    </div>
+
+    <div *ngIf="!loading && usuariosPendientes.length === 0" class="no-data-status">
+      <p>🎉 Todo al día. No hay solicitudes pendientes de registro.</p>
+    </div>
+
+    <table *ngIf="!loading && usuariosPendientes.length > 0" class="admin-table">
+      <thead>
+        <tr>
+          <th>Nombre Completo</th>
+          <th>Correo Electrónico</th>
+          <th>Rol Solicitado</th>
+          <th>Acción</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let usuario of usuariosPendientes">
+          <td>{{ usuario.nombre_completo }}</td>
+          <td>{{ usuario.correo }}</td>
+          <td>
+            <span class="badge-rol">{{ usuario.rol }}</span>
+          </td>
+          <td>
+            <button class="btn-approve" (click)="aceptarCuenta(usuario.id_usuario)">
+              Aceptar Cuenta
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
