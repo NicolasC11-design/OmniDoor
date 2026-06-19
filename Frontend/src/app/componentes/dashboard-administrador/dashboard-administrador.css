@@ -1,0 +1,118 @@
+.dashboard-container {
+  padding: 30px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f8f9fa;
+  min-height: 100vh;
+}
+
+.dashboard-header {
+  margin-bottom: 25px;
+}
+
+.dashboard-title {
+  color: #2c3e50;
+  margin-bottom: 5px;
+  font-size: 2rem;
+}
+
+.dashboard-subtitle {
+  color: #7f8c8d;
+  margin-top: 0;
+  font-size: 1rem;
+}
+
+.alert-success {
+  background-color: #2ecc71;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  font-weight: 500;
+  box-shadow: 0 2px 4px rgba(46, 204, 113, 0.2);
+}
+
+.card-table {
+  background: white;
+  padding: 24px;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.table-title {
+  color: #34495e;
+  font-size: 1.25rem;
+  margin-top: 0;
+  margin-bottom: 20px;
+}
+
+.loading-status {
+  text-align: center;
+  padding: 30px;
+  color: #3498db;
+  font-weight: 500;
+}
+
+.no-data-status {
+  text-align: center;
+  padding: 40px;
+  color: #95a5a6;
+}
+
+.no-data-status p {
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.admin-table th {
+  background-color: #f4f6f8;
+  padding: 14px 16px;
+  color: #495057;
+  font-weight: 600;
+  border-bottom: 2px solid #dee2e6;
+}
+
+.admin-table td {
+  padding: 14px 16px;
+  color: #212529;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.admin-table tbody tr:hover {
+  background-color: #fdfdfd;
+}
+
+.badge-rol {
+  background-color: #e1f5fe;
+  color: #0288d1;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.btn-approve {
+  background-color: #27ae60;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.btn-approve:hover {
+  background-color: #219653;
+}
+
+.btn-approve:active {
+  transform: scale(0.98);
+}

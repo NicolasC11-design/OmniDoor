@@ -18,6 +18,7 @@ import os
 
 from pathlib import Path
 from dotenv import load_dotenv  
+from datetime import timedelta
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -51,6 +52,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'accesos'
 ]
+AUTH_USER_MODEL = 'accesos.Usuario'
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',  
@@ -92,7 +94,7 @@ WSGI_APPLICATION = 'OmniApi.wsgi.application'
 load_dotenv()
 
 
-""" 
+"""""
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -109,13 +111,13 @@ DATABASES = {
         },
     }
 }
-"""
 
 
+"""""
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': 'db_temporal.sqlite3',
+        'NAME': BASE_DIR/ 'db.sqlite3',
     }
 }
 
@@ -167,14 +169,17 @@ CORS_ALLOW_CREDENTIALS = True
 
 
 
-from datetime import timedelta
+
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
-    'ROTATE_REFRESH_TOKENS': False,
+    'ROTATE_REFRESH_TOKENS': True,
     'ALGORITHM': 'HS256',
     'SIGNING_KEY': SECRET_KEY, 
+    'USER_ID_FIELD': 'id_usuario',
+    'USER_ID_CLAIM': 'user_id',
+
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
@@ -186,3 +191,4 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated', 
     ),
 }
+
