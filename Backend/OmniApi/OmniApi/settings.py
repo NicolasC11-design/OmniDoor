@@ -93,12 +93,8 @@ WSGI_APPLICATION = 'OmniApi.wsgi.application'
 
 load_dotenv()
 
-
-"""""
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': 'db.sqlite3',
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': os.getenv('DB_NAME'),
         'USER': os.getenv('DB_USER'),
@@ -106,21 +102,12 @@ DATABASES = {
         'HOST': os.getenv('DB_HOST'),
         'PORT': os.getenv('DB_PORT'),
         'OPTIONS': {
+            # Supabase requiere SSL para conexiones externas, esto está perfecto
             'sslmode': 'require',
             'connect_timeout': 10,
         },
     }
 }
-
-
-"""""
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR/ 'db.sqlite3',
-    }
-}
-
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators

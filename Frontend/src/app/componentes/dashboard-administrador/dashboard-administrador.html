@@ -1,47 +1,316 @@
-<div class="dashboard-container">
-  <header class="dashboard-header">
-    <h1 class="dashboard-title">Panel de Administración - OmniDoor</h1>
-    <p class="dashboard-subtitle">Aprobación de solicitudes de acceso institucional</p>
-  </header>
+<div class="od-shell">
+  <div class="grid-bg"></div>
 
-  <div *ngIf="mensajeExito" class="alert-success">
-    {{ mensajeExito }}
-  </div>
+  <div class="od-content">
 
-  <div class="card-table">
-    <h2 class="table-title">Cuentas en espera de verificación</h2>
-
-    <div *ngIf="loading" class="loading-status">
-      Consultando base de datos de PostgreSQL...
+    <div class="topbar">
+      <div>
+        <div class="od-logo"><h1>OmniDoor — Panel Administrador</h1></div>
+        <div class="od-subtitle"><h2>{{ vistaActual === 'panel' ? 'gestión  de accesos' : breadcrumb() }}</h2></div>
+      </div>
+      <div class="topbar-actions">
+        <button class="back-btn" *ngIf="vistaActual !== 'panel'" (click)="irAPanel()">
+          <i class="ti ti-arrow-left" aria-hidden="true"></i>
+          Ir al panel
+        </button>
+        <button class="logout-btn" (click)="cerrarSesion()" aria-label="Cerrar sesión" title="Cerrar sesión">
+          <i class="ti ti-logout" aria-hidden="true">Cerrar sesion</i>
+        </button>
+      </div>
     </div>
 
-    <div *ngIf="!loading && usuariosPendientes.length === 0" class="no-data-status">
-      <p>🎉 Todo al día. No hay solicitudes pendientes de registro.</p>
-    </div>
+    <ng-container *ngIf="vistaActual === 'panel'">
 
-    <table *ngIf="!loading && usuariosPendientes.length > 0" class="admin-table">
-      <thead>
-        <tr>
-          <th>Nombre Completo</th>
-          <th>Correo Electrónico</th>
-          <th>Rol Solicitado</th>
-          <th>Acción</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let usuario of usuariosPendientes">
-          <td>{{ usuario.nombre_completo }}</td>
-          <td>{{ usuario.correo }}</td>
-          <td>
-            <span class="badge-rol">{{ usuario.rol }}</span>
-          </td>
-          <td>
-            <button class="btn-approve" (click)="aceptarCuenta(usuario.id_usuario)">
-              Aceptar Cuenta
-            </button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+      <div class="kpi-row">
+        <div class="kpi-card">
+          <i class="ti ti-car kpi-icon" aria-hidden="true"></i>
+          <div class="kpi-value">{{ kpis.vehiculosRegistrados }}</div>
+          <div class="kpi-label">vehículos registrados</div>
+        </div>
+        <div class="kpi-card accent2">
+          <i class="ti ti-door-enter kpi-icon" aria-hidden="true"></i>
+          <div class="kpi-value">{{ kpis.ingresosHoy }}</div>
+          <div class="kpi-label">ingresos hoy</div>
+        </div>
+        <div class="kpi-card warn">
+          <i class="ti ti-user-question kpi-icon" aria-hidden="true"></i>
+          <div class="kpi-value">{{ usuariosPendientes.length }}</div>
+          <div class="kpi-label">solicitudes pendientes</div>
+        </div>
+        <div class="kpi-card error">
+          <i class="ti ti-shield-x kpi-icon" aria-hidden="true"></i>
+          <div class="kpi-value">{{ kpis.accesosDenegados }}</div>
+          <div class="kpi-label">accesos denegados (mes)</div>
+        </div>
+      </div>
+
+      <div class="modules-grid">
+        <button class="module-card" (click)="irA('solicitudes')">
+          <span class="module-badge" *ngIf="usuariosPendientes.length > 0">{{ usuariosPendientes.length }}</span>
+          <i class="ti ti-user-check module-icon" aria-hidden="true"></i>
+          <div class="module-title">Autorizaciones pendientes</div>
+          <div class="module-desc">Revisa y aprueba o rechaza solicitudes de registro de nuevos usuarios.</div>
+        </button>
+
+        <button class="module-card" (click)="irA('usuarios')">
+          <i class="ti ti-users module-icon" aria-hidden="true"></i>
+          <div class="module-title">Gestión de usuarios y conductores</div>
+          <div class="module-desc">Asigna roles, registra placas y administra los conductores de la institución.</div>
+        </button>
+
+        <button class="module-card" (click)="irA('reportes')">
+          <i class="ti ti-report module-icon" aria-hidden="true"></i>
+          <div class="module-title">Reportes e historial</div>
+          <div class="module-desc">Consulta el historial de accesos, filtra por fecha y exporta a PDF o Excel.</div>
+        </button>
+      </div>
+
+    </ng-container>
+
+
+    <ng-container *ngIf="vistaActual === 'solicitudes'">
+      <div class="od-panel">
+        <div class="corner c-tl"></div>
+        <div class="corner c-tr"></div>
+        <div class="corner c-bl"></div>
+        <div class="corner c-br"></div>
+
+        <div class="panel-header">
+          <div>
+            <div class="panel-title">Solicitudes de registro</div>
+            <div class="panel-subtitle">Revisar y aprobar o rechazar solicitudes de nuevos usuarios</div>
+          </div>
+        </div>
+
+        <div class="alert-success" *ngIf="mensajeExito">{{ mensajeExito }}</div>
+
+        <div class="loading-state" *ngIf="cargandoSolicitudes">consultando base de datos de postgresql...</div>
+
+        <div class="empty-state" *ngIf="!cargandoSolicitudes && usuariosPendientes.length === 0">
+          <i class="ti ti-user-off" aria-hidden="true"></i>
+          <p>No hay solicitudes de registro en el sistema</p>
+        </div>
+
+        <div class="table-wrap" *ngIf="!cargandoSolicitudes && usuariosPendientes.length > 0">
+          <table class="od-table">
+            <thead>
+              <tr>
+                <th>Nombre completo</th>
+                <th>Correo</th>
+                <th>Rol solicitado</th>
+                <th>Acción</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let usuario of usuariosPendientes">
+                <td>{{ usuario.nombre_completo }}</td>
+                <td>{{ usuario.correo }}</td>
+                <td><span class="badge rol">{{ usuario.rol }}</span></td>
+                <td>
+                  <button class="btn-approve" (click)="aceptarCuenta(usuario.id_usuario)">aceptar</button>
+                  <button class="btn-deny" (click)="rechazarCuenta(usuario.id_usuario)">rechazar</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="note-box">
+          <strong>Nota:</strong> las solicitudes aprobadas permitirán al usuario acceder al sistema con las credenciales
+          que proporcionó durante el registro.
+        </div>
+      </div>
+    </ng-container>
+
+
+    <ng-container *ngIf="vistaActual === 'usuarios'">
+      <div class="od-panel">
+        <div class="corner c-tl"></div>
+        <div class="corner c-tr"></div>
+        <div class="corner c-bl"></div>
+        <div class="corner c-br"></div>
+
+        <div class="panel-header">
+          <div>
+            <div class="panel-title">Gestión de usuarios y conductores</div>
+            <div class="panel-subtitle">Alta, edición y asignación de roles</div>
+          </div>
+          <button class="export-btn" (click)="abrirModalConductor()">
+            <i class="ti ti-user-plus" aria-hidden="true"></i>
+            nuevo conductor
+          </button>
+        </div>
+
+        <div class="empty-state" *ngIf="conductores.length === 0">
+          <i class="ti ti-steering-wheel" aria-hidden="true"></i>
+          <p>Aún no hay conductores registrados en el sistema</p>
+        </div>
+
+        <div class="table-wrap" *ngIf="conductores.length > 0">
+          <table class="od-table">
+            <thead>
+              <tr>
+                <th>Cédula</th>
+                <th>Nombre completo</th>
+                <th>Rol</th>
+                <th>Vehículo</th>
+                <th>Placa</th>
+                <th>Biometría</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let c of conductores">
+                <td>{{ c.cedula }}</td>
+                <td>{{ c.nombre }}</td>
+                <td><span class="badge rol">{{ c.rol }}</span></td>
+                <td>{{ c.tipoVehiculo }}</td>
+                <td>{{ c.placa }}</td>
+                <td>
+                  <span class="badge" [ngClass]="c.biometriaCapturada ? 'biometria' : 'manual'">
+                    {{ c.biometriaCapturada ? 'capturada' : 'pendiente' }}
+                  </span>
+                </td>
+                <td class="row-actions">
+                  <button class="icon-btn" (click)="editarConductor(c)" title="Editar"><i class="ti ti-edit"
+                      aria-hidden="true"></i></button>
+                  <button class="icon-btn danger" (click)="eliminarConductor(c)" title="Eliminar"><i class="ti ti-trash"
+                      aria-hidden="true"></i></button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </ng-container>
+
+
+    <ng-container *ngIf="vistaActual === 'reportes'">
+      <div class="od-panel">
+        <div class="corner c-tl"></div>
+        <div class="corner c-tr"></div>
+        <div class="corner c-bl"></div>
+        <div class="corner c-br"></div>
+
+        <div class="panel-header">
+          <div>
+            <div class="panel-title">Historial logístico y auditoría</div>
+            <div class="panel-subtitle">Consultas globales de tráfico y exportación de documentos</div>
+          </div>
+        </div>
+
+        <div class="filters-row">
+          <div class="filter-group">
+            <label class="filter-label" for="desde">filtrar desde</label>
+            <input id="desde" type="date" class="od-input" [(ngModel)]="filtros.desde" />
+          </div>
+          <div class="filter-group">
+            <label class="filter-label" for="hasta">hasta</label>
+            <input id="hasta" type="date" class="od-input" [(ngModel)]="filtros.hasta" />
+          </div>
+          <div class="filter-group">
+            <label class="filter-label" for="tipoMov">tipo de movimiento</label>
+            <select id="tipoMov" class="od-select" [(ngModel)]="filtros.tipoMovimiento">
+              <option value="todos">Todos los movimientos</option>
+              <option value="entrada">Entrada</option>
+              <option value="salida">Salida</option>
+            </select>
+          </div>
+          <div class="export-actions">
+            <button class="export-btn" (click)="exportar('pdf')"><i class="ti ti-file-type-pdf" aria-hidden="true"></i>
+              PDF</button>
+            <button class="export-btn" (click)="exportar('excel')"><i class="ti ti-file-type-xls"
+                aria-hidden="true"></i> Excel</button>
+          </div>
+        </div>
+
+        <div class="empty-state" *ngIf="historial.length === 0">
+          <i class="ti ti-history" aria-hidden="true"></i>
+          <p>No hay registros para el período seleccionado</p>
+        </div>
+
+        <div class="table-wrap" *ngIf="historial.length > 0">
+          <table class="od-table">
+            <thead>
+              <tr>
+                <th>Fecha/Hora</th>
+                <th>Placa</th>
+                <th>Conductor</th>
+                <th>Validación</th>
+                <th>Sincronizado</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let h of historial">
+                <td>{{ h.fechaHora }}</td>
+                <td>{{ h.placa }}</td>
+                <td>{{ h.conductor }}</td>
+                <td><span class="badge" [ngClass]="h.metodoValidacion">{{ h.metodoValidacion }}</span></td>
+                <td>
+                  <span class="badge" [ngClass]="h.sincronizado ? 'si' : 'no'">
+                    {{ h.sincronizado ? '✓ sí' : '✕ no' }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="note-box">Mostrando {{ historial.length }} registros del período seleccionado</div>
+        </div>
+      </div>
+    </ng-container>
+
   </div>
+
+  <div class="modal-overlay" *ngIf="mostrarModalConductor" (click)="cerrarModalConductor()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <div class="modal-title">{{ conductorEnEdicion ? 'editar conductor' : 'nuevo conductor' }}</div>
+      <div class="modal-subtitle">Alta y modificación de usuarios con mapeo de IA</div>
+
+      <div class="field-group">
+        <label class="field-label" for="cedula">cédula / documento</label>
+        <input id="cedula" class="od-input" type="text" [(ngModel)]="formConductor.cedula" placeholder="1023456789" />
+      </div>
+
+      <div class="field-group">
+        <label class="field-label" for="nombreCond">nombre completo</label>
+        <input id="nombreCond" class="od-input" type="text" [(ngModel)]="formConductor.nombre"
+          placeholder="Nombre completo" />
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">token facial (biometría)</label>
+        <div class="biometric-box" (click)="capturarBiometria()">
+          <i class="ti" [ngClass]="formConductor.biometriaCapturada ? 'ti-check' : 'ti-camera'" aria-hidden="true"></i>
+          {{ formConductor.biometriaCapturada ? 'token facial capturado' : 'capturar rostro' }}
+        </div>
+      </div>
+
+      <div class="input-row">
+        <div class="field-group">
+          <label class="field-label" for="tipoVehCond">tipo de vehículo</label>
+          <select id="tipoVehCond" class="od-select" [(ngModel)]="formConductor.tipoVehiculo" style="width:100%">
+            <option value="auto">Automóvil</option>
+            <option value="moto">Motocicleta</option>
+            <option value="bici">Bicicleta</option>
+            <option value="patin">Patín / Patineta</option>
+            <option value="electr">Eléctrico</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="placaCond">número de placa</label>
+          <input id="placaCond" class="od-input" type="text" [(ngModel)]="formConductor.placa" placeholder="XYZ-123" />
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="od-btn" (click)="cerrarModalConductor()">
+          <i class="ti ti-x" aria-hidden="true"></i> cancelar
+        </button>
+        <button class="od-btn primary" (click)="guardarConductor()">
+          <i class="ti ti-device-floppy" aria-hidden="true"></i> guardar
+        </button>
+      </div>
+    </div>
+  </div>
+
 </div>

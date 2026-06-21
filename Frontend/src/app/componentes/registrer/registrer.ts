@@ -4,7 +4,7 @@ import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 
-// Validadores personalizados
+
 function passwordMatchValidator(control: AbstractControl): ValidationErrors | null {
   const pw = control.get('password');
   const cpw = control.get('confirmPassword');
@@ -38,6 +38,9 @@ export class Register implements OnInit {
   errorMessage = '';
   successMessage = '';
 
+
+  registroEnviado = false;
+
   vehicleTypes: VehicleType[] = [
     { value: 'auto', label: 'auto', icon: 'ti-car' },
     { value: 'moto', label: 'moto', icon: 'ti-motorbike' },
@@ -47,9 +50,9 @@ export class Register implements OnInit {
   ];
 
   constructor(
-    private fb: FormBuilder, 
-    private router: Router, 
-    private http: HttpClient 
+    private fb: FormBuilder,
+    private router: Router,
+    private http: HttpClient
   ) {}
 
   get f() {
@@ -60,7 +63,7 @@ export class Register implements OnInit {
     this.registerForm = this.fb.group({
       nombres: ['', [Validators.required, Validators.minLength(2)]],
       apellidos: ['', [Validators.required, Validators.minLength(2)]],
-      correo: ['', [Validators.required, Validators.email]], 
+      correo: ['', [Validators.required, Validators.email]],
       rol: ['', Validators.required],
       placa: ['', [Validators.required, placaValidator]],
       password: ['', [Validators.required, Validators.minLength(8)]],
@@ -86,21 +89,28 @@ export class Register implements OnInit {
     this.http.post('http://localhost:8000/api/auth/register/', payload).subscribe({
       next: (res) => {
         this.loading = false;
-        this.successMessage = 'Registro enviado con éxito.';
-        setTimeout(() => this.router.navigate(['/registrer']), 2000);
+        this.registroEnviado = true;
+        this.successMessage =
+          'Solicitud recibida. Tu registro está en proceso de verificación y será habilitado cuando el administrador apruebe tu cuenta.';
+        this.registerForm.disable();
+        setTimeout(() => this.router.navigate(['/login']), 8000);
       },
       error: (err) => {
         this.loading = false;
-
+        this.registroEnviado = false;
         this.errorMessage = 'Error: ' + (err.error?.detail || JSON.stringify(err.error));
         console.error('Error del servidor:', err);
       }
     });
   }
 
-  selectVehicle(value: string): void { this.selectedVehicle = value; }
+  selectVehicle(value: string): void {
+    if (this.registroEnviado) return;
+    this.selectedVehicle = value;
+  }
 
   captureOCR(): void {
+    if (this.registroEnviado) return;
     this.ocrCapturing = true;
     setTimeout(() => {
       this.registerForm.patchValue({ placa: 'ABC-123' });
@@ -109,7 +119,7 @@ export class Register implements OnInit {
   }
 
   captureBiometric(): void {
-    if (this.biometricCaptured) return;
+    if (this.biometricCaptured || this.registroEnviado) return;
     this.biometricCapturing = true;
     this.biometricLabel = '[ capturando rostro... ]';
     setTimeout(() => {

@@ -78,10 +78,25 @@ export class Login implements OnInit {
         
         if (response.usuario) {
           localStorage.setItem('usuario', JSON.stringify(response.usuario));
+          
+          const rol = response.usuario.rol; 
+          console.log('Redireccionando según rol:', rol);
+
+          switch (rol) {
+            case 'Administrador':
+              this.router.navigate(['/dashboardAdministrador']); 
+              break;
+            case 'seguridad':
+              this.router.navigate(['/dashboardVigilante']);
+              break;
+            case 'aprendiz':
+              this.router.navigate(['/dashboardUsuario']);
+              break;
+            default:
+              this.errorMessage = 'Rol no autorizado para acceder al sistema.';
+              break;
+          }
         }
-
-
-        this.router.navigate(['/login']); 
       },
       error: (err) => {
         this.loading = false;

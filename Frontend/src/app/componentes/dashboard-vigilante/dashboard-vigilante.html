@@ -1,1 +1,157 @@
-<p>dashboard-vigilante works!</p>
+<div class="od-shell">
+    <div class="grid-bg"></div>
+    <div class="scan-line"></div>
+
+    <div class="od-content">
+
+
+        <div class="topbar">
+            <div class="topbar-id">
+                <div class="od-logo"><h1>OmniDoor — Módulo Portería</h1></div>
+                <div class="od-subtitle"><h2>interfaz vigilante · acceso-core</h2></div>
+            </div>
+            <div class="topbar-status">
+                <div class="status-pill">
+                    <span class="status-dot"></span>
+                    {{ online ? 'online' : 'offline' }}
+                </div>
+                <button class="logout-btn" (click)="cerrarSesion()" aria-label="Cerrar sesión" title="Cerrar sesión">
+                    <i class="ti ti-logout" aria-hidden="true">Cerrar sesion</i>
+                </button>
+            </div>
+        </div>
+
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-value">{{ ingresosHoy }}</div>
+                <div class="stat-label">ingresos hoy</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value warnc">{{ pendientesManual }}</div>
+                <div class="stat-label">aperturas manuales</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value alt">{{ denegadosHoy }}</div>
+                <div class="stat-label">accesos denegados</div>
+            </div>
+        </div>
+
+
+        <div class="od-panel">
+            <div class="corner c-tl"></div>
+            <div class="corner c-tr"></div>
+            <div class="corner c-bl"></div>
+            <div class="corner c-br"></div>
+
+            <div class="panel-header">visor de cámara perimetral en vivo</div>
+
+            <div class="camera-box">
+                <div class="camera-reticle"></div>
+                <i class="ti ti-video camera-icon" aria-hidden="true"></i>
+                <div class="camera-caption">visor de cámara perimetral en vivo</div>
+                <div class="camera-focus">enfoque: entrada vehicular principal</div>
+            </div>
+
+            <div class="alert-banner" [ngClass]="estadoAcceso">
+                <i class="ti" [ngClass]="{
+            'ti-alert-triangle': estadoAcceso === 'deny',
+            'ti-shield-check': estadoAcceso === 'ok',
+            'ti-scan': estadoAcceso === 'idle'
+        }" aria-hidden="true"></i>
+                <span *ngIf="estadoAcceso === 'idle'">esperando vehículo en talanquera...</span>
+                <span *ngIf="estadoAcceso === 'ok'">acceso autorizado — {{ ultimoResultado?.placa }} ({{
+                    ultimoResultado?.conductor }})</span>
+                <span *ngIf="estadoAcceso === 'deny'">alerta ia: vehículo no identificado / acceso denegado</span>
+            </div>
+
+            <div class="action-row">
+                <button class="od-btn danger" (click)="abrirModalManual()">
+                    <i class="ti ti-lock-open" aria-hidden="true"></i>
+                    apertura manual forzada
+                </button>
+                <button class="od-btn" (click)="abrirModalVisitante()">
+                    <i class="ti ti-user-plus" aria-hidden="true"></i>
+                    registrar visitante
+                </button>
+            </div>
+        </div>
+
+
+        <div class="od-panel">
+            <div class="corner c-tl"></div>
+            <div class="corner c-tr"></div>
+            <div class="corner c-bl"></div>
+            <div class="corner c-br"></div>
+
+            <div class="panel-header">últimos ingresos validados localmente (indexeddb)</div>
+
+            <div class="table-wrap">
+                <table class="od-table">
+                    <thead>
+                        <tr>
+                            <th>Medio</th>
+                            <th>Placa</th>
+                            <th>Conductor</th>
+                            <th>Hora</th>
+                            <th>Resultado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let ingreso of ultimosIngresos">
+                            <td>
+                                <span class="veh-chip">
+                                    <i class="ti" [ngClass]="ingreso.icono" aria-hidden="true"></i>
+                                    {{ ingreso.medio }}
+                                </span>
+                            </td>
+                            <td>{{ ingreso.placa }}</td>
+                            <td>{{ ingreso.conductor }}</td>
+                            <td>{{ ingreso.hora }}</td>
+                            <td>
+                                <span class="badge" [ngClass]="ingreso.autorizado ? 'granted' : 'denied'">
+                                    {{ ingreso.autorizado ? 'autorizado' : 'denegado' }}
+                                </span>
+                            </td>
+                        </tr>
+                        <tr *ngIf="ultimosIngresos.length === 0">
+                            <td colspan="5" class="empty-row">sin registros sincronizados todavía</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+
+    <div class="modal-overlay" *ngIf="mostrarModalManual" (click)="cerrarModales()">
+        <div class="modal-box" (click)="$event.stopPropagation()">
+            <div class="modal-title">apertura manual forzada (esp32)</div>
+            <label class="field-label" for="motivo">motivo de la apertura</label>
+            <input id="motivo" class="od-input" type="text" [(ngModel)]="motivoManual"
+                placeholder="ej. placa ilegible, visitante autorizado..." />
+            <div class="modal-actions">
+                <button class="od-btn" (click)="cerrarModales()">cancelar</button>
+                <button class="od-btn danger" (click)="confirmarAperturaManual()">confirmar apertura</button>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="modal-overlay" *ngIf="mostrarModalVisitante" (click)="cerrarModales()">
+        <div class="modal-box" (click)="$event.stopPropagation()">
+            <div class="modal-title">registro rápido de visitante</div>
+            <label class="field-label" for="nombreVisitante">nombre completo</label>
+            <input id="nombreVisitante" class="od-input" type="text" [(ngModel)]="visitante.nombre"
+                placeholder="nombre del visitante" />
+            <label class="field-label" for="placaVisitante">placa</label>
+            <input id="placaVisitante" class="od-input" type="text" [(ngModel)]="visitante.placa"
+                placeholder="ABC-123" />
+            <div class="modal-actions">
+                <button class="od-btn" (click)="cerrarModales()">cancelar</button>
+                <button class="od-btn success" (click)="confirmarVisitante()">registrar e ingresar</button>
+            </div>
+        </div>
+    </div>
+
+</div>
