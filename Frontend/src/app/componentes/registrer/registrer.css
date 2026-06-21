@@ -5,7 +5,6 @@
   width: 100%;
 }
 
-/* ── Variables en CSS Puro ────────────────────────────────────────── */
 :host {
   --bg: #05090f;
   --surface: #0a1120;
@@ -101,17 +100,15 @@
   text-transform: uppercase;
 }
 
-/* Desanidado de &.active */
 .tab-btn.active {
   background: rgba(26, 143, 255, 0.12);
   color: var(--accent);
   border-bottom: 2px solid var(--accent);
 }
 
-/* Desanidado de &:hover:not(.active) */
 .tab-btn:hover:not(.active) {
   background: rgba(26, 143, 255, 0.05);
-  color: #7999b9; /* Color aclarado manualmente equivalente a lighten($muted, 15%) */
+  color: #7999b9;
 }
 
 .od-panel {
@@ -168,8 +165,8 @@
   gap: 10px;
 }
 
-.input-row .field-group { 
-  flex: 1; 
+.input-row .field-group {
+  flex: 1;
 }
 
 .field-group {
@@ -199,18 +196,18 @@
   transition: border-color 0.2s;
 }
 
-.od-input::placeholder { 
-  color: var(--muted); 
-  font-size: 12px; 
+.od-input::placeholder {
+  color: var(--muted);
+  font-size: 12px;
 }
 
-.od-input:focus { 
-  border-color: var(--accent); 
-  background: rgba(26, 143, 255, 0.08); 
+.od-input:focus {
+  border-color: var(--accent);
+  background: rgba(26, 143, 255, 0.08);
 }
 
-.od-input.input-error { 
-  border-color: var(--error); 
+.od-input.input-error {
+  border-color: var(--error);
 }
 
 .plate-input {
@@ -232,16 +229,16 @@
   appearance: none;
 }
 
-.od-select option { 
-  background: var(--surface); 
+.od-select option {
+  background: var(--surface);
 }
 
-.od-select.input-error { 
-  border-color: var(--error); 
+.od-select.input-error {
+  border-color: var(--error);
 }
 
-.od-select:focus { 
-  border-color: var(--accent); 
+.od-select:focus {
+  border-color: var(--accent);
 }
 
 .error-msg {
@@ -272,17 +269,17 @@
   transition: all 0.2s;
 }
 
-.veh-opt i { 
-  font-size: 18px; 
-  color: var(--muted); 
+.veh-opt i {
+  font-size: 18px;
+  color: var(--muted);
 }
 
-.veh-opt span { 
-  font-family: var(--mono); 
-  font-size: 9px; 
-  color: var(--muted); 
-  letter-spacing: 1px; 
-  text-transform: uppercase; 
+.veh-opt span {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--muted);
+  letter-spacing: 1px;
+  text-transform: uppercase;
 }
 
 .veh-opt:hover,
@@ -292,13 +289,13 @@
 }
 
 .veh-opt:hover i,
-.veh-opt.selected i { 
-  color: var(--accent); 
+.veh-opt.selected i {
+  color: var(--accent);
 }
 
 .veh-opt:hover span,
-.veh-opt.selected span { 
-  color: var(--accent); 
+.veh-opt.selected span {
+  color: var(--accent);
 }
 
 .plate-row {
@@ -308,9 +305,9 @@
   margin-bottom: 1rem;
 }
 
-.plate-row .field-group { 
-  flex: 1; 
-  margin-bottom: 0; 
+.plate-row .field-group {
+  flex: 1;
+  margin-bottom: 0;
 }
 
 .plate-badge {
@@ -331,8 +328,8 @@
   height: 42px;
 }
 
-.plate-badge i { 
-  font-size: 16px; 
+.plate-badge i {
+  font-size: 16px;
 }
 
 .plate-badge:hover,
@@ -370,9 +367,9 @@
   justify-content: center;
 }
 
-.face-frame svg { 
-  width: 72px; 
-  height: 72px; 
+.face-frame svg {
+  width: 72px;
+  height: 72px;
 }
 
 .scan-bar-accent {
@@ -412,8 +409,8 @@
   gap: 8px;
 }
 
-.alert-msg i { 
-  font-size: 14px; 
+.alert-msg i {
+  font-size: 14px;
 }
 
 .success-msg {
@@ -431,8 +428,8 @@
   gap: 8px;
 }
 
-.success-msg i { 
-  font-size: 14px; 
+.success-msg i {
+  font-size: 14px;
 }
 
 .od-btn {
@@ -462,17 +459,17 @@
   transition: opacity 0.2s;
 }
 
-.od-btn:hover::before { 
-  opacity: 0.12; 
+.od-btn:hover::before {
+  opacity: 0.12;
 }
 
-.od-btn:active { 
-  transform: scale(0.98); 
+.od-btn:active {
+  transform: scale(0.98);
 }
 
-.od-btn:disabled { 
-  opacity: 0.5; 
-  cursor: not-allowed; 
+.od-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .od-btn.primary {
@@ -480,8 +477,8 @@
   color: var(--accent2);
 }
 
-.od-btn.primary::before { 
-  background: var(--accent2); 
+.od-btn.primary::before {
+  background: var(--accent2);
 }
 
 .sys-msg {
@@ -499,6 +496,122 @@
   text-decoration: underline;
 }
 
-.sys-msg a:hover { 
-  color: #66b2ff; 
+.sys-msg a:hover {
+  color: #66b2ff;
+}
+
+
+.proceso-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 0.5rem 0 0.25rem;
+  animation: proceso-in 0.3s ease-out;
+}
+
+@keyframes proceso-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.proceso-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 1px solid var(--accent2);
+  background: rgba(0, 212, 170, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.proceso-icon i {
+  font-size: 26px;
+  color: var(--accent2);
+  animation: proceso-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes proceso-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.55; }
+}
+
+.proceso-title {
+  font-family: var(--mono);
+  font-size: 14px;
+  color: var(--accent2);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 0.75rem;
+}
+
+.proceso-text {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.5;
+  margin: 0 0 1.25rem;
+}
+
+.proceso-steps {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 1.25rem;
+  text-align: left;
+}
+
+.proceso-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.proceso-step i {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.proceso-step.done {
+  color: var(--accent2);
+  border-color: rgba(0, 212, 170, 0.3);
+}
+
+.proceso-step.done i {
+  color: var(--accent2);
+}
+
+.proceso-step.active {
+  color: var(--accent);
+  border-color: rgba(26, 143, 255, 0.4);
+  background: rgba(26, 143, 255, 0.06);
+}
+
+.proceso-step.active i {
+  color: var(--accent);
+  animation: proceso-spin 1.1s linear infinite;
+}
+
+@keyframes proceso-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.proceso-redirect {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
 }

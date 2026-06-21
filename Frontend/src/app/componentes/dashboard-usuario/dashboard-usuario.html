@@ -1,0 +1,198 @@
+<div class="od-shell">
+    <div class="grid-bg"></div>
+
+    <div class="od-content">
+
+        <div class="topbar">
+            <div>
+                <div class="od-logo">OmniDoor — Mi cuenta</div>
+                <div class="od-subtitle">consulta tu acceso y tus datos vehiculares</div>
+            </div>
+            <button class="logout-btn" (click)="cerrarSesion()" aria-label="Cerrar sesión" title="Cerrar sesión">
+                <i class="ti ti-logout" aria-hidden="true"></i>
+            </button>
+        </div>
+
+        <div class="alert-success" *ngIf="mensajeExito">{{ mensajeExito }}</div>
+
+        <div class="id-card">
+            <div class="corner c-tl"></div>
+            <div class="corner c-tr"></div>
+            <div class="corner c-bl"></div>
+            <div class="corner c-br"></div>
+
+            <div class="id-avatar">{{ iniciales() }}</div>
+            <div class="id-info">
+                <div class="id-name">{{ usuario.nombre_completo || 'Usuario' }}</div>
+                <div class="id-role">{{ usuario.rol || 'aprendiz' }} · {{ usuario.correo }}</div>
+            </div>
+            <div class="id-status" [ngClass]="usuario.estado ? 'activo' : 'restringido'">
+                {{ usuario.estado ? 'acceso activo' : 'acceso restringido' }}
+            </div>
+        </div>
+
+        <div class="od-panel">
+            <div class="panel-header">
+                <div class="panel-title">mi vehículo registrado</div>
+                <button class="edit-link" (click)="abrirModalVehiculo()" *ngIf="vehiculo">
+                    <i class="ti ti-edit" aria-hidden="true"></i> editar
+                </button>
+            </div>
+
+            <div class="vehicle-row" *ngIf="vehiculo">
+                <div class="vehicle-icon">
+                    <i class="ti" [ngClass]="iconoVehiculo()" aria-hidden="true"></i>
+                </div>
+                <div class="vehicle-details">
+                    <div class="vehicle-plate">{{ vehiculo.placa }}</div>
+                    <div class="vehicle-meta">{{ vehiculo.tipoVehiculo }} · biometría {{ vehiculo.biometriaCapturada ?
+                        'registrada' : 'pendiente' }}</div>
+                </div>
+            </div>
+
+            <div class="empty-vehicle" *ngIf="!vehiculo">
+                <p>No tienes un vehículo registrado todavía. Regístralo para que la talanquera te reconozca
+                    automáticamente.</p>
+                <button class="add-vehicle-btn" (click)="abrirModalVehiculo()">
+                    <i class="ti ti-plus" aria-hidden="true"></i> registrar vehículo
+                </button>
+            </div>
+        </div>
+
+        <div class="od-panel">
+            <div class="panel-header">
+                <div class="panel-title">mi historial de accesos</div>
+            </div>
+
+            <div class="empty-state" *ngIf="miHistorial.length === 0">
+                <i class="ti ti-history" aria-hidden="true"></i>
+                <p>Aún no tienes ingresos registrados en el sistema</p>
+            </div>
+
+            <div class="table-wrap" *ngIf="miHistorial.length > 0">
+                <table class="od-table">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Hora</th>
+                            <th>Movimiento</th>
+                            <th>Resultado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let h of miHistorial">
+                            <td>{{ h.fecha }}</td>
+                            <td>{{ h.hora }}</td>
+                            <td>{{ h.movimiento }}</td>
+                            <td>
+                                <span class="badge" [ngClass]="h.autorizado ? 'granted' : 'denied'">
+                                    {{ h.autorizado ? 'autorizado' : 'denegado' }}
+                                </span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+
+        <div class="od-panel">
+            <div class="panel-header">
+                <div class="panel-title">mi cuenta</div>
+            </div>
+
+            <div class="account-actions">
+                <button class="od-btn primary" (click)="abrirModalDatos()">
+                    <i class="ti ti-id-badge-2" aria-hidden="true"></i> actualizar mis datos
+                </button>
+                <button class="od-btn" (click)="abrirModalPassword()">
+                    <i class="ti ti-key" aria-hidden="true"></i> cambiar contraseña
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+
+    <div class="modal-overlay" *ngIf="mostrarModalVehiculo" (click)="cerrarModales()">
+        <div class="modal-box" (click)="$event.stopPropagation()">
+            <div class="modal-title">{{ vehiculo ? 'editar mi vehículo' : 'registrar mi vehículo' }}</div>
+
+            <div class="field-group">
+                <label class="field-label" for="tipoVeh">tipo de vehículo</label>
+                <select id="tipoVeh" class="od-input" [(ngModel)]="formVehiculo.tipoVehiculo">
+                    <option value="auto">Automóvil</option>
+                    <option value="moto">Motocicleta</option>
+                    <option value="bici">Bicicleta</option>
+                    <option value="patin">Patín / Patineta</option>
+                    <option value="electr">Eléctrico</option>
+                </select>
+            </div>
+
+            <div class="field-group">
+                <label class="field-label" for="placaVeh">placa</label>
+                <input id="placaVeh" class="od-input" type="text" [(ngModel)]="formVehiculo.placa"
+                    placeholder="ABC-123" />
+            </div>
+
+            <div class="modal-actions">
+                <button class="od-btn" (click)="cerrarModales()">cancelar</button>
+                <button class="od-btn primary" (click)="guardarVehiculo()">guardar</button>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="modal-overlay" *ngIf="mostrarModalDatos" (click)="cerrarModales()">
+        <div class="modal-box" (click)="$event.stopPropagation()">
+            <div class="modal-title">actualizar mis datos</div>
+
+            <div class="field-group">
+                <label class="field-label" for="nombreU">nombre completo</label>
+                <input id="nombreU" class="od-input" type="text" [(ngModel)]="formDatos.nombre_completo" />
+            </div>
+
+            <div class="field-group">
+                <label class="field-label" for="correoU">correo electrónico</label>
+                <input id="correoU" class="od-input" type="email" [(ngModel)]="formDatos.correo" />
+            </div>
+
+            <div class="modal-actions">
+                <button class="od-btn" (click)="cerrarModales()">cancelar</button>
+                <button class="od-btn primary" (click)="guardarDatos()">guardar cambios</button>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="modal-overlay" *ngIf="mostrarModalPassword" (click)="cerrarModales()">
+        <div class="modal-box" (click)="$event.stopPropagation()">
+            <div class="modal-title">cambiar contraseña</div>
+
+            <div class="field-group">
+                <label class="field-label" for="passActual">contraseña actual</label>
+                <input id="passActual" class="od-input" type="password" [(ngModel)]="formPassword.actual"
+                    placeholder="••••••••" />
+            </div>
+
+            <div class="input-row">
+                <div class="field-group">
+                    <label class="field-label" for="passNueva">nueva contraseña</label>
+                    <input id="passNueva" class="od-input" type="password" [(ngModel)]="formPassword.nueva"
+                        placeholder="••••••••" />
+                </div>
+                <div class="field-group">
+                    <label class="field-label" for="passConfirma">confirmar</label>
+                    <input id="passConfirma" class="od-input" type="password" [(ngModel)]="formPassword.confirmar"
+                        placeholder="••••••••" />
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="od-btn" (click)="cerrarModales()">cancelar</button>
+                <button class="od-btn primary" (click)="guardarPassword()">actualizar contraseña</button>
+            </div>
+        </div>
+    </div>
+
+</div>
