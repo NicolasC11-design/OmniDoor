@@ -1,4 +1,4 @@
-from rest_framework import serializers
+from rest_framework import serializers, generics, permissions
 from .models import Usuario
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -48,3 +48,14 @@ class userSerializer(serializers.ModelSerializer):
     class Meta:
         model = Usuario
         fields = ['id_usuario', 'nombre_completo', 'correo', 'rol', 'estado']
+
+class UsuarioListCreateView(generics.ListCreateAPIView):
+    queryset = Usuario.objects.all()
+    serializer_class = userSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+class UsuarioDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Usuario.objects.all()
+    serializer_class = userSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    lookup_field = 'id_usuario' 
