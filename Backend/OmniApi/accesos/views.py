@@ -44,21 +44,32 @@ class LoginView(APIView):
         }, status=status.HTTP_200_OK)
     
 class AdminGestionCuentasView(APIView):
-
     permission_classes = [IsAuthenticated] 
 
     def get(self, request):
-
         usuarios_pendientes = Usuario.objects.filter(is_active=False)
         serializer = userSerializer(usuarios_pendientes, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.data)
+
+class AprobarUsuarioView(APIView):
+    permission_classes = [IsAuthenticated]
 
     def patch(self, request, id_usuario):
         try:
-
             usuario = Usuario.objects.get(id_usuario=id_usuario)
             usuario.is_active = True 
             usuario.save()
-            return Response({"message": "Usuario aprobado correctamente"}, status=status.HTTP_200_OK)
+            return Response({"message": "Usuario aprobado"}, status=status.HTTP_200_OK)
         except Usuario.DoesNotExist:
-            return Response({"error": "Usuario no encontrado"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "No encontrado"}, status=status.HTTP_404_NOT_FOUND)
+        
+
+class PerfilUsuarioView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request):
+        serializer = userSerializer(request.user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
