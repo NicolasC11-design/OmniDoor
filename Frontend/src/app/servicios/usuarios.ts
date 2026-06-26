@@ -24,6 +24,10 @@ export class UsuarioService {
     return this.http.delete(`${this.url}usuarios/${id}/`, { headers: this.getHeaders() }); 
   }
 
+  rechazarUsuario(id: string): Observable<any> {
+    return this.http.delete(`${this.url}admin/aprobar-usuario/${id}/`);
+  }
+
   updateMiPerfil(data: any): Observable<any> {
     return this.http.put(`${this.url}perfil/actualizar/`, data, { headers: this.getHeaders() });
   }

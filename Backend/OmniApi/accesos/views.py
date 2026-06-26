@@ -63,6 +63,14 @@ class AprobarUsuarioView(APIView):
         except Usuario.DoesNotExist:
             return Response({"error": "No encontrado"}, status=status.HTTP_404_NOT_FOUND)
         
+    def delete(self, request, id_usuario):
+        try:
+            usuario = Usuario.objects.get(id_usuario=id_usuario)
+            usuario.delete() 
+            return Response({"message": "Solicitud rechazada y eliminada"}, status=status.HTTP_200_OK)
+        except Usuario.DoesNotExist:
+            return Response({"error": "Usuario no encontrado"}, status=status.HTTP_404_NOT_FOUND)
+        
 
 class PerfilUsuarioView(APIView):
     permission_classes = [IsAuthenticated]
