@@ -136,9 +136,23 @@ export class AdminDashboard implements OnInit {
   }
 
   rechazarCuenta(idUsuario: string): void {
-    this.usuariosPendientes = this.usuariosPendientes.filter(u => u.id_usuario !== idUsuario);
-    this.mensajeExito = 'Solicitud rechazada';
-    setTimeout(() => { this.mensajeExito = null; this.cdr.detectChanges(); }, 3000);
+    this.authService.rechazarUsuario(idUsuario).subscribe({
+      next: (res: any) => {
+        this.usuariosPendientes = this.usuariosPendientes.filter(u => u.id_usuario !== idUsuario);
+        this.mensajeExito = 'Solicitud rechazada y eliminada del sistema';
+        
+        this.cdr.detectChanges();
+        
+        setTimeout(() => { 
+          this.mensajeExito = null; 
+          this.cdr.detectChanges(); 
+        }, 3000);
+      },
+      error: (err) => {
+        console.error('Error al rechazar el usuario en el backend:', err);
+        alert('Hubo un error al rechazar la solicitud. Revisa la consola.');
+      }
+    });
   }
 
   private cargarConductores(): void {
