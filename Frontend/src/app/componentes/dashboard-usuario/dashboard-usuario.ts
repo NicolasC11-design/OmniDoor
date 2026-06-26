@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../servicios/auth';
+import { UsuarioService } from '../../servicios/usuarios';
 
 export interface MiVehiculo {
   tipoVehiculo: string;
@@ -32,6 +33,7 @@ export class DashboardUsuario implements OnInit {
   mostrarModalVehiculo = false;
   mostrarModalDatos = false;
   mostrarModalPassword = false;
+  cargando = false;
 
   formVehiculo: MiVehiculo = { tipoVehiculo: 'auto', placa: '', biometriaCapturada: false };
   formDatos = { nombre_completo: '', correo: '' };
@@ -48,6 +50,7 @@ export class DashboardUsuario implements OnInit {
   constructor(
     private authService: AuthService,
     private router: Router,
+    private usuarioService: UsuarioService
   ) {}
 
   ngOnInit(): void {
@@ -93,12 +96,22 @@ export class DashboardUsuario implements OnInit {
     this.mostrarModalVehiculo = true;
   }
 
-  guardarVehiculo(): void {
-    if (!this.formVehiculo.placa.trim()) return;
-    this.vehiculo = { ...this.formVehiculo, placa: this.formVehiculo.placa.toUpperCase() };
-    this.mostrarExito('Vehículo guardado correctamente');
-    this.cerrarModales();
-  }
+
+guardarVehiculo(): void {
+  this.cargando = true; 
+  this.usuarioService.actualizarVehiculo(this.formVehiculo).subscribe({
+    next: (data) => {
+      this.vehiculo = data;
+      this.mostrarExito('Vehículo guardado correctamente');
+      this.cargando = false; 
+      this.cerrarModales();
+    },
+    error: (err) => {
+      this.cargando = false;
+      alert('Error al conectar con la base de datos');
+    }
+  });
+}
 
 
   abrirModalDatos(): void {
@@ -106,13 +119,22 @@ export class DashboardUsuario implements OnInit {
   }
 
   guardarDatos(): void {
-    if (!this.formDatos.nombre_completo.trim() || !this.formDatos.correo.trim()) return;
-    this.usuario = { ...this.usuario, ...this.formDatos };
-    localStorage.setItem('usuario', JSON.stringify(this.usuario));
-    this.mostrarExito('Datos actualizados correctamente');
-    this.cerrarModales();
-  }
+  if (!this.formDatos.nombre_completo.trim() || !this.formDatos.correo.trim()) return;
 
+
+  this.usuarioService.updateMiPerfil(this.formDatos).subscribe({
+    next: (data) => {
+      this.usuario = { ...this.usuario, ...data };
+      localStorage.setItem('usuario', JSON.stringify(this.usuario));
+      this.mostrarExito('Datos actualizados correctamente en el servidor');
+      this.cerrarModales();
+    },
+    error: (err) => {
+      console.error('Error al actualizar:', err);
+      alert('Error al guardar en el servidor');
+    }
+  });
+}
 
   abrirModalPassword(): void {
     this.formPassword = { actual: '', nueva: '', confirmar: '' };
