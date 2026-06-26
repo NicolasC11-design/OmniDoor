@@ -6,10 +6,17 @@ import { Observable, tap } from 'rxjs';
   providedIn: 'root'
 })
 export class AuthService {
-
   private apiUrl = 'http://localhost:8000/api'; 
 
   constructor(private http: HttpClient) {}
+
+  private getHeaders(): HttpHeaders {
+    const token = localStorage.getItem('access');
+    return new HttpHeaders({
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    });
+  }
 
   register(payload: any): Observable<any> {
     return this.http.post(`${this.apiUrl}/auth/register/`, payload);
@@ -18,47 +25,32 @@ export class AuthService {
   login(credentials: any): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/auth/login/`, credentials).pipe(
       tap(response => {
-        if (response && response.access) {
+        if (response?.access) {
           localStorage.setItem('access', response.access);
           localStorage.setItem('refresh', response.refresh);
-          
-          if (response.usuario) {
-            localStorage.setItem('usuario', JSON.stringify(response.usuario));
-          }
+          if (response.usuario) localStorage.setItem('usuario', JSON.stringify(response.usuario));
         }
       })
     );
   }
 
   getUsuariosPendientes(): Observable<any[]> {
-    const token = localStorage.getItem('access'); 
-    
-    const headers = new HttpHeaders({
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
-    });
-
-    return this.http.get<any[]>(`${this.apiUrl}/admin/usuarios-pendientes/`, { headers });
+    return this.http.get<any[]>(`${this.apiUrl}/admin/usuarios-pendientes/`, { headers: this.getHeaders() });
   }
 
   aprobarUsuario(idUsuario: string): Observable<any> {
-    const token = localStorage.getItem('access'); 
-    const headers = new HttpHeaders({
-      'Authorization': `Bearer ${token}`
-    });
-
-    return this.http.patch<any>(`${this.apiUrl}/admin/aprobar-usuario/${idUsuario}/`, {}, { headers });
+    return this.http.patch<any>(`${this.apiUrl}/admin/aprobar-usuario/${idUsuario}/`, {}, { headers: this.getHeaders() });
   }
 
+  rechazarUsuario(idUsuario: string): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/admin/aprobar-usuario/${idUsuario}/`, { headers: this.getHeaders() });
+  }
 
   isAuthenticated(): boolean {
-    const token = localStorage.getItem('access');
-    return !!token; 
+    return !!localStorage.getItem('access'); 
   }
 
   logout(): void {
-    localStorage.removeItem('access');
-    localStorage.removeItem('refresh');
-    localStorage.removeItem('usuario');
+    localStorage.clear(); 
   }
 }
