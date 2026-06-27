@@ -19,7 +19,7 @@ class UsuarioManager(BaseUserManager):
     def create_superuser(self, correo, nombre_completo, password=None, **extra_fields):
         extra_fields.setdefault('is_admin', True)
         extra_fields.setdefault('is_staff', True)
-        extra_fields.setdefault('is_superuser', True) # 🚨 Vital
+        extra_fields.setdefault('is_superuser', True) 
         extra_fields.setdefault('is_active', True)
         return self.create_user(correo, nombre_completo, password, **extra_fields)
 

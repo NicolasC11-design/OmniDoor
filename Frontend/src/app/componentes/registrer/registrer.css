@@ -55,23 +55,25 @@
 
 .od-logo {
   font-family: var(--mono);
-  font-size: 22px;
+  font-size: 45px;
   color: var(--accent);
-  letter-spacing: 4px;
+  letter-spacing: 8px;
   text-transform: uppercase;
-  margin-bottom: 4px;
+  margin-bottom: 12px;
   position: relative;
   z-index: 2;
+  text-shadow: 0 0 15px rgba(26, 143, 255, 0.5);
 }
 
 .od-tagline {
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 15px;
   color: var(--accent2);
-  letter-spacing: 3px;
-  margin-bottom: 2rem;
+  letter-spacing: 5px;
+  margin-bottom: 3rem;
   position: relative;
   z-index: 2;
+  text-transform: uppercase;
 }
 
 .tab-bar {
@@ -113,11 +115,11 @@
 
 .od-panel {
   width: 100%;
-  max-width: 420px;
+  max-width: 800px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 6px;
-  padding: 1.5rem;
+  padding: 2.5rem;
   position: relative;
   z-index: 2;
 }
@@ -161,12 +163,17 @@
 }
 
 .input-row {
-  display: flex;
-  gap: 10px;
+  display: flex !important;
+  flex-direction: row !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+  gap: 20px !important;
+  margin-bottom: 20px !important;
 }
 
 .input-row .field-group {
-  flex: 1;
+  flex: 1 !important;
+  min-width: 0 !important; /* Vital para que el flexbox funcione en inputs */
 }
 
 .field-group {
@@ -184,7 +191,7 @@
 }
 
 .od-input {
-  width: 100%;
+  width: 100% !important;
   background: rgba(26, 143, 255, 0.04);
   border: 1px solid var(--border);
   border-radius: 3px;
@@ -194,6 +201,7 @@
   color: var(--text);
   outline: none;
   transition: border-color 0.2s;
+  box-sizing: border-box !important;
 }
 
 .od-input::placeholder {
@@ -253,7 +261,7 @@
 .vehicle-select {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 6px;
+  gap: 12px;
 }
 
 .veh-opt {
@@ -300,9 +308,9 @@
 
 .plate-row {
   display: flex;
-  gap: 10px;
+  gap: 15px;
   align-items: flex-end;
-  margin-bottom: 1rem;
+  margin-bottom: 15px;
 }
 
 .plate-row .field-group {
@@ -326,6 +334,7 @@
   gap: 6px;
   white-space: nowrap;
   height: 42px;
+  min-width: 80px;
 }
 
 .plate-badge i {
