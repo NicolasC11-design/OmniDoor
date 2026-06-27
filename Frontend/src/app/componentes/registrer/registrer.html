@@ -5,7 +5,6 @@
   <div class="od-logo">OmniDoor</div>
   <div class="od-tagline">seguridad y control en cada acceso</div>
 
-
   <div class="od-panel">
     <div class="corner c-tl"></div>
     <div class="corner c-tr"></div>
@@ -43,7 +42,6 @@
 
       <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
 
-
         <div class="input-row">
           <div class="field-group">
             <label class="field-label" for="nombres">nombres</label>
@@ -59,15 +57,12 @@
           </div>
         </div>
 
-
         <div class="field-group">
           <label class="field-label" for="correo">correo electronico</label>
           <input id="correo" class="od-input" type="email" formControlName="correo" placeholder="usuario@gmail.com"
             [class.input-error]="f['correo'].invalid && f['correo'].touched" />
-          <span class="error-msg" *ngIf="f['correo'].invalid && f['correo'].touched"> ingresa un correo válido
-          </span>
+          <span class="error-msg" *ngIf="f['correo'].invalid && f['correo'].touched"> ingresa un correo válido </span>
         </div>
-
 
         <div class="field-group">
           <label class="field-label" for="rol">rol</label>
@@ -82,7 +77,6 @@
           <span class="error-msg" *ngIf="f['rol'].invalid && f['rol'].touched">selecciona un rol</span>
         </div>
 
-
         <div class="field-group">
           <span class="field-label">tipo de vehículo</span>
           <div class="vehicle-select">
@@ -95,17 +89,25 @@
           </div>
         </div>
 
-
         <div class="plate-row">
           <div class="field-group">
             <label class="field-label" for="placa">placa del vehículo</label>
-            <input id="placa" class="od-input plate-input" type="text" formControlName="placa" placeholder="ABC-123"
+            <input id="placa" class="od-input plate-input" type="text" formControlName="placa" 
+              [placeholder]="selectedVehicle === 'auto' ? 'ABC-123' : (selectedVehicle === 'moto' ? 'ABC-12A' : 'N/A')"
+              [readonly]="selectedVehicle === 'bici' || selectedVehicle === 'patin' || selectedVehicle === 'electr'"
               maxlength="7" [class.input-error]="f['placa'].invalid && f['placa'].touched" />
+            
             <span class="error-msg" *ngIf="f['placa'].invalid && f['placa'].touched">
-              formato inválido (ej. ABC-123)
+              <span *ngIf="f['placa'].errors?.['required']">la placa es requerida</span>
+              <span *ngIf="f['placa'].errors?.['placaInvalid']">
+                {{ selectedVehicle === 'moto' ? 'formato de moto inválido (ej. ABC-12A)' : 'formato de auto inválido (ej. ABC-123)' }}
+              </span>
             </span>
           </div>
-          <button type="button" class="plate-badge" (click)="captureOCR()" [class.capturing]="ocrCapturing">
+          
+          <button type="button" class="plate-badge" (click)="captureOCR()" 
+            [class.capturing]="ocrCapturing"
+            [disabled]="selectedVehicle === 'bici' || selectedVehicle === 'patin' || selectedVehicle === 'electr'">
             <i class="ti ti-camera" aria-hidden="true"></i>
             <span>{{ ocrCapturing ? '...' : 'OCR' }}</span>
           </button>
@@ -136,14 +138,16 @@
           <div class="face-label">{{ biometricLabel }}</div>
         </div>
 
-
         <div class="input-row">
           <div class="field-group">
             <label class="field-label" for="password">contraseña</label>
             <input id="password" class="od-input" type="password" formControlName="password" placeholder="••••••••"
               [class.input-error]="f['password'].invalid && f['password'].touched" />
             <span class="error-msg" *ngIf="f['password'].invalid && f['password'].touched">
-              mín. 8 caracteres
+              <span *ngIf="f['password'].errors?.['required']">la contraseña es requerida</span>
+              <span>
+                mín. 8 caracteres, incluir mayúscula, minúscula, número y símbolo (@$!%*?&amp;#)
+              </span>
             </span>
           </div>
           <div class="field-group">

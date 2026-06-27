@@ -4,7 +4,6 @@ import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 
-
 function passwordMatchValidator(control: AbstractControl): ValidationErrors | null {
   const pw = control.get('password');
   const cpw = control.get('confirmPassword');
@@ -12,8 +11,14 @@ function passwordMatchValidator(control: AbstractControl): ValidationErrors | nu
 }
 
 function placaValidator(control: AbstractControl): ValidationErrors | null {
-  const regex = /^[A-Za-z]{3}-?\d{3}$/;
-  return (control.value && !regex.test(control.value)) ? { placaInvalid: true } : null;
+  if (!control.value || control.value === 'N/A') return null;
+  const autoRegex = /^[A-Za-z]{3}-\d{3}$/;
+  const motoRegex = /^[A-Za-z]{3}-\d{2}[A-Za-z]{1}$/;
+  
+  if (autoRegex.test(control.value) || motoRegex.test(control.value)) {
+    return null;
+  }
+  return { placaInvalid: true };
 }
 
 export interface VehicleType {
@@ -37,8 +42,6 @@ export class Register implements OnInit {
   selectedVehicle = 'auto';
   errorMessage = '';
   successMessage = '';
-
-
   registroEnviado = false;
 
   vehicleTypes: VehicleType[] = [
@@ -66,9 +69,31 @@ export class Register implements OnInit {
       correo: ['', [Validators.required, Validators.email]],
       rol: ['', Validators.required],
       placa: ['', [Validators.required, placaValidator]],
-      password: ['', [Validators.required, Validators.minLength(8)]],
+      password: ['', [
+        Validators.required, 
+        Validators.minLength(8),
+        Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/)
+      ]],
       confirmPassword: ['', Validators.required],
     }, { validators: passwordMatchValidator });
+  }
+
+  selectVehicle(value: string): void {
+    if (this.registroEnviado) return;
+    this.selectedVehicle = value;
+
+    const placaControl = this.registerForm.get('placa');
+
+    if (value === 'bici' || value === 'patin' || value === 'electr') {
+      placaControl?.setValue('N/A');
+      placaControl?.clearValidators();
+    } else {
+      if (placaControl?.value === 'N/A') {
+        placaControl?.setValue('');
+      }
+      placaControl?.setValidators([Validators.required, placaValidator]);
+    }
+    placaControl?.updateValueAndValidity();
   }
 
   onSubmit(): void {
@@ -104,16 +129,14 @@ export class Register implements OnInit {
     });
   }
 
-  selectVehicle(value: string): void {
-    if (this.registroEnviado) return;
-    this.selectedVehicle = value;
-  }
-
   captureOCR(): void {
     if (this.registroEnviado) return;
+    if (this.selectedVehicle === 'bici' || this.selectedVehicle === 'patin' || this.selectedVehicle === 'electr') return;
+    
     this.ocrCapturing = true;
     setTimeout(() => {
-      this.registerForm.patchValue({ placa: 'ABC-123' });
+      const placaSimulada = this.selectedVehicle === 'moto' ? 'ABC-12A' : 'ABC-123';
+      this.registerForm.patchValue({ placa: placaSimulada });
       this.ocrCapturing = false;
     }, 1000);
   }
