@@ -1,5 +1,6 @@
 from rest_framework import serializers, generics, permissions
 from .models import Usuario
+import re
 
 class RegisterSerializer(serializers.ModelSerializer):
     nombres = serializers.CharField(write_only=True)
@@ -9,6 +10,35 @@ class RegisterSerializer(serializers.ModelSerializer):
         model = Usuario
         fields = ['nombres', 'apellidos', 'correo', 'password', 'rol', 'placa', 'tipoVehiculo']
         extra_kwargs = {'password': {'write_only': True}}
+
+    def validate_password(self, value):
+        if len(value) < 8:
+            raise serializers.ValidationError("La contraseña debe tener al menos 8 caracteres.")
+        
+        regex_segura = r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$'
+        if not re.match(regex_segura, value):
+            raise serializers.ValidationError(
+                "La contraseña debe incluir al menos una mayúscula, una minúscula, un número y un símbolo (@$!%*?&#)."
+            )
+        return value
+
+    def validate(self, data):
+        tipo_vehiculo = data.get('tipoVehiculo')
+        placa = data.get('placa', '').strip()
+
+        if tipo_vehiculo in ['bici', 'patin', 'electr']:
+            data['placa'] = 'N/A'
+        else:
+            auto_regex = r'^[A-Za-z]{3}-\d{3}$'
+            moto_regex = r'^[A-Za-z]{3}-\d{2}[A-Za-z]$'
+
+            if tipo_vehiculo == 'auto' and not re.match(auto_regex, placa):
+                raise serializers.ValidationError({"placa": "El formato de placa para automóvil debe ser ABC-123."})
+            
+            if tipo_vehiculo == 'moto' and not re.match(moto_regex, placa):
+                raise serializers.ValidationError({"placa": "El formato de placa para motocicleta debe ser ABC-12A."})
+
+        return data
 
     def create(self, validated_data):
         nombres = validated_data.pop('nombres')
@@ -21,6 +51,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         user.save()
         
         return user
+
 
 class LoginSerializer(serializers.Serializer):
     correo = serializers.EmailField(required=True)
@@ -43,11 +74,13 @@ class LoginSerializer(serializers.Serializer):
 
         data['user'] = user
         return data
-    
+
+
 class userSerializer(serializers.ModelSerializer):
     class Meta:
         model = Usuario
         fields = ['id_usuario', 'nombre_completo', 'correo', 'rol', 'estado']
+
 
 class UsuarioListCreateView(generics.ListCreateAPIView):
     queryset = Usuario.objects.all()
@@ -58,4 +91,4 @@ class UsuarioDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Usuario.objects.all()
     serializer_class = userSerializer
     permission_classes = [permissions.IsAuthenticated]
-    lookup_field = 'id_usuario' 
+    lookup_field = 'id_usuario'
