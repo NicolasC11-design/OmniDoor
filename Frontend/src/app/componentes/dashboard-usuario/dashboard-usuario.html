@@ -33,33 +33,26 @@
 
         <div class="od-panel">
             <div class="panel-header">
-                <div class="panel-title">vehículos registrados ({{ vehiculosActivos ? vehiculosActivos.length : 0 }})
-                </div>
-                <button class="edit-link" (click)="abrirModalVehiculo()">
-                    <i class="ti ti-plus" aria-hidden="true"></i> registrar nuevo
+                <div class="panel-title">mi vehículo registrado</div>
+                <button class="edit-link" (click)="abrirModalVehiculo()" *ngIf="vehiculo">
+                    <i class="ti ti-edit" aria-hidden="true"></i> editar
                 </button>
             </div>
 
-            <div *ngIf="vehiculosActivos && vehiculosActivos.length > 0">
-                <div class="vehicle-row" *ngFor="let v of vehiculosActivos" style="margin-bottom: 12px;">
-                    <i class="ti" [ngClass]="obtenerIconoPorTipo(v?.tipoVehiculo || 'auto')" aria-hidden="true"></i>
-                    <div class="vehicle-details">
-                        <div class="vehicle-plate">
-                            {{ (v?.placa === 'SIN PLACA' || v?.placa === 'N/A' || !v?.placa) ? ((v?.tipoVehiculo ||
-                            'vehículo') | uppercase) : v?.placa }}
-                        </div>
-                        <div class="vehicle-meta">
-                            Marca: {{ v?.marca || 'Genérica' }} · Modelo: {{ v?.modelo || 'Genérico' }}
-                            <span *ngIf="v?.placa === 'SIN PLACA' || v?.placa === 'N/A' || !v?.placa"
-                                > · (Exento)</span>
-                        </div>
-                    </div>
+            <div class="vehicle-row" *ngIf="vehiculo">
+                <div class="vehicle-icon">
+                    <i class="ti" [ngClass]="iconoVehiculo()" aria-hidden="true"></i>
+                </div>
+                <div class="vehicle-details">
+                    <div class="vehicle-plate">{{ vehiculo.placa }}</div>
+                    <div class="vehicle-meta">{{ vehiculo.tipoVehiculo }} · biometría {{ vehiculo.biometriaCapturada ?
+                        'registrada' : 'pendiente' }}</div>
                 </div>
             </div>
 
-            <div class="empty-vehicle" *ngIf="vehiculosActivos && vehiculosActivos.length === 0">
-                <p>No hay ningún vehículo registrado en el sistema todavía. Regístralo para que la talanquera te
-                    reconozca automáticamente.</p>
+            <div class="empty-vehicle" *ngIf="!vehiculo">
+                <p>No tienes un vehículo registrado todavía. Regístralo para que la talanquera te reconozca
+                    automáticamente.</p>
                 <button class="add-vehicle-btn" (click)="abrirModalVehiculo()">
                     <i class="ti ti-plus" aria-hidden="true"></i> registrar vehículo
                 </button>
@@ -102,6 +95,7 @@
             </div>
         </div>
 
+
         <div class="od-panel">
             <div class="panel-header">
                 <div class="panel-title">mi cuenta</div>
@@ -119,13 +113,14 @@
 
     </div>
 
+
     <div class="modal-overlay" *ngIf="mostrarModalVehiculo" (click)="cerrarModales()">
-        <form class="modal-box" (click)="$event.stopPropagation()" [formGroup]="formVehiculo">
+        <div class="modal-box" (click)="$event.stopPropagation()">
             <div class="modal-title">{{ vehiculo ? 'editar mi vehículo' : 'registrar mi vehículo' }}</div>
 
             <div class="field-group">
                 <label class="field-label" for="tipoVeh">tipo de vehículo</label>
-                <select id="tipoVeh" class="od-input" formControlName="tipoVehiculo">
+                <select id="tipoVeh" class="od-input" [(ngModel)]="formVehiculo.tipoVehiculo">
                     <option value="auto">Automóvil</option>
                     <option value="moto">Motocicleta</option>
                     <option value="bici">Bicicleta</option>
@@ -134,108 +129,70 @@
                 </select>
             </div>
 
-            <div class="input-row"
-                *ngIf="formVehiculo.get('tipoVehiculo')?.value === 'auto' || formVehiculo.get('tipoVehiculo')?.value === 'moto'">
-                <div class="field-group">
-                    <label class="field-label" for="marcaVeh">marca</label>
-                    <input id="marcaVeh" class="od-input" type="text" formControlName="marca"
-                        placeholder="Ej: Renault / AKT" />
-                </div>
-                <div class="field-group">
-                    <label class="field-label" for="modeloVeh">modelo</label>
-                    <input id="modeloVeh" class="od-input" type="text" formControlName="modelo"
-                        placeholder="Ej: Sandero / NKD" />
-                </div>
-            </div>
-
-            <div class="field-group"
-                *ngIf="formVehiculo.get('tipoVehiculo')?.value === 'auto' || formVehiculo.get('tipoVehiculo')?.value === 'moto'">
+            <div class="field-group">
                 <label class="field-label" for="placaVeh">placa</label>
-                <input id="placaVeh" class="od-input" type="text" formControlName="placa"
-                    [placeholder]="obtenerPlaceholderPlaca()" style="text-transform: uppercase;" />
-
-                <small
-                    *ngIf="formVehiculo.get('tipoVehiculo')?.value === 'moto' && formVehiculo.get('placa')?.value && formVehiculo.get('placa')?.invalid"
-                    style="color: var(--error); font-family: var(--mono); font-size: 11px; margin-top: 4px; display: block;">
-                    Formato sugerido para moto: 3 letras, 2 números y 1 letra (ej: ABC12A)
-                </small>
+                <input id="placaVeh" class="od-input" type="text" [(ngModel)]="formVehiculo.placa"
+                    placeholder="ABC-123" />
             </div>
 
             <div class="modal-actions">
-                <button type="button" class="od-btn" (click)="cerrarModales()">cancelar</button>
-                <button type="button" class="od-btn primary" (click)="guardarVehiculo()">guardar</button>
+                <button class="od-btn" (click)="cerrarModales()">cancelar</button>
+                <button class="od-btn primary" (click)="guardarVehiculo()">guardar</button>
             </div>
-        </form>
+        </div>
     </div>
 
+
     <div class="modal-overlay" *ngIf="mostrarModalDatos" (click)="cerrarModales()">
-        <form class="modal-box" (click)="$event.stopPropagation()" [formGroup]="formDatos">
+        <div class="modal-box" (click)="$event.stopPropagation()">
             <div class="modal-title">actualizar mis datos</div>
 
             <div class="field-group">
                 <label class="field-label" for="nombreU">nombre completo</label>
-                <input id="nombreU" class="od-input" type="text" formControlName="nombre_completo" />
+                <input id="nombreU" class="od-input" type="text" [(ngModel)]="formDatos.nombre_completo" />
             </div>
 
             <div class="field-group">
                 <label class="field-label" for="correoU">correo electrónico</label>
-                <input id="correoU" class="od-input" type="email" formControlName="correo" />
-            </div>
-
-            <div class="input-row">
-                <div class="field-group">
-                    <label class="field-label" for="telefonoU">teléfono celular</label>
-                    <input id="telefonoU" class="od-input" type="text" formControlName="telefono"
-                        placeholder="3XXXXXXXXX" maxlength="10" />
-                </div>
-                <div class="field-group">
-                    <label class="field-label" for="emergenciaU">contacto emergencia</label>
-                    <input id="emergenciaU" class="od-input" type="text" formControlName="contacto_emergencia"
-                        placeholder="Teléfono de apoyo" maxlength="10" />
-                </div>
-            </div>
-
-            <div class="field-group">
-                <label class="field-label" for="direccionU">dirección residencia</label>
-                <input id="direccionU" class="od-input" type="text" formControlName="direccion"
-                    placeholder="Calle, Conjunto, Bloque, Apto" />
+                <input id="correoU" class="od-input" type="email" [(ngModel)]="formDatos.correo" />
             </div>
 
             <div class="modal-actions">
-                <button type="button" class="od-btn" (click)="cerrarModales()">cancelar</button>
-                <button type="button" class="od-btn primary" (click)="guardarDatos()">guardar cambios</button>
+                <button class="od-btn" (click)="cerrarModales()">cancelar</button>
+                <button class="od-btn primary" (click)="guardarDatos()">guardar cambios</button>
             </div>
-        </form>
+        </div>
     </div>
 
+
     <div class="modal-overlay" *ngIf="mostrarModalPassword" (click)="cerrarModales()">
-        <form class="modal-box" (click)="$event.stopPropagation()" [formGroup]="formPassword">
+        <div class="modal-box" (click)="$event.stopPropagation()">
             <div class="modal-title">cambiar contraseña</div>
 
             <div class="field-group">
                 <label class="field-label" for="passActual">contraseña actual</label>
-                <input id="passActual" class="od-input" type="password" formControlName="actual"
+                <input id="passActual" class="od-input" type="password" [(ngModel)]="formPassword.actual"
                     placeholder="••••••••" />
             </div>
 
             <div class="input-row">
                 <div class="field-group">
                     <label class="field-label" for="passNueva">nueva contraseña</label>
-                    <input id="passNueva" class="od-input" type="password" formControlName="nueva"
+                    <input id="passNueva" class="od-input" type="password" [(ngModel)]="formPassword.nueva"
                         placeholder="••••••••" />
                 </div>
                 <div class="field-group">
                     <label class="field-label" for="passConfirma">confirmar</label>
-                    <input id="passConfirma" class="od-input" type="password" formControlName="confirmar"
+                    <input id="passConfirma" class="od-input" type="password" [(ngModel)]="formPassword.confirmar"
                         placeholder="••••••••" />
                 </div>
             </div>
 
             <div class="modal-actions">
-                <button type="button" class="od-btn" (click)="cerrarModales()">cancelar</button>
-                <button type="button" class="od-btn primary" (click)="guardarPassword()">actualizar contraseña</button>
+                <button class="od-btn" (click)="cerrarModales()">cancelar</button>
+                <button class="od-btn primary" (click)="guardarPassword()">actualizar contraseña</button>
             </div>
-        </form>
+        </div>
     </div>
 
 </div>

@@ -4,7 +4,6 @@ import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 
-// Validadores personalizados
 function passwordMatchValidator(control: AbstractControl): ValidationErrors | null {
   const pw = control.get('password');
   const cpw = control.get('confirmPassword');
@@ -12,12 +11,11 @@ function passwordMatchValidator(control: AbstractControl): ValidationErrors | nu
 }
 
 function placaValidator(control: AbstractControl): ValidationErrors | null {
-  if (!control.value || control.value === 'N/A' || control.value === 'SIN PLACA') return null;
-  const valor = control.value.toString().trim().toUpperCase();
-  const autoRegex = /^[A-Z]{3}-?\d{3}$/;
-  const motoRegex = /^[A-Z]{3}-?\d{2}[A-Z]$/;
+  if (!control.value || control.value === 'N/A') return null;
+  const autoRegex = /^[A-Za-z]{3}-\d{3}$/;
+  const motoRegex = /^[A-Za-z]{3}-\d{2}[A-Za-z]{1}$/;
   
-  if (autoRegex.test(valor) || motoRegex.test(valor)) {
+  if (autoRegex.test(control.value) || motoRegex.test(control.value)) {
     return null;
   }
   return { placaInvalid: true };
@@ -44,6 +42,7 @@ export class Register implements OnInit {
   selectedVehicle = 'auto';
   errorMessage = '';
   successMessage = '';
+  registroEnviado = false;
 
   vehicleTypes: VehicleType[] = [
     { value: 'auto', label: 'auto', icon: 'ti-car' },
@@ -54,9 +53,9 @@ export class Register implements OnInit {
   ];
 
   constructor(
-    private fb: FormBuilder, 
-    private router: Router, 
-    private http: HttpClient 
+    private fb: FormBuilder,
+    private router: Router,
+    private http: HttpClient
   ) {}
 
   get f() {
@@ -67,7 +66,7 @@ export class Register implements OnInit {
     this.registerForm = this.fb.group({
       nombres: ['', [Validators.required, Validators.minLength(2)]],
       apellidos: ['', [Validators.required, Validators.minLength(2)]],
-      correo: ['', [Validators.required, Validators.email]], // Corregido: de 'email' a 'correo'
+      correo: ['', [Validators.required, Validators.email]],
       rol: ['', Validators.required],
       
       // ── NUEVOS CAMPOS ADAPTADOS DE CONTACTO E INSTITUCIONALES ──
@@ -78,9 +77,6 @@ export class Register implements OnInit {
       
       // campos vehiculares base
       placa: ['', [Validators.required, placaValidator]],
-      marca: ['', Validators.required],
-      modelo: ['', Validators.required],
-      
       password: ['', [
         Validators.required, 
         Validators.minLength(8),
@@ -122,6 +118,24 @@ export class Register implements OnInit {
     modeloControl?.updateValueAndValidity();
   }
 
+  selectVehicle(value: string): void {
+    if (this.registroEnviado) return;
+    this.selectedVehicle = value;
+
+    const placaControl = this.registerForm.get('placa');
+
+    if (value === 'bici' || value === 'patin' || value === 'electr') {
+      placaControl?.setValue('N/A');
+      placaControl?.clearValidators();
+    } else {
+      if (placaControl?.value === 'N/A') {
+        placaControl?.setValue('');
+      }
+      placaControl?.setValidators([Validators.required, placaValidator]);
+    }
+    placaControl?.updateValueAndValidity();
+  }
+
   onSubmit(): void {
     if (this.registerForm.invalid) {
       this.registerForm.markAllAsTouched();
@@ -149,29 +163,35 @@ export class Register implements OnInit {
     this.http.post('http://localhost:8000/api/auth/register/', payload).subscribe({
       next: (res) => {
         this.loading = false;
-        this.successMessage = 'Registro enviado con éxito.';
-        setTimeout(() => this.router.navigate(['/login']), 2000);
+        this.registroEnviado = true;
+        this.successMessage =
+          'Solicitud recibida. Tu registro está en proceso de verificación y será habilitado cuando el administrador apruebe tu cuenta.';
+        this.registerForm.disable();
+        setTimeout(() => this.router.navigate(['/login']), 8000);
       },
       error: (err) => {
         this.loading = false;
-
+        this.registroEnviado = false;
         this.errorMessage = 'Error: ' + (err.error?.detail || JSON.stringify(err.error));
         console.error('Error del servidor:', err);
       }
     });
   }
 
-
   captureOCR(): void {
+    if (this.registroEnviado) return;
+    if (this.selectedVehicle === 'bici' || this.selectedVehicle === 'patin' || this.selectedVehicle === 'electr') return;
+    
     this.ocrCapturing = true;
     setTimeout(() => {
-      this.registerForm.patchValue({ placa: 'ABC-123' });
+      const placaSimulada = this.selectedVehicle === 'moto' ? 'ABC-12A' : 'ABC-123';
+      this.registerForm.patchValue({ placa: placaSimulada });
       this.ocrCapturing = false;
     }, 1000);
   }
 
   captureBiometric(): void {
-    if (this.biometricCaptured) return;
+    if (this.biometricCaptured || this.registroEnviado) return;
     this.biometricCapturing = true;
     this.biometricLabel = '[ capturando rostro... ]';
     setTimeout(() => {

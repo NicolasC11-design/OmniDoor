@@ -1,24 +1,10 @@
+from rest_framework import serializers, generics, permissions
+from .models import Usuario
 import re
-from rest_framework import serializers
-from .models import Usuario, Vehiculo
-
-class VehiculoSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Vehiculo
-        # Agregamos marca y modelo para que viajen al Dashboard de Angular
-        fields = ['id_vehiculo', 'tipoVehiculo', 'placa', 'marca', 'modelo', 'fecha_registro', 'activo']
-
 
 class RegisterSerializer(serializers.ModelSerializer):
     nombres = serializers.CharField(write_only=True)
     apellidos = serializers.CharField(write_only=True)
-    tipoVehiculo = serializers.CharField(write_only=True, required=False, allow_blank=True)
-    placa = serializers.CharField(write_only=True, required=False, allow_blank=True)
-    
-    # Declaramos los nuevos campos obligatorios y extras que vienen de Angular
-    nombre_emergencia = serializers.CharField(required=True)
-    marca = serializers.CharField(write_only=True, required=False, allow_blank=True)
-    modelo = serializers.CharField(write_only=True, required=False, allow_blank=True)
 
     class Meta:
         model = Usuario
@@ -42,44 +28,30 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         tipo_vehiculo = data.get('tipoVehiculo')
-        placa = data.get('placa', '').strip().upper() # Forzamos mayúsculas limpias
+        placa = data.get('placa', '').strip()
 
-        if tipo_vehiculo:
-            if tipo_vehiculo in ['bici', 'patin', 'electr']:
-                data['placa'] = 'SIN PLACA'
-                data['marca'] = 'GENERICA'
-                data['modelo'] = 'GENERICO'
-            else:
-                auto_regex = r'^[A-Z]{3}-?\d{3}$'
-                moto_regex = r'^[A-Z]{3}-?\d{2}[A-Z]$'
+        if tipo_vehiculo in ['bici', 'patin', 'electr']:
+            data['placa'] = 'N/A'
+        else:
+            auto_regex = r'^[A-Za-z]{3}-\d{3}$'
+            moto_regex = r'^[A-Za-z]{3}-\d{2}[A-Za-z]$'
 
-                if tipo_vehiculo == 'auto' and not re.match(auto_regex, placa):
-                    raise serializers.ValidationError({"placa": "El formato de placa para automóvil debe ser ABC-123."})
-                
-                if tipo_vehiculo == 'moto' and not re.match(moto_regex, placa):
-                    raise serializers.ValidationError({"placa": "El formato de placa para motocicleta debe ser ABC-12A."})
-                
-                if not data.get('marca') or not data.get('modelo'):
-                    raise serializers.ValidationError({"vehiculo": "Los vehículos motorizados requieren Marca y Modelo."})
+            if tipo_vehiculo == 'auto' and not re.match(auto_regex, placa):
+                raise serializers.ValidationError({"placa": "El formato de placa para automóvil debe ser ABC-123."})
+            
+            if tipo_vehiculo == 'moto' and not re.match(moto_regex, placa):
+                raise serializers.ValidationError({"placa": "El formato de placa para motocicleta debe ser ABC-12A."})
 
         return data
 
     def create(self, validated_data):
-
         nombres = validated_data.pop('nombres')
         apellidos = validated_data.pop('apellidos')
-        tipo_vehiculo = validated_data.pop('tipoVehiculo', None)
-        placa = validated_data.pop('placa', None)
-        marca = validated_data.pop('marca', None)
-        modelo = validated_data.pop('modelo', None)
-
         user = Usuario.objects.create_user(
-            correo=validated_data['correo'],
-            password=validated_data['password'],
             nombre_completo=f"{nombres} {apellidos}",
-            rol=validated_data.get('rol', 'Usuario')
+            **validated_data
         )
-        user.is_active = False # Esperando aprobación del admin en portería
+        user.is_active = False
         user.save()
 
         if tipo_vehiculo:
@@ -93,22 +65,45 @@ class RegisterSerializer(serializers.ModelSerializer):
         
         return user
 
+
+class LoginSerializer(serializers.Serializer):
+    correo = serializers.EmailField(required=True)
+    password = serializers.CharField(required=True, write_only=True)
+
+    def validate(self, data):
+        correo = data.get('correo')
+        password = data.get('password')
+
+        if correo and password:
+            try:
+                user = Usuario.objects.get(correo=correo)
+            except Usuario.DoesNotExist:
+                raise serializers.ValidationError("El correo o la contraseña son incorrectos.")
+
+            if not user.check_password(password):
+                raise serializers.ValidationError("El correo o la contraseña son incorrectos.")
+        else:
+            raise serializers.ValidationError("Debe incluir 'correo' y 'password'.")
+
+        data['user'] = user
+        return data
+
+
 class userSerializer(serializers.ModelSerializer):
     vehiculos = VehiculoSerializer(many=True, read_only=True)
 
     class Meta:
         model = Usuario
-        fields = [
-            'id_usuario', 'nombre_completo', 'correo', 'rol', 'estado',
-            'telefono', 'nombre_emergencia', 'contacto_emergencia', 'direccion', 'vehiculos'
-        ]
+        fields = ['id_usuario', 'nombre_completo', 'correo', 'rol', 'estado']
 
 
-class CambiarPasswordSerializer(serializers.Serializer):
-    old_password = serializers.CharField(required=True)
-    new_password = serializers.CharField(required=True)
+class UsuarioListCreateView(generics.ListCreateAPIView):
+    queryset = Usuario.objects.all()
+    serializer_class = userSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
-    def validate_new_password(self, value):
-        if len(value) < 8:
-            raise serializers.ValidationError("La contraseña debe tener al menos 8 caracteres.")
-        return value
+class UsuarioDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Usuario.objects.all()
+    serializer_class = userSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    lookup_field = 'id_usuario'

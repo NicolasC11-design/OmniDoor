@@ -5,58 +5,57 @@
   <div class="od-logo">OmniDoor</div>
   <div class="od-tagline">seguridad y control en cada acceso</div>
 
-
   <div class="od-panel">
     <div class="corner c-tl"></div>
     <div class="corner c-tr"></div>
     <div class="corner c-bl"></div>
     <div class="corner c-br"></div>
 
-    <div class="panel-header">
-      <div class="status-dot"></div>
-      registro de usuario vehicular
+    <div class="proceso-box" *ngIf="registroEnviado">
+      <div class="proceso-icon">
+        <i class="ti ti-clock-hour-4" aria-hidden="true"></i>
+      </div>
+      <div class="proceso-title">solicitud en proceso</div>
+      <p class="proceso-text">{{ successMessage }}</p>
+      <div class="proceso-steps">
+        <div class="proceso-step done">
+          <i class="ti ti-circle-check" aria-hidden="true"></i>
+          datos enviados correctamente
+        </div>
+        <div class="proceso-step active">
+          <i class="ti ti-loader-2" aria-hidden="true"></i>
+          esperando aprobación del administrador
+        </div>
+        <div class="proceso-step">
+          <i class="ti ti-circle-dashed" aria-hidden="true"></i>
+          acceso habilitado al sistema
+        </div>
+      </div>
+      <div class="proceso-redirect">redirigiendo al inicio de sesión...</div>
     </div>
 
-    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+    <ng-container *ngIf="!registroEnviado">
+      <div class="panel-header">
+        <div class="status-dot"></div>
+        registro de usuario vehicular
+      </div>
 
-      <!-- Nombres y apellidos -->
-      <div class="input-row">
-        <div class="field-group">
-          <label class="field-label" for="nombres">nombres</label>
-          <input id="nombres" class="od-input" type="text" formControlName="nombres" placeholder="Nombres"
-            [class.input-error]="f['nombres'].invalid && f['nombres'].touched" />
-          <span class="error-msg" *ngIf="f['nombres'].invalid && f['nombres'].touched">requerido</span>
+      <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+
+        <div class="input-row">
+          <div class="field-group">
+            <label class="field-label" for="nombres">nombres</label>
+            <input id="nombres" class="od-input" type="text" formControlName="nombres" placeholder="Nombres"
+              [class.input-error]="f['nombres'].invalid && f['nombres'].touched" />
+            <span class="error-msg" *ngIf="f['nombres'].invalid && f['nombres'].touched">requerido</span>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="apellidos">apellidos</label>
+            <input id="apellidos" class="od-input" type="text" formControlName="apellidos" placeholder="Apellidos"
+              [class.input-error]="f['apellidos'].invalid && f['apellidos'].touched" />
+            <span class="error-msg" *ngIf="f['apellidos'].invalid && f['apellidos'].touched">requerido</span>
+          </div>
         </div>
-        <div class="field-group">
-          <label class="field-label" for="apellidos">apellidos</label>
-          <input id="apellidos" class="od-input" type="text" formControlName="apellidos" placeholder="Apellidos"
-            [class.input-error]="f['apellidos'].invalid && f['apellidos'].touched" />
-          <span class="error-msg" *ngIf="f['apellidos'].invalid && f['apellidos'].touched">requerido</span>
-        </div>
-      </div>
-
-      <!-- Correo  -->
-      <div class="field-group">
-        <label class="field-label" for="correo">correo electronico</label>
-        <input id="correo" class="od-input" type="email" formControlName="correo" placeholder="usuario@gmail.com"
-          [class.input-error]="f['correo'].invalid && f['correo'].touched" />
-        <span class="error-msg" *ngIf="f['correo'].invalid && f['correo'].touched"> ingresa un correo válido
-        </span>
-      </div>
-
-      <!-- Rol -->
-      <div class="field-group">
-        <label class="field-label" for="rol">rol</label>
-        <select id="rol" class="od-select" formControlName="rol"
-          [class.input-error]="f['rol'].invalid && f['rol'].touched">
-          <option value="">— seleccionar rol —</option>
-          <option value="aprendiz">Usuario</option>
-          <option value="empleado">Coordinador</option>
-          <option value="seguridad">Personal de seguridad</option>
-          <option value="admin">Administrador</option>
-        </select>
-        <span class="error-msg" *ngIf="f['rol'].invalid && f['rol'].touched">selecciona un rol</span>
-      </div>
 
         <div class="field-group">
           <label class="field-label" for="correo">correo electronico</label>
@@ -76,36 +75,6 @@
             <option value="admin">Administrador</option>
           </select>
           <span class="error-msg" *ngIf="f['rol'].invalid && f['rol'].touched">selecciona un rol</span>
-        </div>
-
-        <div class="input-row">
-          <div class="field-group">
-            <label class="field-label" for="telefono">número telefónico</label>
-            <input id="telefono" class="od-input" type="text" formControlName="telefono" placeholder="3XXXXXXXXX" maxlength="10"
-              [class.input-error]="f['telefono'].invalid && f['telefono'].touched" />
-            <span class="error-msg" *ngIf="f['telefono'].invalid && f['telefono'].touched">requerido (10 dígitos)</span>
-          </div>
-          <div class="field-group">
-            <label class="field-label" for="direccion">dirección de residencia</label>
-            <input id="direccion" class="od-input" type="text" formControlName="direccion" placeholder="Calle, Conjunto, Apto"
-              [class.input-error]="f['direccion'].invalid && f['direccion'].touched" />
-            <span class="error-msg" *ngIf="f['direccion'].invalid && f['direccion'].touched">requerido</span>
-          </div>
-        </div>
-
-        <div class="input-row">
-          <div class="field-group">
-            <label class="field-label" for="nombreEmergencia">nombre contacto emergencia</label>
-            <input id="nombreEmergencia" class="od-input" type="text" formControlName="nombre_emergencia" placeholder="Nombre de familiar"
-              [class.input-error]="f['nombre_emergencia'].invalid && f['nombre_emergencia'].touched" />
-            <span class="error-msg" *ngIf="f['nombre_emergencia'].invalid && f['nombre_emergencia'].touched">requerido</span>
-          </div>
-          <div class="field-group">
-            <label class="field-label" for="telefonoEmergencia">teléfono emergencia</label>
-            <input id="telefonoEmergencia" class="od-input" type="text" formControlName="telefono_emergencia" placeholder="Número de apoyo" maxlength="10"
-              [class.input-error]="f['telefono_emergencia'].invalid && f['telefono_emergencia'].touched" />
-            <span class="error-msg" *ngIf="f['telefono_emergencia'].invalid && f['telefono_emergencia'].touched">requerido (10 dígitos)</span>
-          </div>
         </div>
 
         <div class="field-group">
@@ -144,21 +113,6 @@
           </button>
         </div>
 
-        <div class="input-row" *ngIf="selectedVehicle === 'auto' || selectedVehicle === 'moto'">
-          <div class="field-group">
-            <label class="field-label" for="marca">marca</label>
-            <input id="marca" class="od-input" type="text" formControlName="marca" placeholder="Ej: Mazda / Yamaha"
-              [class.input-error]="f['marca'].invalid && f['marca'].touched" />
-            <span class="error-msg" *ngIf="f['marca'].invalid && f['marca'].touched">requerido</span>
-          </div>
-          <div class="field-group">
-            <label class="field-label" for="modelo">modelo</label>
-            <input id="modelo" class="od-input" type="text" formControlName="modelo" placeholder="Ej: 3 / NMAX"
-              [class.input-error]="f['modelo'].invalid && f['modelo'].touched" />
-            <span class="error-msg" *ngIf="f['modelo'].invalid && f['modelo'].touched">requerido</span>
-          </div>
-        </div>
-
         <div class="face-scan-box" (click)="captureBiometric()" [class.scanning]="biometricCapturing">
           <div class="face-frame">
             <svg viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -191,7 +145,9 @@
               [class.input-error]="f['password'].invalid && f['password'].touched" />
             <span class="error-msg" *ngIf="f['password'].invalid && f['password'].touched">
               <span *ngIf="f['password'].errors?.['required']">la contraseña es requerida</span>
-              <span *ngIf="f['password'].errors?.['minlength']">mín. 8 caracteres</span>
+              <span>
+                mín. 8 caracteres, incluir mayúscula, minúscula, número y símbolo (@$!%*?&amp;#)
+              </span>
             </span>
           </div>
           <div class="field-group">
@@ -220,91 +176,7 @@
         ¿Ya registrado?
         <a routerLink="/login">acceder al sistema</a>
       </div>
+    </ng-container>
 
-      <!-- Placa + OCR -->
-      <div class="plate-row">
-        <div class="field-group">
-          <label class="field-label" for="placa">placa del vehículo</label>
-          <input id="placa" class="od-input plate-input" type="text" formControlName="placa" placeholder="ABC-123"
-            maxlength="7" [class.input-error]="f['placa'].invalid && f['placa'].touched" />
-          <span class="error-msg" *ngIf="f['placa'].invalid && f['placa'].touched">
-            formato inválido (ej. ABC-123)
-          </span>
-        </div>
-        <button type="button" class="plate-badge" (click)="captureOCR()" [class.capturing]="ocrCapturing">
-          <i class="ti ti-camera" aria-hidden="true"></i>
-          <span>{{ ocrCapturing ? '...' : 'OCR' }}</span>
-        </button>
-      </div>
-
-      <!-- Biometría facial -->
-      <div class="face-scan-box" (click)="captureBiometric()" [class.scanning]="biometricCapturing">
-        <div class="face-frame">
-          <svg viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="4" y="4" width="12" height="2" fill="#00d4aa" opacity=".7" />
-            <rect x="4" y="4" width="2" height="12" fill="#00d4aa" opacity=".7" />
-            <rect x="56" y="4" width="12" height="2" fill="#00d4aa" opacity=".7" />
-            <rect x="66" y="4" width="2" height="12" fill="#00d4aa" opacity=".7" />
-            <rect x="4" y="66" width="12" height="2" fill="#00d4aa" opacity=".7" />
-            <rect x="4" y="56" width="2" height="12" fill="#00d4aa" opacity=".7" />
-            <rect x="56" y="66" width="12" height="2" fill="#00d4aa" opacity=".7" />
-            <rect x="66" y="56" width="2" height="12" fill="#00d4aa" opacity=".7" />
-            <circle cx="36" cy="30" r="12" stroke="#1a8fff" stroke-width="1.2" />
-            <circle cx="36" cy="30" r="4" fill="#1a8fff" opacity=".15" />
-            <circle cx="32" cy="28" r="1.5" fill="#1a8fff" opacity=".8" />
-            <circle cx="40" cy="28" r="1.5" fill="#1a8fff" opacity=".8" />
-            <path d="M30 34 Q36 38 42 34" stroke="#1a8fff" stroke-width="1.2" fill="none" />
-            <ellipse cx="36" cy="50" rx="16" ry="8" stroke="#1a8fff" stroke-width="1" opacity=".5" />
-            <line x1="18" y1="36" x2="22" y2="36" stroke="#00d4aa" stroke-width="1" opacity=".6" />
-            <line x1="50" y1="36" x2="54" y2="36" stroke="#00d4aa" stroke-width="1" opacity=".6" />
-          </svg>
-          <div class="scan-bar-accent"></div>
-        </div>
-        <div class="face-label">{{ biometricLabel }}</div>
-      </div>
-
-      <!-- Contraseñas -->
-      <div class="input-row">
-        <div class="field-group">
-          <label class="field-label" for="password">contraseña</label>
-          <input id="password" class="od-input" type="password" formControlName="password" placeholder="••••••••"
-            [class.input-error]="f['password'].invalid && f['password'].touched" />
-          <span class="error-msg" *ngIf="f['password'].invalid && f['password'].touched">
-            mín. 8 caracteres
-          </span>
-        </div>
-        <div class="field-group">
-          <label class="field-label" for="confirmPassword">confirmar</label>
-          <input id="confirmPassword" class="od-input" type="password" formControlName="confirmPassword"
-            placeholder="••••••••"
-            [class.input-error]="registerForm.errors?.['passwordMismatch'] && f['confirmPassword'].touched" />
-          <span class="error-msg" *ngIf="registerForm.errors?.['passwordMismatch'] && f['confirmPassword'].touched">
-            no coinciden
-          </span>
-        </div>
-      </div>
-
-      <!-- Alerta -->
-      <div class="alert-msg" *ngIf="errorMessage">
-        <i class="ti ti-alert-triangle" aria-hidden="true"></i>
-        {{ errorMessage }}
-      </div>
-
-      <!-- Éxito -->
-      <div class="success-msg" *ngIf="successMessage">
-        <i class="ti ti-circle-check" aria-hidden="true"></i>
-        {{ successMessage }}
-      </div>
-
-      <button type="submit" class="od-btn primary" [disabled]="loading">
-        <span *ngIf="!loading">solicitar acceso</span>
-        <span *ngIf="loading">[ enviando solicitud... ]</span>
-      </button>
-    </form>
-
-    <div class="sys-msg">
-      ¿Ya registrado?
-      <a routerLink="/login">acceder al sistema</a>
-    </div>
   </div>
 </div>

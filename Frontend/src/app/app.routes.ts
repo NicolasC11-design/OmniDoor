@@ -2,14 +2,37 @@ import { Routes } from '@angular/router';
 import { authGuard } from './guards/auth-guard';
 
 export const routes: Routes = [
-{ path: 'login', loadComponent: () => import('./componentes/login/login').then(m => m.Login) },
+  {
+    path: 'login',
+    loadComponent: () => import('./componentes/login/login').then(m => m.Login)
+  },
+
+  {
+    path: 'register',
+    loadComponent: () => import('./componentes/registrer/registrer').then(m => m.Register)
+  },
 
 
-{ 
-    path: 'dashboard', 
-    loadComponent: () => import('./componentes/login/login').then(m => m.Login), 
-    canActivate: [authGuard] 
-},
+  {
+    path: 'dashboardAdministrador',
+    loadComponent: () => import('./componentes/dashboard-administrador/dashboard-administrador').then(m => m.AdminDashboard),
+    canActivate: [authGuard]
+  },
 
-    { path: '', redirectTo: 'login', pathMatch: 'full' }
+
+  {
+    path: 'dashboardVigilante',
+    loadComponent: () => import('./componentes/dashboard-vigilante/dashboard-vigilante').then(m => m.DashboardVigilante),
+    canActivate: [authGuard]
+  },
+
+
+  {
+    path: 'dashboardUsuario',
+    loadComponent: () => import('./componentes/dashboard-usuario/dashboard-usuario').then(m => m.DashboardUsuario),
+    canActivate: [authGuard]
+  },
+
+  { path: '', redirectTo: 'login', pathMatch: 'full' },
+  { path: '**', redirectTo: 'login' }
 ];

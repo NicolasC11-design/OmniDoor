@@ -5,7 +5,6 @@
   width: 100%;
 }
 
-/* ── Variables  ────────────────────────────────────────── */
 :host {
   --bg: #05090f;
   --surface: #0a1120;
@@ -25,7 +24,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 2rem 1rem;
+  padding: 4rem 2rem;
   position: relative;
   overflow: hidden;
 }
@@ -57,23 +56,25 @@
 
 .od-logo {
   font-family: var(--mono);
-  font-size: 22px;
+  font-size: 36px;
   color: var(--accent);
-  letter-spacing: 4px;
+  letter-spacing: 8px;
   text-transform: uppercase;
-  margin-bottom: 4px;
+  margin-bottom: 12px;
   position: relative;
   z-index: 2;
+  text-shadow: 0 0 15px rgba(26, 143, 255, 0.5);
 }
 
 .od-tagline {
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 14px;
   color: var(--accent2);
-  letter-spacing: 3px;
-  margin-bottom: 2rem;
+  letter-spacing: 5px;
+  margin-bottom: 3rem;
   position: relative;
   z-index: 2;
+  text-transform: uppercase;
 }
 
 .tab-bar {
@@ -102,13 +103,11 @@
   text-transform: uppercase;
 }
 
-
 .tab-btn.active {
   background: rgba(26, 143, 255, 0.12);
   color: var(--accent);
   border-bottom: 2px solid var(--accent);
 }
-
 
 .tab-btn:hover:not(.active) {
   background: rgba(26, 143, 255, 0.05);
@@ -117,13 +116,14 @@
 
 .od-panel {
   width: 100%;
-  max-width: 400px;
+  max-width: 750px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 6px;
-  padding: 1.5rem;
+  padding: 2.5rem;
   position: relative;
   z-index: 2;
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(26, 143, 255, 0.1);
 }
 
 .corner {
@@ -144,7 +144,7 @@
   color: var(--muted);
   letter-spacing: 3px;
   text-transform: uppercase;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1.5rem;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -165,7 +165,8 @@
 }
 
 .field-group {
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
+  width: 100%;
 }
 
 .field-label {
@@ -182,6 +183,7 @@
   position: relative;
   display: flex;
   align-items: center;
+  width: 100%;
 }
 
 .od-input {
@@ -189,11 +191,12 @@
   background: rgba(26, 143, 255, 0.04);
   border: 1px solid var(--border);
   border-radius: 3px;
-  padding: 10px 12px;
+  padding: 12px 14px;
   font-family: var(--mono);
-  font-size: 13px;
+  font-size: 14px;
   color: var(--text);
   outline: none;
+  box-sizing: border-box;
   transition: border-color 0.2s;
 }
 
@@ -213,14 +216,15 @@
 
 .toggle-pw {
   position: absolute;
-  right: 10px;
+  right: 12px;
   background: transparent;
   border: none;
   cursor: pointer;
   color: var(--muted);
   font-size: 16px;
-  padding: 0;
-  line-height: 1;
+  padding: 4px;
+  display: flex;
+  align-items: center;
 }
 
 .toggle-pw:hover { 
@@ -232,43 +236,46 @@
   font-size: 10px;
   color: var(--error);
   letter-spacing: 1px;
-  margin-top: 4px;
+  margin-top: 5px;
   display: block;
 }
 
 .divider {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin: 1rem 0;
+  gap: 15px;
+  margin: 1.75rem 0;
 }
 
 .divider-line {
   flex: 1;
   height: 1px;
   background: var(--border);
+  opacity: 0.5;
 }
 
 .divider span {
   font-family: var(--mono);
   font-size: 10px;
   color: var(--muted);
-  letter-spacing: 1px;
-  white-space: nowrap;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
 }
 
 .face-scan-box {
   border: 1px solid var(--border);
   border-radius: 4px;
-  padding: 1rem;
-  margin-bottom: 1rem;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
-  background: rgba(0, 212, 170, 0.03);
+  gap: 12px;
+  background: rgba(0, 212, 170, 0.02);
   cursor: pointer;
   transition: all 0.2s;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .face-scan-box:hover,
@@ -293,25 +300,26 @@
 
 .scan-bar {
   position: absolute;
-  left: 10px;
-  right: 10px;
-  height: 1px;
+  left: 8px;
+  right: 8px;
+  height: 2px;
   background: var(--accent2);
-  opacity: 0.7;
-  animation: face-scan 2.5s linear infinite;
+  opacity: 0.8;
+  animation: face-scan 2s linear infinite;
 }
 
 @keyframes face-scan {
-  0%   { top: 10px; }
-  100% { top: 62px; }
+  0%   { top: 8px; }
+  100% { top: 64px; }
 }
 
 .face-label {
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11px;
   color: var(--accent2);
   letter-spacing: 2px;
   text-align: center;
+  text-transform: uppercase;
 }
 
 .alert-msg {
@@ -322,8 +330,8 @@
   background: rgba(226, 75, 74, 0.08);
   border: 1px solid rgba(226, 75, 74, 0.3);
   border-radius: 3px;
-  padding: 8px 12px;
-  margin-bottom: 1rem;
+  padding: 10px 14px;
+  margin-bottom: 1.25rem;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -335,8 +343,8 @@
 
 .od-btn {
   width: 100%;
-  padding: 12px;
-  background: transparent;
+  padding: 14px;
+  background: rgba(26, 143, 255, 0.08);
   border: 1px solid var(--accent);
   border-radius: 3px;
   font-family: var(--mono);
@@ -360,8 +368,15 @@
   transition: opacity 0.2s;
 }
 
-.od-btn:hover::before { 
-  opacity: 0.12; 
+.od-btn:hover:not(:disabled) { 
+  background: rgba(26, 143, 255, 0.16);
+  border-color: #66b2ff;
+  color: #e0eeff;
+  box-shadow: 0 0 15px rgba(26, 143, 255, 0.3);
+}
+
+.od-btn:hover::before {
+  opacity: 0.12;
 }
 
 .od-btn:active { 
@@ -375,19 +390,19 @@
 
 .sys-msg {
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11px;
   color: var(--muted);
   text-align: center;
-  margin-top: 1rem;
+  margin-top: 1.5rem;
   letter-spacing: 1px;
 }
 
 .sys-msg a {
-  color: var(--accent);
+  color: var(--accent2);
   cursor: pointer;
   text-decoration: underline;
 }
 
 .sys-msg a:hover { 
-  color: #66b2ff; 
+  color: #66f3d5; 
 }

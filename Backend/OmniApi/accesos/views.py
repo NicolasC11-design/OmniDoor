@@ -1,9 +1,10 @@
-import re
-from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
-from rest_framework.response import Response 
-from rest_framework import status, generics, permissions
-from rest_framework_simplejwt.tokens import RefreshToken 
+from rest_framework.response import Response  
+from rest_framework import status
+from rest_framework_simplejwt.tokens import RefreshToken  
+from .serializers import RegisterSerializer, userSerializer, LoginSerializer
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from .models import Usuario
 
 from .serializers import (
     RegisterSerializer, userSerializer, LoginSerializer, 
@@ -17,8 +18,13 @@ class RegisterView(APIView):
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
+
             user = serializer.save()
-            return Response({"mensaje": "Registro exitoso."}, status=status.HTTP_201_CREATED)
+            return Response({
+                "mensaje": "Usuario registrado exitosamente. Esperando aprobación del administrador.",
+                "usuario": userSerializer(user).data
+            }, status=status.HTTP_201_CREATED)
+        
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -61,60 +67,58 @@ class CambiarPasswordView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     
     def post(self, request):
-        serializer = CambiarPasswordSerializer(data=request.data)
-        if serializer.is_valid():
-            old_pass = serializer.validated_data.get("old_password")
-            new_pass = serializer.validated_data.get("new_password")
-            
-            if not request.user.check_password(old_pass):
-                return Response({"old_password": ["La contraseña actual es incorrecta."]}, status=status.HTTP_400_BAD_REQUEST)
-                
-            request.user.set_password(new_pass)
-            request.user.save()
-            return Response({"message": "Password actualizado con éxito."}, status=status.HTTP_200_OK)
-            
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer = LoginSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data['user']
 
 
-class HistorialAccesosView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+        if not user.is_active:
+            return Response({
+                "error": "Cuenta inactiva. El administrador aún no ha aprobado tu registro."
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            "access": str(refresh.access_token),  
+            "refresh": str(refresh),
+            "usuario": userSerializer(user).data  
+        }, status=status.HTTP_200_OK)
     
-    def get(self, request):
-        return Response([], status=status.HTTP_200_OK)
-
-
 class AdminGestionCuentasView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-    
-    def get(self, request):
-        usuarios = Usuario.objects.filter(is_active=False, estado = True)
-        return Response(userSerializer(usuarios, many=True).data, status=status.HTTP_200_OK)
+    permission_classes = [IsAuthenticated] 
 
+    def get(self, request):
+        usuarios_pendientes = Usuario.objects.filter(is_active=False)
+        serializer = userSerializer(usuarios_pendientes, many=True)
+        return Response(serializer.data)
 
 class AprobarUsuarioView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-    
+    permission_classes = [IsAuthenticated]
+
     def patch(self, request, id_usuario):
-        user = get_object_or_404(Usuario, id_usuario=id_usuario)
-        user.is_active = True
-        user.save()
-        return Response({"message": f"Usuario {user.correo} aprobado con éxito para ingreso vehicular."}, status=status.HTTP_200_OK)
-    
+        try:
+            usuario = Usuario.objects.get(id_usuario=id_usuario)
+            usuario.is_active = True 
+            usuario.save()
+            return Response({"message": "Usuario aprobado"}, status=status.HTTP_200_OK)
+        except Usuario.DoesNotExist:
+            return Response({"error": "No encontrado"}, status=status.HTTP_404_NOT_FOUND)
+        
+    def delete(self, request, id_usuario):
+        try:
+            usuario = Usuario.objects.get(id_usuario=id_usuario)
+            usuario.delete() 
+            return Response({"message": "Solicitud rechazada y eliminada"}, status=status.HTTP_200_OK)
+        except Usuario.DoesNotExist:
+            return Response({"error": "Usuario no encontrado"}, status=status.HTTP_404_NOT_FOUND)
+        
 
-class TodosLosVehiculosView(generics.ListAPIView):
-    """ Retorna la lista global de todos los vehículos para el monitor institucional """
-    queryset = Vehiculo.objects.filter(activo=True).order_by('-fecha_registro') # <── CORREGIDO A order_by
-    serializer_class = VehiculoSerializer
-    permission_classes = [permissions.IsAuthenticated]
+class PerfilUsuarioView(APIView):
+    permission_classes = [IsAuthenticated]
 
-
-class UsuarioListCreateView(generics.ListCreateAPIView):
-    queryset = Usuario.objects.all()
-    serializer_class = userSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-class UsuarioDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Usuario.objects.all()
-    serializer_class = userSerializer
-    permission_classes = [permissions.IsAuthenticated]
-    lookup_field = 'id_usuario'
+    def put(self, request):
+        serializer = userSerializer(request.user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

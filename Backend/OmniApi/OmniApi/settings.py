@@ -18,6 +18,7 @@ import os
 
 from pathlib import Path
 from dotenv import load_dotenv  
+from datetime import timedelta
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -51,6 +52,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'accesos'
 ]
+AUTH_USER_MODEL = 'accesos.Usuario'
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',  
@@ -91,12 +93,8 @@ WSGI_APPLICATION = 'OmniApi.wsgi.application'
 
 load_dotenv()
 
-
-""" 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': 'db.sqlite3',
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': os.getenv('DB_NAME'),
         'USER': os.getenv('DB_USER'),
@@ -104,21 +102,12 @@ DATABASES = {
         'HOST': os.getenv('DB_HOST'),
         'PORT': os.getenv('DB_PORT'),
         'OPTIONS': {
+            # Supabase requiere SSL para conexiones externas, esto está perfecto
             'sslmode': 'require',
             'connect_timeout': 10,
         },
     }
 }
-"""
-
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': 'db_temporal.sqlite3',
-    }
-}
-
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
@@ -167,14 +156,17 @@ CORS_ALLOW_CREDENTIALS = True
 
 
 
-from datetime import timedelta
+
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
-    'ROTATE_REFRESH_TOKENS': False,
+    'ROTATE_REFRESH_TOKENS': True,
     'ALGORITHM': 'HS256',
     'SIGNING_KEY': SECRET_KEY, 
+    'USER_ID_FIELD': 'id_usuario',
+    'USER_ID_CLAIM': 'user_id',
+
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
@@ -186,3 +178,4 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated', 
     ),
 }
+
