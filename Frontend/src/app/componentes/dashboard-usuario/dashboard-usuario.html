@@ -1,0 +1,241 @@
+<div class="od-shell">
+    <div class="grid-bg"></div>
+
+    <div class="od-content">
+
+        <div class="topbar">
+            <div>
+                <div class="od-logo">OmniDoor — Mi cuenta</div>
+                <div class="od-subtitle">consulta tu acceso y tus datos vehiculares</div>
+            </div>
+            <button class="logout-btn" (click)="cerrarSesion()" aria-label="Cerrar sesión" title="Cerrar sesión">
+                <i class="ti ti-logout" aria-hidden="true">Cerrar Sesion</i>
+            </button>
+        </div>
+
+        <div class="alert-success" *ngIf="mensajeExito">{{ mensajeExito }}</div>
+
+        <div class="id-card">
+            <div class="corner c-tl"></div>
+            <div class="corner c-tr"></div>
+            <div class="corner c-bl"></div>
+            <div class="corner c-br"></div>
+
+            <div class="id-avatar">{{ iniciales() }}</div>
+            <div class="id-info">
+                <div class="id-name">{{ usuario.nombre_completo || 'Usuario' }}</div>
+                <div class="id-role">{{ usuario.rol || 'aprendiz' }} · {{ usuario.correo }}</div>
+            </div>
+            <div class="id-status" [ngClass]="usuario.estado ? 'activo' : 'restringido'">
+                {{ usuario.estado ? 'acceso activo' : 'acceso restringido' }}
+            </div>
+        </div>
+
+        <div class="od-panel">
+            <div class="panel-header">
+                <div class="panel-title">vehículos registrados ({{ vehiculosActivos ? vehiculosActivos.length : 0 }})
+                </div>
+                <button class="edit-link" (click)="abrirModalVehiculo()">
+                    <i class="ti ti-plus" aria-hidden="true"></i> registrar nuevo
+                </button>
+            </div>
+
+            <div *ngIf="vehiculosActivos && vehiculosActivos.length > 0">
+                <div class="vehicle-row" *ngFor="let v of vehiculosActivos" style="margin-bottom: 12px;">
+                    <i class="ti" [ngClass]="obtenerIconoPorTipo(v?.tipoVehiculo || 'auto')" aria-hidden="true"></i>
+                    <div class="vehicle-details">
+                        <div class="vehicle-plate">
+                            {{ (v?.placa === 'SIN PLACA' || v?.placa === 'N/A' || !v?.placa) ? ((v?.tipoVehiculo ||
+                            'vehículo') | uppercase) : v?.placa }}
+                        </div>
+                        <div class="vehicle-meta">
+                            Marca: {{ v?.marca || 'Genérica' }} · Modelo: {{ v?.modelo || 'Genérico' }}
+                            <span *ngIf="v?.placa === 'SIN PLACA' || v?.placa === 'N/A' || !v?.placa"
+                                > · (Exento)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="empty-vehicle" *ngIf="vehiculosActivos && vehiculosActivos.length === 0">
+                <p>No hay ningún vehículo registrado en el sistema todavía. Regístralo para que la talanquera te
+                    reconozca automáticamente.</p>
+                <button class="add-vehicle-btn" (click)="abrirModalVehiculo()">
+                    <i class="ti ti-plus" aria-hidden="true"></i> registrar vehículo
+                </button>
+            </div>
+        </div>
+
+        <div class="od-panel">
+            <div class="panel-header">
+                <div class="panel-title">mi historial de accesos</div>
+            </div>
+
+            <div class="empty-state" *ngIf="miHistorial.length === 0">
+                <i class="ti ti-history" aria-hidden="true"></i>
+                <p>Aún no tienes ingresos registrados en el sistema</p>
+            </div>
+
+            <div class="table-wrap" *ngIf="miHistorial.length > 0">
+                <table class="od-table">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Hora</th>
+                            <th>Movimiento</th>
+                            <th>Resultado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let h of miHistorial">
+                            <td>{{ h.fecha }}</td>
+                            <td>{{ h.hora }}</td>
+                            <td>{{ h.movimiento }}</td>
+                            <td>
+                                <span class="badge" [ngClass]="h.autorizado ? 'granted' : 'denied'">
+                                    {{ h.autorizado ? 'autorizado' : 'denegado' }}
+                                </span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="od-panel">
+            <div class="panel-header">
+                <div class="panel-title">mi cuenta</div>
+            </div>
+
+            <div class="account-actions">
+                <button class="od-btn primary" (click)="abrirModalDatos()">
+                    <i class="ti ti-id-badge-2" aria-hidden="true"></i> actualizar mis datos
+                </button>
+                <button class="od-btn" (click)="abrirModalPassword()">
+                    <i class="ti ti-key" aria-hidden="true"></i> cambiar contraseña
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="modal-overlay" *ngIf="mostrarModalVehiculo" (click)="cerrarModales()">
+        <form class="modal-box" (click)="$event.stopPropagation()" [formGroup]="formVehiculo">
+            <div class="modal-title">{{ vehiculo ? 'editar mi vehículo' : 'registrar mi vehículo' }}</div>
+
+            <div class="field-group">
+                <label class="field-label" for="tipoVeh">tipo de vehículo</label>
+                <select id="tipoVeh" class="od-input" formControlName="tipoVehiculo">
+                    <option value="auto">Automóvil</option>
+                    <option value="moto">Motocicleta</option>
+                    <option value="bici">Bicicleta</option>
+                    <option value="patin">Patín / Patineta</option>
+                    <option value="electr">Eléctrico</option>
+                </select>
+            </div>
+
+            <div class="input-row"
+                *ngIf="formVehiculo.get('tipoVehiculo')?.value === 'auto' || formVehiculo.get('tipoVehiculo')?.value === 'moto'">
+                <div class="field-group">
+                    <label class="field-label" for="marcaVeh">marca</label>
+                    <input id="marcaVeh" class="od-input" type="text" formControlName="marca"
+                        placeholder="Ej: Renault / AKT" />
+                </div>
+                <div class="field-group">
+                    <label class="field-label" for="modeloVeh">modelo</label>
+                    <input id="modeloVeh" class="od-input" type="text" formControlName="modelo"
+                        placeholder="Ej: Sandero / NKD" />
+                </div>
+            </div>
+
+            <div class="field-group"
+                *ngIf="formVehiculo.get('tipoVehiculo')?.value === 'auto' || formVehiculo.get('tipoVehiculo')?.value === 'moto'">
+                <label class="field-label" for="placaVeh">placa</label>
+                <input id="placaVeh" class="od-input" type="text" formControlName="placa"
+                    [placeholder]="obtenerPlaceholderPlaca()" style="text-transform: uppercase;" />
+
+                <small
+                    *ngIf="formVehiculo.get('tipoVehiculo')?.value === 'moto' && formVehiculo.get('placa')?.value && formVehiculo.get('placa')?.invalid"
+                    style="color: var(--error); font-family: var(--mono); font-size: 11px; margin-top: 4px; display: block;">
+                    Formato sugerido para moto: 3 letras, 2 números y 1 letra (ej: ABC12A)
+                </small>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="od-btn" (click)="cerrarModales()">cancelar</button>
+                <button type="button" class="od-btn primary" (click)="guardarVehiculo()">guardar</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="modal-overlay" *ngIf="mostrarModalDatos" (click)="cerrarModales()">
+        <form class="modal-box" (click)="$event.stopPropagation()" [formGroup]="formDatos">
+            <div class="modal-title">actualizar mis datos</div>
+
+            <div class="field-group">
+                <label class="field-label" for="nombreU">nombre completo</label>
+                <input id="nombreU" class="od-input" type="text" formControlName="nombre_completo" />
+            </div>
+
+            <div class="field-group">
+                <label class="field-label" for="correoU">correo electrónico</label>
+                <input id="correoU" class="od-input" type="email" formControlName="correo" />
+            </div>
+
+            <div class="input-row">
+                <div class="field-group">
+                    <label class="field-label" for="telefonoU">teléfono celular</label>
+                    <input id="telefonoU" class="od-input" type="text" formControlName="telefono"
+                        placeholder="3XXXXXXXXX" maxlength="10" />
+                </div>
+                <div class="field-group">
+                    <label class="field-label" for="emergenciaU">contacto emergencia</label>
+                    <input id="emergenciaU" class="od-input" type="text" formControlName="contacto_emergencia"
+                        placeholder="Teléfono de apoyo" maxlength="10" />
+                </div>
+            </div>
+
+            <div class="field-group">
+                <label class="field-label" for="direccionU">dirección residencia</label>
+                <input id="direccionU" class="od-input" type="text" formControlName="direccion"
+                    placeholder="Calle, Conjunto, Bloque, Apto" />
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="od-btn" (click)="cerrarModales()">cancelar</button>
+                <button type="button" class="od-btn primary" (click)="guardarDatos()">guardar cambios</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="modal-overlay" *ngIf="mostrarModalPassword" (click)="cerrarModales()">
+        <form class="modal-box" (click)="$event.stopPropagation()" [formGroup]="formPassword">
+            <div class="modal-title">cambiar contraseña</div>
+
+            <div class="field-group">
+                <label class="field-label" for="passActual">contraseña actual</label>
+                <input id="passActual" class="od-input" type="password" formControlName="actual"
+                    placeholder="••••••••" />
+            </div>
+
+            <div class="input-row">
+                <div class="field-group">
+                    <label class="field-label" for="passNueva">nueva contraseña</label>
+                    <input id="passNueva" class="od-input" type="password" formControlName="nueva"
+                        placeholder="••••••••" />
+                </div>
+                <div class="field-group">
+                    <label class="field-label" for="passConfirma">confirmar</label>
+                    <input id="passConfirma" class="od-input" type="password" formControlName="confirmar"
+                        placeholder="••••••••" />
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="od-btn" (click)="cerrarModales()">cancelar</button>
+                <button type="button" class="od-btn primary" (click)="guardarPassword()">actualizar contraseña</button>
+            </div>
+        </form>
+    </div>
+
+</div>

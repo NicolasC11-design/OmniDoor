@@ -12,8 +12,15 @@ function passwordMatchValidator(control: AbstractControl): ValidationErrors | nu
 }
 
 function placaValidator(control: AbstractControl): ValidationErrors | null {
-  const regex = /^[A-Za-z]{3}-?\d{3}$/;
-  return (control.value && !regex.test(control.value)) ? { placaInvalid: true } : null;
+  if (!control.value || control.value === 'N/A' || control.value === 'SIN PLACA') return null;
+  const valor = control.value.toString().trim().toUpperCase();
+  const autoRegex = /^[A-Z]{3}-?\d{3}$/;
+  const motoRegex = /^[A-Z]{3}-?\d{2}[A-Z]$/;
+  
+  if (autoRegex.test(valor) || motoRegex.test(valor)) {
+    return null;
+  }
+  return { placaInvalid: true };
 }
 
 export interface VehicleType {
@@ -62,10 +69,57 @@ export class Register implements OnInit {
       apellidos: ['', [Validators.required, Validators.minLength(2)]],
       correo: ['', [Validators.required, Validators.email]], // Corregido: de 'email' a 'correo'
       rol: ['', Validators.required],
+      
+      // ── NUEVOS CAMPOS ADAPTADOS DE CONTACTO E INSTITUCIONALES ──
+      telefono: ['', [Validators.required, Validators.pattern(/^\d{10}$/)]],
+      direccion: ['', Validators.required],
+      nombre_emergencia: ['', Validators.required],
+      telefono_emergencia: ['', [Validators.required, Validators.pattern(/^\d{10}$/)]],
+      
+      // campos vehiculares base
       placa: ['', [Validators.required, placaValidator]],
-      password: ['', [Validators.required, Validators.minLength(8)]],
+      marca: ['', Validators.required],
+      modelo: ['', Validators.required],
+      
+      password: ['', [
+        Validators.required, 
+        Validators.minLength(8),
+        Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/)
+      ]],
       confirmPassword: ['', Validators.required],
     }, { validators: passwordMatchValidator });
+
+    this.selectVehicle('auto');
+  }
+
+  selectVehicle(value: string): void {
+    this.selectedVehicle = value;
+
+    const placaControl = this.registerForm.get('placa');
+    const marcaControl = this.registerForm.get('marca');
+    const modeloControl = this.registerForm.get('modelo');
+
+    if (value === 'bici' || value === 'patin' || value === 'electr') {
+      placaControl?.setValue('N/A');
+      marcaControl?.setValue('N/A');
+      modeloControl?.setValue('N/A');
+
+      placaControl?.clearValidators();
+      marcaControl?.clearValidators();
+      modeloControl?.clearValidators();
+    } else {
+      if (placaControl?.value === 'N/A') { placaControl?.setValue(''); }
+      if (marcaControl?.value === 'N/A') { marcaControl?.setValue(''); }
+      if (modeloControl?.value === 'N/A') { modeloControl?.setValue(''); }
+
+      placaControl?.setValidators([Validators.required, placaValidator]);
+      marcaControl?.setValidators([Validators.required]);
+      modeloControl?.setValidators([Validators.required]);
+    }
+
+    placaControl?.updateValueAndValidity();
+    marcaControl?.updateValueAndValidity();
+    modeloControl?.updateValueAndValidity();
   }
 
   onSubmit(): void {
@@ -79,6 +133,15 @@ export class Register implements OnInit {
     this.successMessage = '';
 
     const { confirmPassword, ...data } = this.registerForm.value;
+  
+    if (this.selectedVehicle === 'bici' || this.selectedVehicle === 'patin' || this.selectedVehicle === 'electr') {
+      data.placa = 'SIN PLACA';
+      data.marca = 'GENERICA';
+      data.modelo = 'GENERICO';
+    } else {
+      data.placa = data.placa.toUpperCase().trim();
+    }
+
     const payload = { ...data, tipoVehiculo: this.selectedVehicle };
 
     console.log('Enviando a Django:', payload);
@@ -98,7 +161,6 @@ export class Register implements OnInit {
     });
   }
 
-  selectVehicle(value: string): void { this.selectedVehicle = value; }
 
   captureOCR(): void {
     this.ocrCapturing = true;
