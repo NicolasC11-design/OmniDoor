@@ -6,8 +6,10 @@
   <div class="od-tagline">seguridad y control en cada acceso</div>
 
   <div class="od-panel">
-    <div class="corner c-tl"></div> <div class="corner c-tr"></div>
-    <div class="corner c-bl"></div> <div class="corner c-br"></div>
+    <div class="corner c-tl"></div>
+    <div class="corner c-tr"></div>
+    <div class="corner c-bl"></div>
+    <div class="corner c-br"></div>
 
     <div class="proceso-box" *ngIf="registroEnviado">
       <div class="proceso-icon"><i class="ti ti-clock-hour-4"></i></div>
@@ -27,7 +29,7 @@
       </div>
 
       <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
-        
+
         <div class="input-row">
           <div class="field-group">
             <label class="field-label" for="nombres">nombres</label>
@@ -39,7 +41,8 @@
             <label class="field-label" for="apellidos">apellidos</label>
             <input id="apellidos" class="od-input" type="text" formControlName="apellidos" placeholder="Apellidos"
               [class.input-error]="f['apellidos'].invalid && f['apellidos'].touched" />
-            <span class="error-msg" *ngIf="f['apellidos'].invalid && f['apellidos'].touched">este campo es requerido</span>
+            <span class="error-msg" *ngIf="f['apellidos'].invalid && f['apellidos'].touched">este campo es
+              requerido</span>
           </div>
         </div>
 
@@ -48,28 +51,34 @@
             <label class="field-label" for="telefono">teléfono</label>
             <input id="telefono" class="od-input" type="text" formControlName="telefono" placeholder="3001234567"
               [class.input-error]="f['telefono'].invalid && f['telefono'].touched" />
-            <span class="error-msg" *ngIf="f['telefono'].invalid && f['telefono'].touched">ingresa un número válido</span>
+            <span class="error-msg" *ngIf="f['telefono'].invalid && f['telefono'].touched">ingresa un número
+              válido</span>
           </div>
           <div class="field-group">
             <label class="field-label" for="direccion">dirección residencia</label>
-            <input id="direccion" class="od-input" type="text" formControlName="direccion" placeholder="Carrera 7A # 12-45"
-              [class.input-error]="f['direccion'].invalid && f['direccion'].touched" />
-            <span class="error-msg" *ngIf="f['direccion'].invalid && f['direccion'].touched">este campo es requerido</span>
+            <input id="direccion" class="od-input" type="text" formControlName="direccion"
+              placeholder="Carrera 7A # 12-45" [class.input-error]="f['direccion'].invalid && f['direccion'].touched" />
+            <span class="error-msg" *ngIf="f['direccion'].invalid && f['direccion'].touched">este campo es
+              requerido</span>
           </div>
         </div>
 
         <div class="input-row">
           <div class="field-group">
             <label class="field-label" for="nombre_emergencia">contacto de emergencia (nombre)</label>
-            <input id="nombre_emergencia" class="od-input" type="text" formControlName="nombre_emergencia" placeholder="James Rodriguez"
+            <input id="nombre_emergencia" class="od-input" type="text" formControlName="nombre_emergencia"
+              placeholder="James Rodriguez"
               [class.input-error]="f['nombre_emergencia'].invalid && f['nombre_emergencia'].touched" />
-            <span class="error-msg" *ngIf="f['nombre_emergencia'].invalid && f['nombre_emergencia'].touched">este campo es requerido</span>
+            <span class="error-msg" *ngIf="f['nombre_emergencia'].invalid && f['nombre_emergencia'].touched">este campo
+              es requerido</span>
           </div>
           <div class="field-group">
             <label class="field-label" for="contacto_emergencia">teléfono emergencia</label>
-            <input id="contacto_emergencia" class="od-input" type="text" formControlName="contacto_emergencia" placeholder="3002324424"
+            <input id="contacto_emergencia" class="od-input" type="text" formControlName="contacto_emergencia"
+              placeholder="3002324424"
               [class.input-error]="f['contacto_emergencia'].invalid && f['contacto_emergencia'].touched" />
-            <span class="error-msg" *ngIf="f['contacto_emergencia'].invalid && f['contacto_emergencia'].touched">ingresa un número válido</span>
+            <span class="error-msg" *ngIf="f['contacto_emergencia'].invalid && f['contacto_emergencia'].touched">ingresa
+              un número válido</span>
           </div>
         </div>
 
@@ -77,12 +86,14 @@
           <label class="field-label" for="correo">correo electrónico</label>
           <input id="correo" class="od-input" type="email" formControlName="correo" placeholder="usuario@gmail.com"
             [class.input-error]="f['correo'].invalid && f['correo'].touched" />
-          <span class="error-msg" *ngIf="f['correo'].invalid && f['correo'].touched">ingresa un correo electrónico válido</span>
+          <span class="error-msg" *ngIf="f['correo'].invalid && f['correo'].touched">ingresa un correo electrónico
+            válido</span>
         </div>
 
         <div class="field-group">
           <label class="field-label" for="rol">rol</label>
-          <select id="rol" class="od-select" formControlName="rol" [class.input-error]="f['rol'].invalid && f['rol'].touched">
+          <select id="rol" class="od-select" formControlName="rol"
+            [class.input-error]="f['rol'].invalid && f['rol'].touched">
             <option value="">— seleccionar rol —</option>
             <option value="aprendiz">Aprendiz</option>
             <option value="empleado">Coordinador</option>
@@ -106,29 +117,43 @@
         <div class="plate-row">
           <div class="field-group">
             <label class="field-label" for="placa">placa del vehículo</label>
-            <input id="placa" class="od-input plate-input" type="text" formControlName="placa" 
+            <input id="placa" class="od-input plate-input" type="text" formControlName="placa"
               [placeholder]="selectedVehicle === 'auto' ? 'ABC-123' : (selectedVehicle === 'moto' ? 'ABC-12D' : 'N/A')"
               [readonly]="selectedVehicle === 'bici' || selectedVehicle === 'patin' || selectedVehicle === 'electr'"
               maxlength="7" [class.input-error]="f['placa'].invalid && f['placa'].touched" />
-            
+
             <span class="error-msg" *ngIf="f['placa'].invalid && f['placa'].touched">
               <span *ngIf="f['placa'].errors?.['required']">la placa es requerida</span>
               <span *ngIf="f['placa'].errors?.['placaInvalid']">formato inválido (autos: ABC-123, motos: ABC-12D)</span>
             </span>
           </div>
-          
-          <button type="button" class="plate-badge" (click)="captureOCR()" [disabled]="selectedVehicle === 'bici' || selectedVehicle === 'patin' || selectedVehicle === 'electr'">
+
+          <button type="button" class="plate-badge" (click)="captureOCR()"
+            [disabled]="selectedVehicle === 'bici' || selectedVehicle === 'patin' || selectedVehicle === 'electr'">
             <i class="ti ti-camera"></i>
             <span>{{ ocrCapturing ? '...' : 'OCR' }}</span>
           </button>
         </div>
 
-        <div class="face-scan-box" (click)="captureBiometric()" [class.scanning]="biometricCapturing" [class.captured]="biometricCaptured">
+        <div class="face-scan-box" (click)="captureBiometric()" [class.scanning]="captureBiometric">
           <div class="face-frame">
-            <div class="scan-line-animation"></div>
-            <div class="corner-marker tl"></div> <div class="corner-marker tr"></div>
-            <div class="corner-marker bl"></div> <div class="corner-marker br"></div>
-            <i class="ti ti-user-scan"></i>
+            <svg viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="4" y="4" width="12" height="2" fill="#1a8fff" opacity=".7" />
+              <rect x="4" y="4" width="2" height="12" fill="#1a8fff" opacity=".7" />
+              <rect x="56" y="4" width="12" height="2" fill="#1a8fff" opacity=".7" />
+              <rect x="66" y="4" width="2" height="12" fill="#1a8fff" opacity=".7" />
+              <rect x="4" y="66" width="12" height="2" fill="#1a8fff" opacity=".7" />
+              <rect x="4" y="56" width="2" height="12" fill="#1a8fff" opacity=".7" />
+              <rect x="56" y="66" width="12" height="2" fill="#1a8fff" opacity=".7" />
+              <rect x="66" y="56" width="2" height="12" fill="#1a8fff" opacity=".7" />
+              <circle cx="36" cy="30" r="12" stroke="#00d4aa" stroke-width="1.2" stroke-dasharray="3 3" />
+              <circle cx="36" cy="30" r="4" fill="#00d4aa" opacity=".2" />
+              <line x1="28" y1="27" x2="30" y2="27" stroke="#00d4aa" stroke-width="1.5" />
+              <line x1="42" y1="27" x2="44" y2="27" stroke="#00d4aa" stroke-width="1.5" />
+              <path d="M31 33 Q36 36 41 33" stroke="#00d4aa" stroke-width="1.2" fill="none" />
+              <ellipse cx="36" cy="50" rx="16" ry="8" stroke="#00d4aa" stroke-width="1.2" stroke-dasharray="3 3" />
+            </svg>
+            <div class="scan-bar"></div>
           </div>
           <div class="face-label">{{ biometricLabel }}</div>
         </div>
@@ -141,15 +166,21 @@
             <span class="error-msg" *ngIf="f['password'].invalid && f['password'].touched">
               <span *ngIf="f['password'].errors?.['required']">la contraseña es requerida</span>
               <span *ngIf="f['password'].errors?.['minlength']">mínimo 8 caracteres</span>
-              <span *ngIf="f['password'].errors?.['pattern']">debe incluir una mayúscula, minúscula, número y símbolo</span>
+              <span *ngIf="f['password'].errors?.['pattern']">debe incluir una mayúscula, minúscula, número y
+                símbolo</span>
             </span>
           </div>
           <div class="field-group">
             <label class="field-label" for="confirmPassword">confirmar</label>
-            <input id="confirmPassword" class="od-input" type="password" formControlName="confirmPassword" placeholder="••••••••"
+            <input id="confirmPassword" class="od-input" type="password" formControlName="confirmPassword"
+              placeholder="••••••••"
               [class.input-error]="(registerForm.errors?.['passwordMismatch'] || f['confirmPassword'].invalid) && f['confirmPassword'].touched" />
-            <span class="error-msg" *ngIf="registerForm.errors?.['passwordMismatch'] && f['confirmPassword'].touched">las contraseñas no coinciden</span>
-            <span class="error-msg" *ngIf="!registerForm.errors?.['passwordMismatch'] && f['confirmPassword'].errors?.['required'] && f['confirmPassword'].touched">este campo es requerido</span>
+            <span class="error-msg"
+              *ngIf="registerForm.errors?.['passwordMismatch'] && f['confirmPassword'].touched">las contraseñas no
+              coinciden</span>
+            <span class="error-msg"
+              *ngIf="!registerForm.errors?.['passwordMismatch'] && f['confirmPassword'].errors?.['required'] && f['confirmPassword'].touched">este
+              campo es requerido</span>
           </div>
         </div>
 
