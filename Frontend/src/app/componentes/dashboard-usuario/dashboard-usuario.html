@@ -32,22 +32,62 @@
                     <i class="ti ti-plus"></i> registrar nuevo
                 </button>
             </div>
+
             <div *ngFor="let v of vehiculos" class="vehicle-row">
-                <div class="vehicle-icon"><i class="ti" [ngClass]="iconoVehiculo(v.tipoVehiculo)"></i></div>
+                <div class="vehicle-icon">
+                    <i class="ti" [ngClass]="iconoVehiculo(v.tipoVehiculo)"></i>
+                </div>
                 <div class="vehicle-details">
                     <div class="vehicle-plate">{{ v.placa }}</div>
-                    <div class="vehicle-meta">{{ v.tipoVehiculo }} · {{ v.marca }} · {{ v.modelo }}</div>
+                    <div class="vehicle-meta">{{ v.tipoVehiculo }} · {{ v.marca || 'S/M' }} · {{ v.modelo || 'S/M' }}
+                    </div>
                 </div>
-                <button class="edit-link" (click)="abrirModalVehiculo(v)"><i class="ti ti-edit"></i> editar</button>
+                <div class="vehicle-actions-row">
+                    <button class="edit-link" (click)="abrirModalVehiculo(v)">
+                        <i class="ti ti-edit"></i> editar
+                    </button>
+                    <button class="delete-link" (click)="eliminarVehiculo(v.id_vehiculo)">
+                        <i class="ti ti-trash"></i> eliminar
+                    </button>
+                </div>
+            </div>
+
+            <div class="empty-vehicle" *ngIf="vehiculos.length === 0">
+                <p>No tienes vehículos registrados. Regístralos para que la talanquera te reconozca.</p>
             </div>
         </div>
 
         <div class="od-panel">
-            <div class="panel-header"><div class="panel-title">mi historial de accesos</div></div>
+            <div class="panel-header">
+                <div class="panel-title">mi historial de accesos</div>
             </div>
 
+            <div *ngFor="let h of miHistorial" class="vehicle-row">
+                <div class="vehicle-icon">
+                    <i class="ti" [ngClass]="h.movimiento === 'entrada' ? 'ti-login' : 'ti-logout'"></i>
+                </div>
+                <div class="vehicle-details">
+                    <div class="vehicle-plate" style="font-size: 0.9rem; letter-spacing: 1px;">
+                        {{ h.movimiento | uppercase }}
+                    </div>
+                    <div class="vehicle-meta">{{ h.fecha }} · {{ h.hora }}</div>
+                </div>
+                <div class="vehicle-actions-row">
+                    <span class="id-status" [ngClass]="h.autorizado ? 'activo' : 'restringido'">
+                        {{ h.autorizado ? 'permitido' : 'denegado' }}
+                    </span>
+                </div>
+            </div>
+
+            <div class="empty-vehicle" *ngIf="miHistorial.length === 0">
+                <p>No registras movimientos de acceso recientes en el sistema.</p>
+            </div>
+        </div>
+
         <div class="od-panel">
-            <div class="panel-header"><div class="panel-title">mi cuenta</div></div>
+            <div class="panel-header">
+                <div class="panel-title">mi cuenta</div>
+            </div>
             <div class="account-actions">
                 <button class="od-btn primary" (click)="abrirModalDatos()">Actualizar datos</button>
                 <button class="od-btn" (click)="abrirModalPassword()">Cambiar contraseña</button>
@@ -55,46 +95,126 @@
         </div>
     </div>
 
+
     <div class="modal-overlay" *ngIf="mostrarModalVehiculo" (click)="cerrarModales()">
-        <div class="modal-box" (click)="$event.stopPropagation()">
-            <div class="modal-title">{{ formVehiculo.id_vehiculo ? 'editar mi vehículo' : 'registrar mi vehículo' }}</div>
+        <form class="modal-box" (click)="$event.stopPropagation()" #vehiculoForm="ngForm">
+            <div class="modal-title">{{ formVehiculo.id_vehiculo ? 'editar mi vehículo' : 'registrar mi vehículo' }}
+            </div>
 
             <div class="field-group">
                 <label class="field-label" for="tipoVeh">tipo de vehículo</label>
-                <select id="tipoVeh" class="od-input" [(ngModel)]="formVehiculo.tipoVehiculo" name="tipo" #tipo="ngModel" required>
+                <select id="tipoVeh" class="od-input" [(ngModel)]="formVehiculo.tipoVehiculo" name="tipo"
+                    #tipo="ngModel" required>
                     <option value="auto">Automóvil</option>
                     <option value="moto">Motocicleta</option>
                     <option value="bici">Bicicleta</option>
                     <option value="patin">Patín / Patineta</option>
                     <option value="electr">Eléctrico</option>
                 </select>
-                <span class="error-msg" *ngIf="tipo.invalid && (tipo.dirty || tipo.touched)">este campo es requerido</span>
+                <span class="error-msg" *ngIf="tipo.invalid && (tipo.dirty || tipo.touched)">este campo es
+                    requerido</span>
             </div>
 
-            <div class="field-group">
+            <div class="field-group"
+                *ngIf="formVehiculo.tipoVehiculo === 'auto' || formVehiculo.tipoVehiculo === 'moto'">
                 <label class="field-label" for="placaVeh">placa</label>
-                <input id="placaVeh" class="od-input" type="text" [(ngModel)]="formVehiculo.placa" name="placa" #placa="ngModel" required placeholder="ABC-123" />
-                <span class="error-msg" *ngIf="placa.invalid && (placa.dirty || placa.touched)">este campo es requerido</span>
+                <input id="placaVeh" class="od-input" type="text" [(ngModel)]="formVehiculo.placa" name="placa"
+                    #placa="ngModel" required placeholder="ABC-123" />
+                <span class="error-msg" *ngIf="placa.invalid && (placa.dirty || placa.touched)">este campo es
+                    requerido</span>
             </div>
 
             <div class="field-group">
                 <label class="field-label" for="marcaVeh">marca</label>
-                <input id="marcaVeh" class="od-input" type="text" [(ngModel)]="formVehiculo.marca" name="marca" #marca="ngModel" required placeholder="Ej: Yamaha, Toyota" />
-                <span class="error-msg" *ngIf="marca.invalid && (marca.dirty || marca.touched)">este campo es requerido</span>
+                <input id="marcaVeh" class="od-input" type="text" [(ngModel)]="formVehiculo.marca" name="marca"
+                    #marca="ngModel"
+                    [required]="formVehiculo.tipoVehiculo === 'auto' || formVehiculo.tipoVehiculo === 'moto'"
+                    placeholder="Ej: Yamaha, Toyota" />
+                <span class="error-msg" *ngIf="marca.invalid && (marca.dirty || marca.touched)">este campo es
+                    requerido</span>
             </div>
 
             <div class="field-group">
                 <label class="field-label" for="modeloVeh">modelo</label>
-                <input id="modeloVeh" class="od-input" type="text" [(ngModel)]="formVehiculo.modelo" name="modelo" #modelo="ngModel" required placeholder="Ej: 2026" />
-                <span class="error-msg" *ngIf="modelo.invalid && (modelo.dirty || modelo.touched)">este campo es requerido</span>
+                <input id="modeloVeh" class="od-input" type="text" [(ngModel)]="formVehiculo.modelo" name="modelo"
+                    #modelo="ngModel"
+                    [required]="formVehiculo.tipoVehiculo === 'auto' || formVehiculo.tipoVehiculo === 'moto'"
+                    placeholder="Ej: 2026" />
+                <span class="error-msg" *ngIf="modelo.invalid && (modelo.dirty || modelo.touched)">este campo es
+                    requerido</span>
             </div>
 
             <div class="modal-actions">
-                <button class="od-btn" (click)="cerrarModales()">cancelar</button>
-                <button class="od-btn primary" 
-                        [disabled]="tipo.invalid || placa.invalid || marca.invalid || modelo.invalid" 
-                        (click)="guardarVehiculo()">guardar</button>
+                <button type="button" class="od-btn delete" *ngIf="formVehiculo.id_vehiculo"
+                    (click)="eliminarVehiculo(formVehiculo.id_vehiculo)">
+                    eliminar vehículo
+                </button>
+                <button type="button" class="od-btn" (click)="cerrarModales()">cancelar</button>
+                <button type="button" class="od-btn primary" [disabled]="vehiculoForm.invalid"
+                    (click)="guardarVehiculo()">guardar</button>
             </div>
-        </div>
+        </form>
+    </div>
+
+    <div class="modal-overlay" *ngIf="mostrarModalDatos" (click)="cerrarModales()">
+        <form class="modal-box" (click)="$event.stopPropagation()" #datosForm="ngForm">
+            <div class="modal-title">actualizar mis datos</div>
+
+            <div class="field-group">
+                <label class="field-label" for="datNombre">nombre completo</label>
+                <input id="datNombre" class="od-input" type="text" [(ngModel)]="formDatos.nombre_completo"
+                    name="nombre_completo" required placeholder="Tu nombre completo" />
+            </div>
+
+            <div class="field-group">
+                <label class="field-label" for="datTelefono">teléfono</label>
+                <input id="datTelefono" class="od-input" type="text" [(ngModel)]="formDatos.telefono" name="telefono"
+                    required placeholder="Número de celular" />
+            </div>
+
+            <div class="field-group">
+                <label class="field-label" for="datDireccion">dirección</label>
+                <input id="datDireccion" class="od-input" type="text" [(ngModel)]="formDatos.direccion" name="direccion"
+                    required placeholder="Dirección de residencia" />
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="od-btn" (click)="cerrarModales()">cancelar</button>
+                <button type="button" class="od-btn primary" [disabled]="datosForm.invalid"
+                    (click)="guardarDatos()">guardar cambios</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="modal-overlay" *ngIf="mostrarModalPassword" (click)="cerrarModales()">
+        <form class="modal-box" (click)="$event.stopPropagation()" #passwordForm="ngForm">
+            <div class="modal-title">cambiar contraseña</div>
+
+            <div class="field-group">
+                <label class="field-label" for="passActual">contraseña actual</label>
+                <input id="passActual" class="od-input" type="password" [(ngModel)]="formPassword.actual" name="actual"
+                    required placeholder="••••••••" />
+            </div>
+
+            <div class="field-group">
+                <label class="field-label" for="passNueva">nueva contraseña</label>
+                <input id="passNueva" class="od-input" type="password" [(ngModel)]="formPassword.nueva" name="nueva"
+                    required placeholder="Mínimo 6 caracteres" />
+            </div>
+
+            <div class="field-group">
+                <label class="field-label" for="passConf">confirmar nueva contraseña</label>
+                <input id="passConf" class="od-input" type="password" [(ngModel)]="formPassword.confirmar"
+                    name="confirmar" required placeholder="Repite la contraseña nueva" />
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="od-btn" (click)="cerrarModales()">cancelar</button>
+                <button type="button" class="od-btn primary" [disabled]="passwordForm.invalid"
+                    (click)="guardarPassword(); mostrarModalPassword = false">
+                    actualizar
+                </button>
+            </div>
+        </form>
     </div>
 </div>

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -50,7 +50,8 @@ export class DashboardUsuario implements OnInit {
   constructor(
     private authService: AuthService,
     private router: Router,
-    private usuarioService: UsuarioService
+    private usuarioService: UsuarioService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -70,15 +71,28 @@ export class DashboardUsuario implements OnInit {
     };
   }
 
-  private cargarVehiculos(): void {
+  cargarVehiculos(): void {
     this.usuarioService.obtenerTodosLosVehiculos().subscribe({
-      next: (data) => { this.vehiculos = data; },
-      error: () => console.error('Error cargando vehículos')
+      next: (data) => { 
+        this.vehiculos = data;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error cargando vehículos:', err);
+      }
     });
   }
 
   private cargarHistorial(): void {
-    this.miHistorial = [];
+    this.usuarioService.obtenerMiHistorial().subscribe({
+      next: (data) => {
+        this.miHistorial = [...data];
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error cargando historial:', err);
+      }
+    });
   }
 
   iniciales(): string {
@@ -94,51 +108,172 @@ export class DashboardUsuario implements OnInit {
   abrirModalVehiculo(v?: MiVehiculo): void {
     this.formVehiculo = v ? { ...v } : { tipoVehiculo: 'auto', placa: '', marca: '', modelo: '' };
     this.mostrarModalVehiculo = true;
+    this.cdr.detectChanges();
   }
 
   guardarVehiculo(): void {
+    if (this.cargando) return;
+
+    const tipo = this.formVehiculo.tipoVehiculo;
+    
+    if (!this.formVehiculo.marca?.trim() || !this.formVehiculo.modelo?.trim()) {
+      alert('Por favor, ingresa la marca y el modelo del vehículo.');
+      return;
+    }
+
+    if (tipo === 'bici' || tipo === 'patin' || tipo === 'electr') {
+      this.formVehiculo.placa = 'N/A';
+    } else {
+      if (!this.formVehiculo.placa || !this.formVehiculo.placa.trim()) {
+        alert('Por favor, ingresa la placa del vehículo.');
+        return;
+      }
+
+      const placaLimpia = this.formVehiculo.placa.trim().toUpperCase();
+      this.formVehiculo.placa = placaLimpia;
+
+      if (tipo === 'moto') {
+        const regexMoto = /^[A-Z]{3}-\d{2}[A-Z]$/;
+        if (!regexMoto.test(placaLimpia)) {
+          alert('Formato de placa de motocicleta inválido. Debe ser de tipo ABC-12D (con guión).');
+          return;
+        }
+      } else if (tipo === 'auto') {
+        const regexCarro = /^[A-Z]{3}-\d{3}$/;
+        if (!regexCarro.test(placaLimpia)) {
+          alert('Formato de placa de automóvil inválido. Debe ser de tipo ABC-123 (con guión).');
+          return;
+        }
+      }
+    }
+
     this.cargando = true;
+    
     const obs = this.formVehiculo.id_vehiculo 
       ? this.usuarioService.actualizarVehiculo(this.formVehiculo.id_vehiculo, this.formVehiculo)
       : this.usuarioService.agregarVehiculo(this.formVehiculo);
 
     obs.subscribe({
-      next: () => { this.mostrarExito('Guardado correctamente'); this.cargarVehiculos(); this.cerrarModales(); this.cargando = false; },
-      error: () => { alert('Error'); this.cargando = false; }
-    });
-  }
-
-  abrirModalDatos(): void { this.mostrarModalDatos = true; }
-  
-  guardarDatos(): void {
-    this.usuarioService.updateMiPerfil(this.formDatos).subscribe({
-      next: (data) => {
-        this.usuario = { ...this.usuario, ...data };
-        localStorage.setItem('usuario', JSON.stringify(this.usuario));
-        this.mostrarExito('Datos actualizados');
-        this.cerrarModales();
+      next: () => { 
+        this.cargando = false; 
+        this.cerrarModales(); 
+        this.mostrarExito(this.formVehiculo.id_vehiculo ? 'Vehículo actualizado' : 'Vehículo registrado'); 
+        this.cargarVehiculos(); 
+      },
+      error: (err) => { 
+        console.error('Error del servidor:', err);
+        alert('Error al guardar el vehículo. Revisa que la placa no esté duplicada.'); 
+        this.cargando = false; 
+        this.cdr.detectChanges();
       }
     });
   }
 
-  abrirModalPassword(): void { this.mostrarModalPassword = true; }
+  eliminarVehiculo(id: string | undefined): void {
+    if (!id) return;
+    if (confirm('¿Estás seguro de que deseas eliminar este vehículo?')) {
+      this.cargando = true;
+      this.usuarioService.eliminarVehiculo(id).subscribe({
+        next: () => {
+          this.cargando = false;
+          this.mostrarExito('Vehículo eliminado correctamente');
+          this.cargarVehiculos();
+        },
+        error: () => {
+          alert('Error al intentar eliminar el vehículo');
+          this.cargando = false;
+          this.cdr.detectChanges();
+        }
+      });
+    }
+  }
+
+  abrirModalDatos(): void { 
+    this.mostrarModalDatos = true; 
+    this.cdr.detectChanges();
+  }
+  
+  guardarDatos(): void {
+    if (this.cargando) return;
+    if (!this.formDatos.nombre_completo.trim() || !this.formDatos.correo.trim() || !this.formDatos.telefono.trim()) {
+      alert('Los campos Nombre, Correo y Teléfono son obligatorios.');
+      return;
+    }
+
+    this.cargando = true;
+    this.usuarioService.updateMiPerfil(this.formDatos).subscribe({
+      next: (data) => {
+        this.cargando = false;
+        this.usuario = { ...this.usuario, ...data };
+        localStorage.setItem('usuario', JSON.stringify(this.usuario));
+        this.cerrarModales();
+        this.mostrarExito('Datos actualizados correctamente');
+      },
+      error: (err) => {
+        console.error('Error al actualizar datos:', err);
+        alert('No se pudieron actualizar los datos del perfil.');
+        this.cargando = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  abrirModalPassword(): void { 
+    this.mostrarModalPassword = true; 
+    this.cdr.detectChanges();
+  }
 
   guardarPassword(): void {
-    if (this.formPassword.nueva === this.formPassword.confirmar) {
-      this.mostrarExito('Contraseña actualizada');
-      this.cerrarModales();
+    if (!this.formPassword.actual || !this.formPassword.nueva || !this.formPassword.confirmar) {
+      alert('Todos los campos de contraseña son obligatorios.');
+      return;
     }
+
+    if (this.formPassword.nueva.length < 8) {
+      alert('La nueva contraseña debe tener al menos 8 caracteres.');
+      return;
+    }
+
+    if (this.formPassword.nueva !== this.formPassword.confirmar) {
+      alert('Las contraseñas nuevas no coinciden.');
+      return;
+    }
+
+    this.cargando = true;
+    this.usuarioService.cambiarPassword({
+      password_actual: this.formPassword.actual,
+      password_nueva: this.formPassword.nueva
+    }).subscribe({
+      next: (res) => {
+        this.cargando = false;
+        this.formPassword = { actual: '', nueva: '', confirmar: '' };
+        this.cerrarModales();
+        alert('¡Contraseña actualizada con éxito!');
+        this.mostrarExito('Contraseña actualizada correctamente.');
+      },
+      error: (err) => {
+        console.error(err);
+        alert(err.error?.error || 'La contraseña actual es incorrecta.');
+        this.cargando = false;
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   cerrarModales(): void {
     this.mostrarModalVehiculo = false;
     this.mostrarModalDatos = false;
     this.mostrarModalPassword = false;
+    this.cdr.detectChanges();
   }
 
   private mostrarExito(msg: string): void {
     this.mensajeExito = msg;
-    setTimeout(() => { this.mensajeExito = null; }, 3000);
+    this.cdr.detectChanges();
+    setTimeout(() => { 
+      this.mensajeExito = null; 
+      this.cdr.detectChanges();
+    }, 3000);
   }
 
   cerrarSesion(): void {
