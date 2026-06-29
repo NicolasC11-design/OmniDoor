@@ -1,10 +1,10 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response  
-from rest_framework import status
+from rest_framework import status, permissions, generics
 from rest_framework_simplejwt.tokens import RefreshToken  
-from .serializers import RegisterSerializer, userSerializer, LoginSerializer
+from .serializers import RegisterSerializer, userSerializer, LoginSerializer, VehiculoSerializer
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from .models import Usuario
+from .models import Usuario, Vehiculo
 
 class RegisterView(APIView):
     permission_classes = [AllowAny] 
@@ -72,6 +72,22 @@ class AprobarUsuarioView(APIView):
             return Response({"error": "Usuario no encontrado"}, status=status.HTTP_404_NOT_FOUND)
         
 
+class VehiculoListCreateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        vehiculos = Vehiculo.objects.filter(propietario=request.user)
+        serializer = VehiculoSerializer(vehiculos, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        serializer = VehiculoSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(propietario=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+
 class PerfilUsuarioView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -81,3 +97,14 @@ class PerfilUsuarioView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class UsuarioListCreateView(generics.ListCreateAPIView):
+    queryset = Usuario.objects.all()
+    serializer_class = userSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+class UsuarioDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Usuario.objects.all()
+    serializer_class = userSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    lookup_field = 'id_usuario'
