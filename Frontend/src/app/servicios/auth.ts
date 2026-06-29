@@ -9,12 +9,12 @@ export class AuthService {
   private apiUrl = 'http://localhost:8000/api'; 
 
   constructor(private http: HttpClient) {}
-
+  
   private getHeaders(): HttpHeaders {
     const token = localStorage.getItem('access');
     return new HttpHeaders({
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
     });
   }
 
@@ -34,9 +34,12 @@ export class AuthService {
     );
   }
 
+
   getUsuariosPendientes(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/admin/usuarios-pendientes/`, { headers: this.getHeaders() });
-  }
+  return this.http.get<any[]>(`${this.apiUrl}/admin/usuarios-pendientes/`, { 
+    headers: this.getHeaders() 
+  });
+}
 
   aprobarUsuario(idUsuario: string): Observable<any> {
     return this.http.patch<any>(`${this.apiUrl}/admin/aprobar-usuario/${idUsuario}/`, {}, { headers: this.getHeaders() });

@@ -69,7 +69,7 @@ export class Login implements OnInit {
       password: this.loginForm.value.password
     };
 
-    console.log('Datos mapeados enviados a Django:', datosMapeados);
+    console.log('Datos enviados a Django:', datosMapeados);
 
     this.authService.login(datosMapeados).subscribe({
       next: (response) => {
@@ -86,7 +86,7 @@ export class Login implements OnInit {
           console.log('Redireccionando según rol:', rol);
 
           switch (rol) {
-            case 'Administrador':
+            case 'administrador':
               this.router.navigate(['/dashboardAdministrador']); 
               break;
             case 'seguridad':

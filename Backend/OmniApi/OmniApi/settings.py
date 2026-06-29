@@ -19,6 +19,7 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv  
 from datetime import timedelta
+from django.conf import settings
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -32,13 +33,10 @@ load_dotenv(os.path.join(BASE_DIR, '.env'))
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-!(mfl77tb=h%7ut6h=@(i_s5#=8i6*nhpr2)$)=-z)zm9vx+$q'
 
-# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
 ALLOWED_HOSTS = []
 
-
-# Application definition
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -55,8 +53,7 @@ INSTALLED_APPS = [
 AUTH_USER_MODEL = 'accesos.Usuario'
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',  
-    'django.middleware.common.CommonMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -64,7 +61,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    
 ]
 
 ROOT_URLCONF = 'OmniApi.urls'
@@ -154,8 +150,23 @@ CORS_ALLOWED_ORIGINS = [
 
 CORS_ALLOW_CREDENTIALS = True
 
+CORS_ALLOW_METHODS = [
+    "DELETE",
+    "GET",
+    "OPTIONS",
+    "PATCH",
+    "POST",
+    "PUT",
+]
 
-
+CORS_ALLOW_HEADERS = [
+    "accept",
+    "authorization",
+    "content-type",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+]
 
 
 SIMPLE_JWT = {
@@ -163,19 +174,17 @@ SIMPLE_JWT = {
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     'ROTATE_REFRESH_TOKENS': True,
     'ALGORITHM': 'HS256',
-    'SIGNING_KEY': SECRET_KEY, 
-    'USER_ID_FIELD': 'id_usuario',
-    'USER_ID_CLAIM': 'user_id',
-
+    'SIGNING_KEY': SECRET_KEY,
     'AUTH_HEADER_TYPES': ('Bearer',),
+    'USER_ID_FIELD': 'id_usuario', 
+    'USER_ID_CLAIM': 'user_id',
 }
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'accesos.authentication.UUIDJWTAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticated', 
+        'rest_framework.permissions.AllowAny',
     ),
 }
-
