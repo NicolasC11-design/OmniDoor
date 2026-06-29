@@ -7,11 +7,16 @@ import { HttpClient } from '@angular/common/http';
 function passwordMatchValidator(control: AbstractControl): ValidationErrors | null {
   const pw = control.get('password');
   const cpw = control.get('confirmPassword');
-  return (pw && cpw && pw.value !== cpw.value) ? { passwordMismatch: true } : null;
+  
+  if (!pw || !cpw || !pw.value || !cpw.value) return null;
+  
+  return pw.value !== cpw.value ? { passwordMismatch: true } : null;
 }
 
 function placaValidator(control: AbstractControl): ValidationErrors | null {
-  if (!control.value || control.value === 'N/A') return null;
+  if (!control.value || control.value === 'N/A' || control.value.trim() === '') {
+    return null;
+  }
   const autoRegex = /^[A-Za-z]{3}-\d{3}$/;
   const motoRegex = /^[A-Za-z]{3}-\d{2}[A-Za-z]{1}$/;
   
@@ -69,6 +74,10 @@ export class Register implements OnInit {
       correo: ['', [Validators.required, Validators.email]],
       rol: ['', Validators.required],
       placa: ['', [Validators.required, placaValidator]],
+      telefono: ['', [Validators.required, Validators.pattern(/^\d+$/)]], 
+      direccion: ['', Validators.required], 
+      nombre_emergencia: ['', Validators.required], 
+      contacto_emergencia: ['', [Validators.required, Validators.pattern(/^\d+$/)]],
       password: ['', [
         Validators.required, 
         Validators.minLength(8),
@@ -99,6 +108,13 @@ export class Register implements OnInit {
   onSubmit(): void {
     if (this.registerForm.invalid) {
       this.registerForm.markAllAsTouched();
+      console.error('El formulario tiene errores en los siguientes campos:');
+      Object.keys(this.registerForm.controls).forEach(key => {
+        const controlErrors = this.registerForm.get(key)?.errors;
+        if (controlErrors != null) {
+          console.error(`-> Campo [${key}]:`, controlErrors);
+        }
+      });
       return;
     }
 
@@ -109,7 +125,7 @@ export class Register implements OnInit {
     const { confirmPassword, ...data } = this.registerForm.value;
     const payload = { ...data, tipoVehiculo: this.selectedVehicle };
 
-    console.log('Enviando a Django:', payload);
+    console.log('Enviando petición POST a Django:', payload);
 
     this.http.post('http://localhost:8000/api/auth/register/', payload).subscribe({
       next: (res) => {
@@ -135,8 +151,11 @@ export class Register implements OnInit {
     
     this.ocrCapturing = true;
     setTimeout(() => {
-      const placaSimulada = this.selectedVehicle === 'moto' ? 'ABC-12A' : 'ABC-123';
+      const placaSimulada = this.selectedVehicle === 'moto' ? 'ABC-12D' : 'ABC-123';
       this.registerForm.patchValue({ placa: placaSimulada });
+      this.registerForm.get('placa')?.markAsTouched();
+      this.registerForm.get('placa')?.markAsDirty();
+      this.registerForm.get('placa')?.updateValueAndValidity();
       this.ocrCapturing = false;
     }, 1000);
   }

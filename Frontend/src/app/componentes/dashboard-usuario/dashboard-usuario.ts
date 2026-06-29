@@ -6,9 +6,12 @@ import { AuthService } from '../../servicios/auth';
 import { UsuarioService } from '../../servicios/usuarios';
 
 export interface MiVehiculo {
+  id_vehiculo?: string;
   tipoVehiculo: string;
   placa: string;
-  biometriaCapturada: boolean;
+  marca: string;
+  modelo: string;
+  biometriaCapturada?: boolean;
 }
 
 export interface RegistroMioHistorial {
@@ -27,24 +30,21 @@ export interface RegistroMioHistorial {
 })
 export class DashboardUsuario implements OnInit {
   usuario: any = {};
-  vehiculo: MiVehiculo | null = null;
+  vehiculos: MiVehiculo[] = [];
   miHistorial: RegistroMioHistorial[] = [];
+  
   mensajeExito: string | null = null;
   mostrarModalVehiculo = false;
   mostrarModalDatos = false;
   mostrarModalPassword = false;
   cargando = false;
 
-  formVehiculo: MiVehiculo = { tipoVehiculo: 'auto', placa: '', biometriaCapturada: false };
-  formDatos = { nombre_completo: '', correo: '' };
+  formVehiculo: MiVehiculo = { tipoVehiculo: 'auto', placa: '', marca: '', modelo: '' };
+  formDatos = { nombre_completo: '', correo: '', telefono: '', direccion: '' };
   formPassword = { actual: '', nueva: '', confirmar: '' };
 
   private iconosVehiculo: Record<string, string> = {
-    auto: 'ti-car',
-    moto: 'ti-motorbike',
-    bici: 'ti-bike',
-    patin: 'ti-skateboard',
-    electr: 'ti-plug',
+    auto: 'ti-car', moto: 'ti-motorbike', bici: 'ti-bike', patin: 'ti-skateboard', electr: 'ti-plug',
   };
 
   constructor(
@@ -55,7 +55,7 @@ export class DashboardUsuario implements OnInit {
 
   ngOnInit(): void {
     this.cargarUsuario();
-    this.cargarVehiculo();
+    this.cargarVehiculos();
     this.cargarHistorial();
   }
 
@@ -65,11 +65,16 @@ export class DashboardUsuario implements OnInit {
     this.formDatos = {
       nombre_completo: this.usuario.nombre_completo || '',
       correo: this.usuario.correo || '',
+      telefono: this.usuario.telefono || '',
+      direccion: this.usuario.direccion || ''
     };
   }
 
-  private cargarVehiculo(): void {
-    this.vehiculo = null;
+  private cargarVehiculos(): void {
+    this.usuarioService.obtenerTodosLosVehiculos().subscribe({
+      next: (data) => { this.vehiculos = data; },
+      error: () => console.error('Error cargando vehículos')
+    });
   }
 
   private cargarHistorial(): void {
@@ -79,73 +84,50 @@ export class DashboardUsuario implements OnInit {
   iniciales(): string {
     const nombre = this.usuario?.nombre_completo || '';
     const partes = nombre.trim().split(/\s+/).filter(Boolean);
-    if (partes.length === 0) return '?';
-    if (partes.length === 1) return partes[0].charAt(0).toUpperCase();
-    return (partes[0].charAt(0) + partes[1].charAt(0)).toUpperCase();
+    return partes.length > 0 ? (partes[0][0] + (partes[1]?.[0] || '')).toUpperCase() : '?';
   }
 
-  iconoVehiculo(): string {
-    if (!this.vehiculo) return 'ti-car';
-    return this.iconosVehiculo[this.vehiculo.tipoVehiculo] || 'ti-car';
+  iconoVehiculo(tipo: string): string {
+    return this.iconosVehiculo[tipo] || 'ti-car';
   }
 
-  abrirModalVehiculo(): void {
-    this.formVehiculo = this.vehiculo
-      ? { ...this.vehiculo }
-      : { tipoVehiculo: 'auto', placa: '', biometriaCapturada: false };
+  abrirModalVehiculo(v?: MiVehiculo): void {
+    this.formVehiculo = v ? { ...v } : { tipoVehiculo: 'auto', placa: '', marca: '', modelo: '' };
     this.mostrarModalVehiculo = true;
   }
 
+  guardarVehiculo(): void {
+    this.cargando = true;
+    const obs = this.formVehiculo.id_vehiculo 
+      ? this.usuarioService.actualizarVehiculo(this.formVehiculo.id_vehiculo, this.formVehiculo)
+      : this.usuarioService.agregarVehiculo(this.formVehiculo);
 
-guardarVehiculo(): void {
-  this.cargando = true; 
-  this.usuarioService.actualizarVehiculo(this.formVehiculo).subscribe({
-    next: (data) => {
-      this.vehiculo = data;
-      this.mostrarExito('Vehículo guardado correctamente');
-      this.cargando = false; 
-      this.cerrarModales();
-    },
-    error: (err) => {
-      this.cargando = false;
-      alert('Error al conectar con la base de datos');
-    }
-  });
-}
-
-
-  abrirModalDatos(): void {
-    this.mostrarModalDatos = true;
+    obs.subscribe({
+      next: () => { this.mostrarExito('Guardado correctamente'); this.cargarVehiculos(); this.cerrarModales(); this.cargando = false; },
+      error: () => { alert('Error'); this.cargando = false; }
+    });
   }
 
+  abrirModalDatos(): void { this.mostrarModalDatos = true; }
+  
   guardarDatos(): void {
-  if (!this.formDatos.nombre_completo.trim() || !this.formDatos.correo.trim()) return;
-
-
-  this.usuarioService.updateMiPerfil(this.formDatos).subscribe({
-    next: (data) => {
-      this.usuario = { ...this.usuario, ...data };
-      localStorage.setItem('usuario', JSON.stringify(this.usuario));
-      this.mostrarExito('Datos actualizados correctamente en el servidor');
-      this.cerrarModales();
-    },
-    error: (err) => {
-      console.error('Error al actualizar:', err);
-      alert('Error al guardar en el servidor');
-    }
-  });
-}
-
-  abrirModalPassword(): void {
-    this.formPassword = { actual: '', nueva: '', confirmar: '' };
-    this.mostrarModalPassword = true;
+    this.usuarioService.updateMiPerfil(this.formDatos).subscribe({
+      next: (data) => {
+        this.usuario = { ...this.usuario, ...data };
+        localStorage.setItem('usuario', JSON.stringify(this.usuario));
+        this.mostrarExito('Datos actualizados');
+        this.cerrarModales();
+      }
+    });
   }
+
+  abrirModalPassword(): void { this.mostrarModalPassword = true; }
 
   guardarPassword(): void {
-    const { actual, nueva, confirmar } = this.formPassword;
-    if (!actual || !nueva || nueva !== confirmar) return;
-    this.mostrarExito('Contraseña actualizada correctamente');
-    this.cerrarModales();
+    if (this.formPassword.nueva === this.formPassword.confirmar) {
+      this.mostrarExito('Contraseña actualizada');
+      this.cerrarModales();
+    }
   }
 
   cerrarModales(): void {
