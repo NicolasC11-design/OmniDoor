@@ -3,7 +3,8 @@ from .views import (
     RegisterView, LoginView, AdminGestionCuentasView, 
     AprobarUsuarioView, VehiculoListCreateView, VehiculoDetailView, 
     RegistroAccesoListCreateView, InformeTurnoCreateView, PerfilUsuarioView, 
-    MisRegistrosAccesoView, CambiarPasswordView
+    MisRegistrosAccesoView, CambiarPasswordView, AdminDashboardStatsView,
+    UsuarioListCreateView, UsuarioDetailUpdateDeleteView
 )
 
 urlpatterns = [
@@ -24,4 +25,9 @@ urlpatterns = [
     path('usuarios/historial/mio/', MisRegistrosAccesoView.as_view(), name='mi_historial'),
     path('perfil/actualizar/', PerfilUsuarioView.as_view(), name='actualizar_perfil'),
     path('perfil/cambiar-password/', CambiarPasswordView.as_view(), name='cambiar_password'),
+
+    path('usuarios/<str:id_usuario>/', UsuarioDetailUpdateDeleteView.as_view(), name='usuario-detail'),
+
+    path('stats/', AdminDashboardStatsView.as_view(), name='admin-stats'),
+    path('usuarios/', UsuarioListCreateView.as_view(), name='usuarios-list'),
 ]
