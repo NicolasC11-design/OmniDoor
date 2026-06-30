@@ -11,8 +11,9 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from .models import Usuario, Vehiculo, RegistroAcceso, InformeTurno
 from django.utils import timezone
-from .permissions import IsSeguridad, IsAdmin
+from .permissions import IsSeguridad, IsAdmin, IsSeguridadOrAdmin
 from django.contrib.auth.hashers import check_password
+from django.db.models import Count
 
 class RegisterView(APIView):
     permission_classes = [AllowAny] 
@@ -77,6 +78,28 @@ class UsuarioManager(BaseUserManager):
         extra_fields.setdefault('rol', 'admin')
 
         return self.create_user(correo, password, **extra_fields)
+    
+class AdminDashboardStatsView(APIView):
+    permission_classes = [IsAdmin]
+
+    def get(self, request):
+        hoy = timezone.now().date()
+        
+        total_vehiculos = Vehiculo.objects.count()
+        ingresos_hoy = RegistroAcceso.objects.filter(tipo_movimiento='ENTRADA', fecha_hora__date=hoy).count()
+        solicitudes_pendientes = Usuario.objects.filter(is_active=False).count()
+        primer_dia_mes = hoy.replace(day=1)
+        accesos_denegados = RegistroAcceso.objects.filter(
+            tipo_movimiento='DENUR_O_FALLA',
+            fecha_hora__date__gte=primer_dia_mes
+        ).count()
+
+        return Response({
+            "total_vehiculos": total_vehiculos,
+            "ingresos_hoy": ingresos_hoy,
+            "solicitudes_pendientes": solicitudes_pendientes,
+            "accesos_denegados": accesos_denegados
+        }, status=status.HTTP_200_OK)
 
 class AprobarUsuarioView(APIView):
     permission_classes = [IsAdmin]
@@ -157,13 +180,13 @@ class UsuarioDetailView(generics.RetrieveUpdateDestroyAPIView):
     lookup_field = 'id_usuario'
 
 class RegistroAccesoListCreateView(APIView):
-    permission_classes = [IsSeguridad]
+    permission_classes = [IsSeguridadOrAdmin]
 
     def get(self, request):
-        if request.user.rol != 'seguridad':
-            raise PermissionDenied("No tienes permisos para ver el panel de seguridad.")
-        todos_los_accesos = RegistroAcceso.objects.all().order_by('-fecha_hora')[:50]
-        serializer = RegistroAccesoSerializer(todos_los_accesos, many=True)
+        if request.user.rol != 'seguridad' and request.user.rol != 'admin':
+            raise PermissionDenied("No tienes permisos para consultar este historial.")
+        registros = RegistroAcceso.objects.all().order_by('-fecha_hora')[:100]
+        serializer = RegistroAccesoSerializer(registros, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
@@ -261,3 +284,8 @@ class CambiarPasswordView(APIView):
         user.set_password(password_nueva)
         user.save()
         return Response({'message': 'Contraseña actualizada con éxito.'}, status=status.HTTP_200_OK)
+    
+class UsuarioDetailUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Usuario.objects.all()
+    serializer_class = userSerializer
+    lookup_field = 'id_usuario'
