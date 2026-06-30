@@ -5,8 +5,12 @@
 
     <div class="topbar">
       <div>
-        <div class="od-logo"><h1>OmniDoor — Panel Administrador</h1></div>
-        <div class="od-subtitle"><h2>{{ vistaActual === 'panel' ? 'gestión  de accesos' : breadcrumb() }}</h2></div>
+        <div class="od-logo">
+          <h1>OmniDoor — Panel Administrador</h1>
+        </div>
+        <div class="od-subtitle">
+          <h2>{{ vistaActual === 'panel' ? 'gestión de accesos' : breadcrumb() }}</h2>
+        </div>
       </div>
       <div class="topbar-actions">
         <button class="back-btn" *ngIf="vistaActual !== 'panel'" (click)="irAPanel()">
@@ -146,12 +150,11 @@
           <p>Aún no hay conductores registrados en el sistema</p>
         </div>
 
-        <div class="table-wrap" *ngIf="conductores.length > 0">
+        <div class="table-wrap">
           <table class="od-table">
             <thead>
               <tr>
-                <th>Cédula</th>
-                <th>Nombre completo</th>
+                <th>Nombre Completo</th>
                 <th>Rol</th>
                 <th>Vehículo</th>
                 <th>Placa</th>
@@ -160,22 +163,30 @@
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let c of conductores">
-                <td>{{ c.cedula }}</td>
-                <td>{{ c.nombre }}</td>
-                <td><span class="badge rol">{{ c.rol }}</span></td>
-                <td>{{ c.tipoVehiculo }}</td>
-                <td>{{ c.placa }}</td>
+              <tr *ngFor="let cond of conductores">
+                <td>{{ cond.nombre }}</td>
+
                 <td>
-                  <span class="badge" [ngClass]="c.biometriaCapturada ? 'biometria' : 'manual'">
-                    {{ c.biometriaCapturada ? 'capturada' : 'pendiente' }}
+                  <span class="role-tag" [ngClass]="cond.rol">
+                    {{ cond.rol | uppercase }}
                   </span>
                 </td>
-                <td class="row-actions">
-                  <button class="icon-btn" (click)="editarConductor(c)" title="Editar"><i class="ti ti-edit"
-                      aria-hidden="true"></i></button>
-                  <button class="icon-btn danger" (click)="eliminarConductor(c)" title="Eliminar"><i class="ti ti-trash"
-                      aria-hidden="true"></i></button>
+
+                <td>{{ cond.tipoVehiculo | uppercase }}</td>
+
+                <td><span class="placa-text">{{ cond.placa }}</span></td>
+
+                <td>
+                  <span class="od-chip" [ngClass]="cond.biometriaCapturada ? 'residente-tag' : 'apertura-tag'">
+                    {{ cond.biometriaCapturada ? 'Activo' : 'Pendiente' }}
+                  </span>
+                </td>
+
+                <td>
+                  <div class="actions-cell-group">
+                    <button class="btn-table edit" (click)="editarConductor(cond)">Editar</button>
+                    <button class="btn-table delete" (click)="eliminarConductor(cond)">Eliminar</button>
+                  </div>
                 </td>
               </tr>
             </tbody>
@@ -265,11 +276,6 @@
     <div class="modal-box" (click)="$event.stopPropagation()">
       <div class="modal-title">{{ conductorEnEdicion ? 'editar conductor' : 'nuevo conductor' }}</div>
       <div class="modal-subtitle">Alta y modificación de usuarios con mapeo de IA</div>
-
-      <div class="field-group">
-        <label class="field-label" for="cedula">cédula / documento</label>
-        <input id="cedula" class="od-input" type="text" [(ngModel)]="formConductor.cedula" placeholder="1023456789" />
-      </div>
 
       <div class="field-group">
         <label class="field-label" for="nombreCond">nombre completo</label>
