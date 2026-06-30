@@ -49,6 +49,25 @@ export class AuthService {
     return this.http.delete(`${this.apiUrl}/admin/aprobar-usuario/${idUsuario}/`, { headers: this.getHeaders() });
   }
 
+  getEstadisticasAdmin(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/stats/`);
+  }
+
+  getUsuarios(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/usuarios/`);
+  }
+
+  getHistorialGeneral(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/accesos/`);
+  }
+
+  actualizarUsuarioAdmin(idUsuario: string, datos: any): Observable<any> {
+  return this.http.put<any>(`${this.apiUrl}/usuarios/${idUsuario}/`, datos);
+}
+  eliminarUsuarioAdmin(idUsuario: string): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/usuarios/${idUsuario}/`);
+  }
+
   isAuthenticated(): boolean {
     return !!localStorage.getItem('access'); 
   }
