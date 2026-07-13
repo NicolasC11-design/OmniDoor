@@ -1,5 +1,5 @@
 from rest_framework.views import APIView
-from rest_framework.response import Response  
+from rest_framework.response import Response 
 from rest_framework import status, permissions, generics
 from rest_framework_simplejwt.tokens import RefreshToken  
 from .serializers import (
@@ -13,24 +13,34 @@ from .models import Usuario, Vehiculo, RegistroAcceso, InformeTurno
 from django.utils import timezone
 from .permissions import IsSeguridad, IsAdmin, IsSeguridadOrAdmin
 from django.contrib.auth.hashers import check_password
-from django.db.models import Count
+from django.db import transaction
+from django.db.models import Count, Q
 
 class RegisterView(APIView):
-    permission_classes = [AllowAny] 
+    permission_classes = [AllowAny]
+    authentication_classes = []
 
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            user = serializer.save()
+        if serializer.is_valid():
+            with transaction.atomic():
+                user = serializer.save()
+            
             return Response({
                 "mensaje": "Usuario registrado exitosamente. Esperando aprobación del administrador.",
-                "usuario": userSerializer(user).data
+                "usuario": {
+                    "id_usuario": user.id_usuario,
+                    "nombre_completo": user.nombre_completo,
+                    "correo": user.correo,
+                    "rol": user.rol,
+                    "estado": user.estado
+                }
             }, status=status.HTTP_201_CREATED)
-        
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class LoginView(APIView):
     permission_classes = [AllowAny]
+    authentication_classes = []
 
     def post(self, request, *args, **kwargs):
         serializer = LoginSerializer(data=request.data)
@@ -80,7 +90,7 @@ class UsuarioManager(BaseUserManager):
         return self.create_user(correo, password, **extra_fields)
     
 class AdminDashboardStatsView(APIView):
-    permission_classes = [IsAdmin]
+    permission_classes = [IsSeguridadOrAdmin]
 
     def get(self, request):
         hoy = timezone.now().date()
@@ -90,7 +100,7 @@ class AdminDashboardStatsView(APIView):
         solicitudes_pendientes = Usuario.objects.filter(is_active=False).count()
         primer_dia_mes = hoy.replace(day=1)
         accesos_denegados = RegistroAcceso.objects.filter(
-            tipo_movimiento='DENUR_O_FALLA',
+            Q(tipo_movimiento='DENUR_O_FALLA') | Q(motivo_apertura__icontains='RECHAZADO'),
             fecha_hora__date__gte=primer_dia_mes
         ).count()
 
@@ -122,7 +132,7 @@ class AprobarUsuarioView(APIView):
             return Response({"error": "Usuario no encontrado"}, status=status.HTTP_404_NOT_FOUND)
         
 class VehiculoListCreateView(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         vehiculos = Vehiculo.objects.filter(propietario=request.user)
@@ -139,25 +149,55 @@ class VehiculoListCreateView(APIView):
 class VehiculoDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def put(self, request, id_vehiculo):
+    def patch(self, request, id_vehiculo):
         try:
-            vehiculo = Vehiculo.objects.get(id_vehiculo=id_vehiculo, propietario=request.user)
+            if request.user.rol in ['admin', 'administrador'] or request.user.is_superuser:
+                vehiculo = Vehiculo.objects.get(id_vehiculo=id_vehiculo)
+            else:
+                vehiculo = Vehiculo.objects.get(id_vehiculo=id_vehiculo, propietario=request.user)
+            nueva_placa = request.data.get('placa')
+            if nueva_placa:
+                nueva_placa = nueva_placa.strip().upper()
+                placa_existe = Vehiculo.objects.filter(placa=nueva_placa).exclude(id_vehiculo=id_vehiculo).exists()
+                
+                if placa_existe:
+                    return Response(
+                        {"error": f"La placa '{nueva_placa}' ya está asignada a otro conductor en el sistema."},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
             serializer = VehiculoSerializer(vehiculo, data=request.data, partial=True)
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_200_OK)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            
         except Vehiculo.DoesNotExist:
             return Response({"error": "Vehículo no encontrado o no autorizado"}, status=status.HTTP_404_NOT_FOUND)
 
-    def delete(self, request, id_vehiculo):
+    def put(self, request, id_vehiculo):
         try:
-            vehiculo = Vehiculo.objects.get(id_vehiculo=id_vehiculo, propietario=request.user)
-            vehiculo.delete()
-            return Response({"message": "Vehículo eliminado correctamente"}, status=status.HTTP_200_OK)
+            if request.user.rol in ['admin', 'administrador'] or request.user.is_superuser:
+                vehiculo = Vehiculo.objects.get(id_vehiculo=id_vehiculo)
+            else:
+                vehiculo = Vehiculo.objects.get(id_vehiculo=id_vehiculo, propietario=request.user)
+            nueva_placa = request.data.get('placa')
+            if nueva_placa:
+                nueva_placa = nueva_placa.strip().upper()
+                placa_existe = Vehiculo.objects.filter(placa=nueva_placa).exclude(id_vehiculo=id_vehiculo).exists()
+                
+                if placa_existe:
+                    return Response(
+                        {"error": f"La placa '{nueva_placa}' ya está asignada a otro conductor en el sistema."},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+            serializer = VehiculoSerializer(vehiculo, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            
         except Vehiculo.DoesNotExist:
-            return Response({"error": "Vehículo no encontrado o no autorizado"}, status=status.HTTP_404_NOT_FOUND)
-        
+            return Response({"error": "Vehículo no encontrado o no autorizado"}, status=status.HTTP_404_NOT_FOUND)        
 class PerfilUsuarioView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -195,19 +235,17 @@ class RegistroAccesoListCreateView(APIView):
         
         data = request.data.copy()
         tipo_original = data.get('tipo_movimiento')
-        if tipo_original in ["APERTURA_MANUAL", "REGISTRO_VISITANTE"]:
-            data['tipo_movimiento'] = 'ENTRADA'
-            
-            serializer = RegistroAccesoSerializer(data=data)
-            if serializer.is_valid():
-                serializer.save(
-                    vigilante=request.user,
-                    tipo_movimiento='ENTRADA'
-                )
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
+        if tipo_original == "APERTURA_MANUAL":
+            data['tipo_movimiento'] = 'APERTURA_MANUAL'
+            
+        elif tipo_original == "REGISTRO_VISITANTE":
+            data['tipo_movimiento'] = 'ENTRADA'
+            if not data.get('motivo_input'):
+                data['motivo_input'] = "INGRESO VISITANTE"
+
         serializer = RegistroAccesoSerializer(data=data, context={'request': request})
+        
         if serializer.is_valid():
             serializer.save(vigilante=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -289,3 +327,32 @@ class UsuarioDetailUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Usuario.objects.all()
     serializer_class = userSerializer
     lookup_field = 'id_usuario'
+    permission_classes = [IsAdmin]
+
+    def patch(self, request, *args, **kwargs):
+        try:
+
+            usuario = self.get_object()
+        except Usuario.DoesNotExist:
+            return Response({"error": "Usuario no encontrado"}, status=status.HTTP_404_NOT_FOUND)
+        
+        nuevo_estado = request.data.get('estado')
+        nuevo_rol = request.data.get('rol')
+
+        if nuevo_estado:
+            usuario.estado = nuevo_estado
+
+            if nuevo_estado == 'activo':
+                usuario.is_active = True
+            elif nuevo_estado == 'pendiente' or nuevo_estado == 'inactivo':
+                usuario.is_active = False
+
+        if nuevo_rol:
+            usuario.rol = nuevo_rol
+            if nuevo_rol == 'admin':
+                usuario.is_admin = True
+                usuario.is_staff = True
+
+        usuario.save()
+        serializer = self.get_serializer(usuario)
+        return Response(serializer.data, status=status.HTTP_200_OK)

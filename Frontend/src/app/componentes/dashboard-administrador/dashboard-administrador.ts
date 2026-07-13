@@ -9,6 +9,7 @@ type Vista = 'panel' | 'solicitudes' | 'usuarios' | 'reportes';
 
 export interface Conductor {
   id_usuario?: string;
+  id_vehiculo?: string;
   cedula: string;
   nombre: string;
   correo : string;
@@ -166,34 +167,34 @@ export class AdminDashboard implements OnInit {
   }
 
   private cargarConductores(): void {
-    this.cargandoSolicitudes = true;
-    this.authService.getUsuarios().subscribe({
-      next: (data: any[]) => {
-        console.log('Usuarios brutos de Django:', data);
-        
-        this.conductores = data.map(u => ({
-          id_usuario: u.id_usuario || u.id || u.id_conductor || u.idUsuario, 
-          
-          cedula: u.cedula || 'N/A',
-          nombre: (u.nombre_completo || u.nombre || 'Sin Nombre').toUpperCase(),
-          correo: u.correo || '',
-          rol: u.rol || 'aprendiz',
-          tipoVehiculo: u.vehiculos && u.vehiculos.length > 0 ? u.vehiculos[0].tipoVehiculo : 'auto',
-          placa: u.vehiculos && u.vehiculos.length > 0 ? u.vehiculos[0].placa : 'N/A',
-          biometriaCapturada: u.estado === 'activo'
-        }));
-        
-        console.log('Conductores mapeados con ID:', this.conductores);
-        this.cargandoSolicitudes = false;
-        this.cdr.detectChanges();
-      },
-      error: (err) => {
-        console.error('Error al cargar conductores:', err);
-        this.cargandoSolicitudes = false;
-        this.cdr.detectChanges();
-      }
-    });
-  }
+  this.cargandoSolicitudes = true;
+  this.authService.getUsuarios().subscribe({
+    next: (data: any[]) => {
+      console.log('Usuarios brutos de Django:', data);
+      
+      this.conductores = data.map(u => ({
+        id_usuario: u.id_usuario || u.id, 
+        id_vehiculo: u.vehiculos && u.vehiculos.length > 0 ? (u.vehiculos[0].id_vehiculo || u.vehiculos[0].id) : undefined,
+        cedula: u.cedula || 'N/A',
+        nombre: (u.nombre_completo || u.nombre || 'Sin Nombre').toUpperCase(),
+        correo: u.correo || '',
+        rol: u.rol || 'aprendiz',
+        tipoVehiculo: u.vehiculos && u.vehiculos.length > 0 ? u.vehiculos[0].tipoVehiculo : 'auto',
+        placa: u.vehiculos && u.vehiculos.length > 0 ? u.vehiculos[0].placa : 'N/A',
+        biometriaCapturada: u.estado === 'activo'
+      }));
+      
+      console.log('Conductores mapeados con ID:', this.conductores);
+      this.cargandoSolicitudes = false;
+      this.cdr.detectChanges();
+    },
+    error: (err) => {
+      console.error('Error al cargar conductores:', err);
+      this.cargandoSolicitudes = false;
+      this.cdr.detectChanges();
+    }
+  });
+}
 
   private conductorVacio(): Conductor {
     return { 
@@ -227,35 +228,56 @@ export class AdminDashboard implements OnInit {
   }
 
   guardarConductor(): void {
-    if (!this.formConductor.nombre || !this.formConductor.nombre.trim()) {
-      alert('Por favor, ingresa el nombre completo.');
-      return;
-    }
-
-    if (this.conductorEnEdicion && this.conductorEnEdicion.id_usuario) {
-      this.cargandoSolicitudes = true;
-      const payload = {
-        nombre_completo: this.formConductor.nombre.trim(),
-        rol: this.formConductor.rol,
-        correo: this.formConductor.correo
-      };
-
-      this.authService.actualizarUsuarioAdmin(this.conductorEnEdicion.id_usuario, payload).subscribe({
-        next: () => {
-          alert('¡Usuario actualizado en la base de datos con éxito!');
-          this.cerrarModalConductor();
-          this.cargarConductores();
-        },
-        error: (err) => {
-          console.error('Error detallado de Django:', err);
-          const msgError = err.error ? JSON.stringify(err.error) : 'Revisa las validaciones.';
-          alert('Error del servidor: ' + msgError);
-          this.cargandoSolicitudes = false;
-          this.cdr.detectChanges();
-        }
-      });
-    }
+  if (!this.formConductor.nombre || !this.formConductor.nombre.trim()) {
+    alert('Por favor, ingresa el nombre completo.');
+    return;
   }
+
+  if (this.conductorEnEdicion && this.conductorEnEdicion.id_usuario) {
+    this.cargandoSolicitudes = true;
+    const usuarioPayload = {
+      nombre_completo: this.formConductor.nombre.trim(),
+      rol: this.formConductor.rol,
+      correo: this.formConductor.correo
+    };
+    const vehiculoPayload = {
+      placa: this.formConductor.placa.trim(),
+      tipoVehiculo: this.formConductor.tipoVehiculo
+    };
+    this.authService.actualizarUsuarioAdmin(this.conductorEnEdicion.id_usuario, usuarioPayload).subscribe({
+      next: () => {
+        console.log('Usuario actualizado con éxito.');
+        if (this.conductorEnEdicion?.id_vehiculo) {
+          this.authService.actualizarVehiculoAdmin(this.conductorEnEdicion.id_vehiculo, vehiculoPayload).subscribe({
+            next: () => {
+              alert('¡Conductor y Vehículo actualizados en Supabase correctamente!');
+              this.finalizarGuardado();
+            },
+            error: (vErr) => {
+              console.error('Error al actualizar el vehículo:', vErr);
+              alert('Se actualizó el usuario, pero falló la actualización del vehículo.');
+              this.finalizarGuardado();
+            }
+          });
+        } else {
+          alert('¡Usuario actualizado con éxito! (No se encontró un vehículo asociado).');
+          this.finalizarGuardado();
+        }
+      },
+      error: (err) => {
+        console.error('Error detallado de Django al actualizar usuario:', err);
+        alert('Error al actualizar el usuario: ' + (err.error ? JSON.stringify(err.error) : 'Revisa las validaciones.'));
+        this.cargandoSolicitudes = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+}
+
+private finalizarGuardado(): void {
+  this.cerrarModalConductor();
+  this.cargarConductores();
+}
   
 
   eliminarConductor(c: Conductor): void {
@@ -325,6 +347,18 @@ export class AdminDashboard implements OnInit {
       }
     });
   }
+
+  formatearPlaca(): void {
+  if (!this.formConductor.placa) return;
+  let limpia = this.formConductor.placa.replace(/[\s-]/g, '').toUpperCase();
+  if (limpia.length > 3) {
+    const letras = limpia.substring(0, 3);
+    const numeros = limpia.substring(3, 7);
+    this.formConductor.placa = `${letras}-${numeros}`;
+  } else {
+    this.formConductor.placa = limpia;
+  }
+}
 
   exportar(formato: 'pdf' | 'excel'): void {
     console.log('Exportando historial en formato', formato, this.filtros);

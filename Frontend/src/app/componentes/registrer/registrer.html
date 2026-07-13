@@ -120,11 +120,15 @@
             <input id="placa" class="od-input plate-input" type="text" formControlName="placa"
               [placeholder]="selectedVehicle === 'auto' ? 'ABC-123' : (selectedVehicle === 'moto' ? 'ABC-12D' : 'N/A')"
               [readonly]="selectedVehicle === 'bici' || selectedVehicle === 'patin' || selectedVehicle === 'electr'"
-              maxlength="7" [class.input-error]="f['placa'].invalid && f['placa'].touched" />
+              maxlength="7" [class.input-error]="backendPlacaError || (f['placa'].invalid && f['placa'].touched)" />
 
-            <span class="error-msg" *ngIf="f['placa'].invalid && f['placa'].touched">
+            <span class="error-msg" *ngIf="backendPlacaError || (f['placa'].invalid && f['placa'].touched)">
               <span *ngIf="f['placa'].errors?.['required']">la placa es requerida</span>
               <span *ngIf="f['placa'].errors?.['placaInvalid']">formato inválido (autos: ABC-123, motos: ABC-12D)</span>
+
+              <span *ngIf="backendPlacaError && f['placa'].errors?.['placaDuplicada']">
+                ⚠️ {{ backendPlacaError | lowercase }}
+              </span>
             </span>
           </div>
 

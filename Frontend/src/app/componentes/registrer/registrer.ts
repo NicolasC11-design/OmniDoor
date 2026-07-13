@@ -3,6 +3,7 @@ import { FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors, 
 import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
+import { AuthService } from '../../servicios/auth';
 
 function passwordMatchValidator(control: AbstractControl): ValidationErrors | null {
   const pw = control.get('password');
@@ -48,6 +49,7 @@ export class Register implements OnInit {
   errorMessage = '';
   successMessage = '';
   registroEnviado = false;
+  backendPlacaError: string | null = null;
 
   vehicleTypes: VehicleType[] = [
     { value: 'auto', label: 'auto', icon: 'ti-car' },
@@ -59,91 +61,90 @@ export class Register implements OnInit {
 
   constructor(
     private fb: FormBuilder,
+    private authService: AuthService,
     private router: Router,
     private http: HttpClient
   ) {}
 
   get f() {
     return this.registerForm.controls;
+
+    
   }
 
-  ngOnInit(): void {
-    this.registerForm = this.fb.group({
-      nombres: ['', [Validators.required, Validators.minLength(2)]],
-      apellidos: ['', [Validators.required, Validators.minLength(2)]],
-      correo: ['', [Validators.required, Validators.email]],
-      rol: ['', Validators.required],
-      placa: ['', [Validators.required, placaValidator]],
-      telefono: ['', [Validators.required, Validators.pattern(/^\d+$/)]], 
-      direccion: ['', Validators.required], 
-      nombre_emergencia: ['', Validators.required], 
-      contacto_emergencia: ['', [Validators.required, Validators.pattern(/^\d+$/)]],
-      password: ['', [
-        Validators.required, 
-        Validators.minLength(8),
-        Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/)
-      ]],
-      confirmPassword: ['', Validators.required],
-    }, { validators: passwordMatchValidator });
-  }
+ngOnInit(): void {
+  const tipoInicial = this.selectedVehicle === 'auto' ? 'AUTOMOVIL' : (this.selectedVehicle ? this.selectedVehicle.toUpperCase() : 'AUTOMOVIL');
 
-  selectVehicle(value: string): void {
-    if (this.registroEnviado) return;
-    this.selectedVehicle = value;
-
-    const placaControl = this.registerForm.get('placa');
-
-    if (value === 'bici' || value === 'patin' || value === 'electr') {
-      placaControl?.setValue('N/A');
-      placaControl?.clearValidators();
-    } else {
-      if (placaControl?.value === 'N/A') {
-        placaControl?.setValue('');
-      }
-      placaControl?.setValidators([Validators.required, placaValidator]);
-    }
-    placaControl?.updateValueAndValidity();
-  }
+  this.registerForm = this.fb.group({
+    nombres: ['', [Validators.required, Validators.minLength(2)]],
+    apellidos: ['', [Validators.required, Validators.minLength(2)]],
+    correo: ['', [Validators.required, Validators.email]],
+    rol: ['', Validators.required],
+    placa: ['', [Validators.required, placaValidator]],
+    telefono: ['', [Validators.required, Validators.pattern(/^\d+$/)]], 
+    direccion: ['', Validators.required], 
+    nombre_emergencia: ['', Validators.required], 
+    contacto_emergencia: ['', [Validators.required, Validators.pattern(/^\d+$/)]],
+    password: ['', [
+      Validators.required, 
+      Validators.minLength(8),
+      Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/)
+    ]],
+    confirmPassword: ['', Validators.required],
+    tipoVehiculo: [tipoInicial]
+  }, { validators: passwordMatchValidator });
+  this.evaluarRequerimientoPlaca(this.selectedVehicle);
+  this.registerForm.get('placa')?.valueChanges.subscribe(() => this.backendPlacaError = null);
+}
 
   onSubmit(): void {
-    if (this.registerForm.invalid) {
-      this.registerForm.markAllAsTouched();
-      console.error('El formulario tiene errores en los siguientes campos:');
-      Object.keys(this.registerForm.controls).forEach(key => {
-        const controlErrors = this.registerForm.get(key)?.errors;
-        if (controlErrors != null) {
-          console.error(`-> Campo [${key}]:`, controlErrors);
-        }
-      });
-      return;
-    }
-
-    this.loading = true;
-    this.errorMessage = '';
-    this.successMessage = '';
-
-    const { confirmPassword, ...data } = this.registerForm.value;
-    const payload = { ...data, tipoVehiculo: this.selectedVehicle };
-
-    console.log('Enviando petición POST a Django:', payload);
-
-    this.http.post('http://localhost:8000/api/auth/register/', payload).subscribe({
-      next: (res) => {
-        this.loading = false;
-        this.registroEnviado = true;
-        this.successMessage =
-          'Solicitud recibida. Tu registro está en proceso de verificación y será habilitado cuando el administrador apruebe tu cuenta.';
-        this.registerForm.disable();
-        setTimeout(() => this.router.navigate(['/login']), 8000);
-      },
-      error: (err) => {
-        this.loading = false;
-        this.registroEnviado = false;
-        this.errorMessage = 'Error: ' + (err.error?.detail || JSON.stringify(err.error));
-        console.error('Error del servidor:', err);
+  if (this.registerForm.invalid) {
+    this.registerForm.markAllAsTouched();
+    console.error('El formulario tiene errores en los siguientes campos:');
+    Object.keys(this.registerForm.controls).forEach(key => {
+      const controlErrors = this.registerForm.get(key)?.errors;
+      if (controlErrors != null) {
+        console.error(`-> Campo [${key}]:`, controlErrors);
       }
     });
+    return;
   }
+
+  this.loading = true;
+  this.errorMessage = '';
+  this.successMessage = '';
+  this.backendPlacaError = null;
+  const { confirmPassword, ...data } = this.registerForm.value;
+  const payload = { ...data, tipoVehiculo: this.selectedVehicle };
+
+  console.log('Enviando petición POST a Django:', payload);
+  this.authService.register(payload).subscribe({
+    next: (res) => {
+      this.loading = false;
+      this.registroEnviado = true;
+      this.successMessage =
+        'Solicitud recibida. Tu registro está en proceso de verificación y será habilitado cuando el administrador apruebe tu cuenta.';
+      this.registerForm.disable();
+      setTimeout(() => this.router.navigate(['/login']), 8000);
+    },
+    error: (err) => {
+      this.loading = false;
+      this.registroEnviado = false;
+      console.error('Error del servidor:', err);
+      if (err.error && err.error.placa) {
+        this.backendPlacaError = Array.isArray(err.error.placa) ? err.error.placa[0] : err.error.placa;
+        this.registerForm.get('placa')?.setErrors({ placaDuplicada: true });
+      } 
+      else if (err.error && err.error.correo) {
+        this.registerForm.get('correo')?.setErrors({ unique: true });
+        this.errorMessage = Array.isArray(err.error.correo) ? err.error.correo[0] : err.error.correo;
+      } 
+      else {
+        this.errorMessage = 'Error: ' + (err.error?.detail || JSON.stringify(err.error));
+      }
+    }
+  });
+}
 
   captureOCR(): void {
     if (this.registroEnviado) return;
@@ -170,4 +171,27 @@ export class Register implements OnInit {
       this.biometricLabel = '✓ biometría capturada';
     }, 2000);
   }
+
+
+evaluarRequerimientoPlaca(vehicleType: string) {
+  const placaControl = this.registerForm.get('placa');
+  
+  if (vehicleType === 'bici' || vehicleType === 'patin' || vehicleType === 'electr') {
+    placaControl?.clearValidators();
+    this.registerForm.patchValue({ placa: 'N/A' });
+  } else {
+    placaControl?.setValidators([Validators.required, placaValidator]);
+    if (placaControl?.value === 'N/A') {
+      this.registerForm.patchValue({ placa: '' });
+    }
+  }
+  placaControl?.updateValueAndValidity();
 }
+selectVehicle(value: string) {
+  this.selectedVehicle = value;
+  const tipoParaBackend = value === 'auto' ? 'AUTOMOVIL' : value.toUpperCase();
+  this.registerForm.patchValue({ tipoVehiculo: tipoParaBackend });
+  this.evaluarRequerimientoPlaca(value);
+}
+}
+

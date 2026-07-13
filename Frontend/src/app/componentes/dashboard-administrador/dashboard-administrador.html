@@ -304,7 +304,7 @@
         </div>
         <div class="field-group">
           <label class="field-label" for="placaCond">número de placa</label>
-          <input id="placaCond" class="od-input" type="text" [(ngModel)]="formConductor.placa" placeholder="XYZ-123" />
+          <input id="placaCond" class="od-input" type="text" [(ngModel)]="formConductor.placa" (blur)="formatearPlaca()" maxlength="7" placeholder="XYZ-123" />
         </div>
       </div>
 
