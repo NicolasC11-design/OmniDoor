@@ -155,7 +155,7 @@
             <div class="modal-title">apertura manual forzada</div>
 
             <label class="field-label" for="motivo">Nombre del conductor</label>
-            <input id="motivo" class="od-input" type="text" [(ngModel)]="aperturaManual.motivo"/>
+            <input id="motivo" class="od-input" type="text" [(ngModel)]="aperturaManual.motivo" />
 
             <label class="field-label" for="tipoVehiculoManual">tipo de vehículo</label>
             <select id="tipoVehiculoManual" class="od-input" [(ngModel)]="aperturaManual.tipoVehiculo"
@@ -249,6 +249,31 @@
                 </button>
             </div>
         </div>
+    </div>
+
+    <div *ngIf="estadoAcceso === 'ok' && ultimoResultado" class="alerta-pantalla-contingencia contingencia-ok">
+        <h1>ACCESO AUTORIZADO</h1>
+        <div style="margin-top: 1.5rem;">
+            <p>Vehículo Placa: <strong
+                    style="font-size: 3rem; background: rgba(0,0,0,0.2); padding: 0.2rem 1rem; border-radius: 8px;">{{
+                    ultimoResultado.placa }}</strong></p>
+            <p style="margin-top: 1rem;">Conductor / Motivo:</p>
+            <p><strong>{{ ultimoResultado.conductor }}</strong></p>
+        </div>
+        <p style="font-size: 1.2rem; margin-top: 3rem; opacity: 0.8; font-style: italic;">Retornando al panel en unos
+            segundos...</p>
+    </div>
+
+    <div *ngIf="estadoAcceso === 'deny' && ultimoResultado" class="alerta-pantalla-contingencia contingencia-deny">
+        <h1>ACCESO DENEGADO / CANCELADO</h1>
+        <div style="margin-top: 1.5rem;">
+            <p>Vehículo Placa: <strong
+                    style="font-size: 3rem; background: rgba(0,0,0,0.2); padding: 0.2rem 1rem; border-radius: 8px;">{{
+                    ultimoResultado.placa }}</strong></p>
+            <p style="margin-top: 1rem; color: #ffcccc;">El ingreso no fue aprobado o no se encuentra en el sistema.</p>
+        </div>
+        <p style="font-size: 1.2rem; margin-top: 3rem; opacity: 0.8; font-style: italic;">Retornando al panel en unos
+            segundos...</p>
     </div>
 
 </div>

@@ -18,6 +18,8 @@ urlpatterns = [
     path('usuarios/vehiculos/agregar/', VehiculoListCreateView.as_view(), name='vehiculos_agregar'),
     path('usuarios/vehiculos/actualizar/<str:id_vehiculo>/', VehiculoDetailView.as_view(), name='vehiculo_actualizar'),
     path('usuarios/vehiculos/eliminar/<str:id_vehiculo>/', VehiculoDetailView.as_view(), name='vehiculo_eliminar'),
+    path('vehiculos/<uuid:id_vehiculo>/', VehiculoDetailView.as_view(), name='vehiculo-detail'),
+    path('vehiculos/<uuid:id_vehiculo>/accesos/', RegistroAccesoListCreateView.as_view(), name='vehiculo-accesos'),
 
     path('accesos/', RegistroAccesoListCreateView.as_view(), name='accesos-list'),
     path('informes-turno/', InformeTurnoCreateView.as_view(), name='informes-create'),
@@ -30,4 +32,7 @@ urlpatterns = [
 
     path('stats/', AdminDashboardStatsView.as_view(), name='admin-stats'),
     path('usuarios/', UsuarioListCreateView.as_view(), name='usuarios-list'),
+    path('usuarios/<uuid:id_usuario>/', UsuarioDetailUpdateDeleteView.as_view(), name='usuario-detail-update-delete'),
+
+    
 ]

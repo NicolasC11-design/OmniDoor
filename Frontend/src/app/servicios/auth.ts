@@ -62,8 +62,15 @@ export class AuthService {
   }
 
   actualizarUsuarioAdmin(idUsuario: string, datos: any): Observable<any> {
-  return this.http.put<any>(`${this.apiUrl}/usuarios/${idUsuario}/`, datos);
+    return this.http.put<any>(`${this.apiUrl}/usuarios/${idUsuario}/`, datos);
 }
+
+  actualizarVehiculoAdmin(idVehiculo: string, datos: any): Observable<any> {
+    return this.http.patch<any>(`${this.apiUrl}/vehiculos/${idVehiculo}/`, datos, { 
+      headers: this.getHeaders() 
+    });
+}
+
   eliminarUsuarioAdmin(idUsuario: string): Observable<any> {
     return this.http.delete<any>(`${this.apiUrl}/usuarios/${idUsuario}/`);
   }
