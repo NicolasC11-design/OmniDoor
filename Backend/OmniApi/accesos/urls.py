@@ -4,7 +4,7 @@ from .views import (
     AprobarUsuarioView, VehiculoListCreateView, VehiculoDetailView, 
     RegistroAccesoListCreateView, InformeTurnoCreateView, PerfilUsuarioView, 
     MisRegistrosAccesoView, CambiarPasswordView, AdminDashboardStatsView,
-    UsuarioListCreateView, UsuarioDetailUpdateDeleteView
+    UsuarioListCreateView, UsuarioDetailUpdateDeleteView,   ValidarPlacaBiometriaView, EnrolarBiometriaView, RegistrarBiometriaView, ValidarAccesoPorteriaView
 )
 
 urlpatterns = [
@@ -34,5 +34,10 @@ urlpatterns = [
     path('usuarios/', UsuarioListCreateView.as_view(), name='usuarios-list'),
     path('usuarios/<uuid:id_usuario>/', UsuarioDetailUpdateDeleteView.as_view(), name='usuario-detail-update-delete'),
 
-    
+    path('biometria/enrolar/', EnrolarBiometriaView.as_view(), name='biometria-enrolar'),
+    path('biometria/validar-placa/<str:placa>/', ValidarPlacaBiometriaView.as_view(), name='biometria-validar-placa'),
+
+    path('auth/registrar-biometria/', RegistrarBiometriaView.as_view(), name='registrar-biometria'),
+
+    path('accesos/validar-porteria/', ValidarAccesoPorteriaView.as_view(), name='validar-porteria'),
 ]

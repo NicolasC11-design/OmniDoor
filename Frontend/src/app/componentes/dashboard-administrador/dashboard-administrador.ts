@@ -12,7 +12,7 @@ export interface Conductor {
   id_vehiculo?: string;
   cedula: string;
   nombre: string;
-  correo : string;
+  correo: string;
   rol: string;
   tipoVehiculo: string;
   placa: string;
@@ -21,9 +21,11 @@ export interface Conductor {
 
 export interface RegistroHistorial {
   fechaHora: string;
+  usuario: string;
+  tipoVehiculo: string;
   placa: string;
-  conductor: string;
-  metodoValidacion: 'biometria' | 'manual' | 'ocr';
+  metodoValidacion: string;
+  evento: string;
   sincronizado: boolean;
 }
 
@@ -37,30 +39,27 @@ export interface RegistroHistorial {
 export class AdminDashboard implements OnInit {
   vistaActual: Vista = 'panel';
 
-
   kpis = {
     vehiculosRegistrados: 0,
     ingresosHoy: 0,
     accesosDenegados: 0,
   };
 
-
   usuariosPendientes: any[] = [];
   cargandoSolicitudes = false;
   cargandoHistorial = false;
   mensajeExito: string | null = null;
-
 
   conductores: Conductor[] = [];
   mostrarModalConductor = false;
   conductorEnEdicion: Conductor | null = null;
   formConductor: Conductor = this.conductorVacio();
 
-
   historial: RegistroHistorial[] = [];
   filtros = {
     desde: '',
     hasta: '',
+    tipoVehiculo: 'todos',
     tipoMovimiento: 'todos',
   };
 
@@ -68,13 +67,12 @@ export class AdminDashboard implements OnInit {
     private authService: AuthService,
     private cdr: ChangeDetectorRef,
     private router: Router,
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.cargarKpis();
     this.cargarUsuariosPendientes();
   }
-
 
   irA(vista: Vista): void {
     this.vistaActual = vista;
@@ -97,20 +95,19 @@ export class AdminDashboard implements OnInit {
     return nombres[this.vistaActual];
   }
 
-
   private cargarKpis(): void {
-  this.authService.getEstadisticasAdmin().subscribe({
-    next: (res: any) => {
-      this.kpis = {
-        vehiculosRegistrados: res.total_vehiculos || 0,
-        ingresosHoy: res.ingresos_hoy || 0,
-        accesosDenegados: res.accesos_denegados || 0,
-      };
-      this.cdr.detectChanges();
-    },
-    error: (err) => console.error('Error cargando KPIs:', err)
-  });
-}
+    this.authService.getEstadisticasAdmin().subscribe({
+      next: (res: any) => {
+        this.kpis = {
+          vehiculosRegistrados: res.total_vehiculos || 0,
+          ingresosHoy: res.ingresos_hoy || 0,
+          accesosDenegados: res.accesos_denegados || 0,
+        };
+        this.cdr.detectChanges();
+      },
+      error: (err) => console.error('Error cargando KPIs:', err)
+    });
+  }
 
   cargarUsuariosPendientes(): void {
     this.cargandoSolicitudes = true;
@@ -151,12 +148,10 @@ export class AdminDashboard implements OnInit {
       next: (res: any) => {
         this.usuariosPendientes = this.usuariosPendientes.filter(u => u.id_usuario !== idUsuario);
         this.mensajeExito = 'Solicitud rechazada y eliminada del sistema';
-        
         this.cdr.detectChanges();
-        
-        setTimeout(() => { 
-          this.mensajeExito = null; 
-          this.cdr.detectChanges(); 
+        setTimeout(() => {
+          this.mensajeExito = null;
+          this.cdr.detectChanges();
         }, 3000);
       },
       error: (err) => {
@@ -167,43 +162,41 @@ export class AdminDashboard implements OnInit {
   }
 
   private cargarConductores(): void {
-  this.cargandoSolicitudes = true;
-  this.authService.getUsuarios().subscribe({
-    next: (data: any[]) => {
-      console.log('Usuarios brutos de Django:', data);
-      
-      this.conductores = data.map(u => ({
-        id_usuario: u.id_usuario || u.id, 
-        id_vehiculo: u.vehiculos && u.vehiculos.length > 0 ? (u.vehiculos[0].id_vehiculo || u.vehiculos[0].id) : undefined,
-        cedula: u.cedula || 'N/A',
-        nombre: (u.nombre_completo || u.nombre || 'Sin Nombre').toUpperCase(),
-        correo: u.correo || '',
-        rol: u.rol || 'aprendiz',
-        tipoVehiculo: u.vehiculos && u.vehiculos.length > 0 ? u.vehiculos[0].tipoVehiculo : 'auto',
-        placa: u.vehiculos && u.vehiculos.length > 0 ? u.vehiculos[0].placa : 'N/A',
-        biometriaCapturada: u.estado === 'activo'
-      }));
-      
-      console.log('Conductores mapeados con ID:', this.conductores);
-      this.cargandoSolicitudes = false;
-      this.cdr.detectChanges();
-    },
-    error: (err) => {
-      console.error('Error al cargar conductores:', err);
-      this.cargandoSolicitudes = false;
-      this.cdr.detectChanges();
-    }
-  });
-}
+    this.cargandoSolicitudes = true;
+    this.authService.getUsuarios().subscribe({
+      next: (data: any[]) => {
+        this.conductores = data.map(u => ({
+          id_usuario: u.id_usuario || u.id,
+          id_vehiculo: u.vehiculos && u.vehiculos.length > 0 ? (u.vehiculos[0].id_vehiculo || u.vehiculos[0].id) : undefined,
+          cedula: u.cedula || 'N/A',
+          nombre: (u.nombre_completo || u.nombre || 'Sin Nombre').toUpperCase(),
+          correo: u.correo || '',
+          rol: u.rol || 'aprendiz',
+          tipoVehiculo: u.vehiculos && u.vehiculos.length > 0 ? u.vehiculos[0].tipoVehiculo : 'auto',
+          placa: u.vehiculos && u.vehiculos.length > 0 ? u.vehiculos[0].placa : 'N/A',
+          biometriaCapturada: u.estado === 'activo'
+        }));
+        this.cargandoSolicitudes = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error al cargar conductores:', err);
+        this.cargandoSolicitudes = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
 
   private conductorVacio(): Conductor {
-    return { 
-      cedula: '', 
-      nombre: '', rol: 'aprendiz', 
-      correo: '' ,
-      tipoVehiculo: 'auto', 
-      placa: '', 
-      biometriaCapturada: false };
+    return {
+      cedula: '',
+      nombre: '',
+      rol: 'aprendiz',
+      correo: '',
+      tipoVehiculo: 'auto',
+      placa: '',
+      biometriaCapturada: false
+    };
   }
 
   abrirModalConductor(): void {
@@ -214,7 +207,7 @@ export class AdminDashboard implements OnInit {
 
   editarConductor(c: Conductor): void {
     this.conductorEnEdicion = c;
-    this.formConductor = { ...c }; 
+    this.formConductor = { ...c };
     this.mostrarModalConductor = true;
     this.cdr.detectChanges();
   }
@@ -228,137 +221,194 @@ export class AdminDashboard implements OnInit {
   }
 
   guardarConductor(): void {
-  if (!this.formConductor.nombre || !this.formConductor.nombre.trim()) {
-    alert('Por favor, ingresa el nombre completo.');
-    return;
-  }
+    if (!this.formConductor.nombre || !this.formConductor.nombre.trim()) {
+      alert('Por favor, ingresa el nombre completo.');
+      return;
+    }
 
-  if (this.conductorEnEdicion && this.conductorEnEdicion.id_usuario) {
-    this.cargandoSolicitudes = true;
-    const usuarioPayload = {
-      nombre_completo: this.formConductor.nombre.trim(),
-      rol: this.formConductor.rol,
-      correo: this.formConductor.correo
-    };
-    const vehiculoPayload = {
-      placa: this.formConductor.placa.trim(),
-      tipoVehiculo: this.formConductor.tipoVehiculo
-    };
-    this.authService.actualizarUsuarioAdmin(this.conductorEnEdicion.id_usuario, usuarioPayload).subscribe({
-      next: () => {
-        console.log('Usuario actualizado con éxito.');
-        if (this.conductorEnEdicion?.id_vehiculo) {
-          this.authService.actualizarVehiculoAdmin(this.conductorEnEdicion.id_vehiculo, vehiculoPayload).subscribe({
-            next: () => {
-              alert('¡Conductor y Vehículo actualizados en Supabase correctamente!');
-              this.finalizarGuardado();
-            },
-            error: (vErr) => {
-              console.error('Error al actualizar el vehículo:', vErr);
-              alert('Se actualizó el usuario, pero falló la actualización del vehículo.');
-              this.finalizarGuardado();
-            }
-          });
-        } else {
-          alert('¡Usuario actualizado con éxito! (No se encontró un vehículo asociado).');
-          this.finalizarGuardado();
+    if (this.conductorEnEdicion && this.conductorEnEdicion.id_usuario) {
+      this.cargandoSolicitudes = true;
+      const usuarioPayload = {
+        nombre_completo: this.formConductor.nombre.trim(),
+        rol: this.formConductor.rol,
+        correo: this.formConductor.correo
+      };
+      const vehiculoPayload = {
+        placa: this.formConductor.placa.trim(),
+        tipoVehiculo: this.formConductor.tipoVehiculo
+      };
+      this.authService.actualizarUsuarioAdmin(this.conductorEnEdicion.id_usuario, usuarioPayload).subscribe({
+        next: () => {
+          if (this.conductorEnEdicion?.id_vehiculo) {
+            this.authService.actualizarVehiculoAdmin(this.conductorEnEdicion.id_vehiculo, vehiculoPayload).subscribe({
+              next: () => {
+                alert('¡Conductor y Vehículo actualizados correctamente!');
+                this.finalizarGuardado();
+              },
+              error: (vErr) => {
+                console.error('Error al actualizar el vehículo:', vErr);
+                alert('Se actualizó el usuario, pero falló la actualización del vehículo.');
+                this.finalizarGuardado();
+              }
+            });
+          } else {
+            alert('¡Usuario actualizado con éxito!');
+            this.finalizarGuardado();
+          }
+        },
+        error: (err) => {
+          console.error('Error al actualizar usuario:', err);
+          alert('Error al actualizar el usuario.');
+          this.cargandoSolicitudes = false;
+          this.cdr.detectChanges();
         }
-      },
-      error: (err) => {
-        console.error('Error detallado de Django al actualizar usuario:', err);
-        alert('Error al actualizar el usuario: ' + (err.error ? JSON.stringify(err.error) : 'Revisa las validaciones.'));
-        this.cargandoSolicitudes = false;
-        this.cdr.detectChanges();
-      }
-    });
+      });
+    }
   }
-}
 
-private finalizarGuardado(): void {
-  this.cerrarModalConductor();
-  this.cargarConductores();
-}
-  
+  private finalizarGuardado(): void {
+    this.cerrarModalConductor();
+    this.cargarConductores();
+  }
 
   eliminarConductor(c: Conductor): void {
-  console.log('Conductor a eliminar:', c);
+    if (!c.id_usuario) {
+      alert(`Error: El usuario ${c.nombre} no tiene un ID asignado.`);
+      return;
+    }
 
-  if (!c.id_usuario) {
-    alert(`Error: El usuario ${c.nombre} no tiene un ID de base de datos asignado en el Frontend.`);
-    return;
+    if (confirm(`¿Estás seguro de eliminar permanentemente a ${c.nombre}?`)) {
+      this.cargandoSolicitudes = true;
+      this.authService.eliminarUsuarioAdmin(c.id_usuario).subscribe({
+        next: () => {
+          alert('Usuario eliminado correctamente.');
+          this.cargarConductores();
+          this.cargarKpis();
+        },
+        error: (err) => {
+          console.error('Error al eliminar:', err);
+          alert('Hubo un error en el servidor al intentar eliminar el registro.');
+          this.cargandoSolicitudes = false;
+          this.cdr.detectChanges();
+        }
+      });
+    }
   }
-
-  if (confirm(`¿Estás seguro de eliminar permanentemente a ${c.nombre} de la base de datos?`)) {
-    this.cargandoSolicitudes = true;
-
-    this.authService.eliminarUsuarioAdmin(c.id_usuario).subscribe({
-      next: () => {
-        alert('Usuario eliminado correctamente de Supabase.');
-        this.cargarConductores();
-        this.cargarKpis();
-      },
-      error: (err) => {
-        console.error('Error al eliminar:', err);
-        alert(err.error?.error || 'Hubo un error en el servidor al intentar eliminar el registro.');
-        this.cargandoSolicitudes = false;
-        this.cdr.detectChanges();
-      }
-    });
-  }
-}
 
   private cargarHistorial(): void {
-    this.cargandoHistorial = true;
-    
-    this.authService.getHistorialGeneral().subscribe({
-      next: (data: any[]) => {
-        this.historial = data.map(reg => {
-          const conductorReal = reg.vehiculo?.propietario?.nombre_completo 
-                            || reg.nombre_conductor_manual 
-                            || 'CONSTRUCTOR / VISITANTE';
-          const placaReal = reg.vehiculo?.placa 
-                        || reg.placa_manual 
-                        || 'N/A';
+  this.cargandoHistorial = true;
 
-          let fechaHoraFormateada = 'Fecha Desconocida';
-          if (reg.fecha_hora) {
-            const dateObj = new Date(reg.fecha_hora);
-            fechaHoraFormateada = `${dateObj.toLocaleDateString()} ${dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-          }
-          const metodo = reg.vehiculo ? 'Automático' : 'Manual';
+  this.authService.getHistorialGeneral().subscribe({
+    next: (data: any[]) => {
+      console.log('Historial directo del Backend:', data);
 
-          return {
-            fechaHora: fechaHoraFormateada,
-            placa: placaReal,
-            conductor: conductorReal,
-            metodoValidacion: reg.tipo_movimiento || metodo,
-            sincronizado: true
-          };
-        });
+      this.historial = data.map(reg => {
+        
+        const usuarioReal =
+          reg.usuario?.nombre_completo ||
+          reg.usuario?.nombre ||
+          reg.nombre_completo ||
+          reg.nombre_conductor ||
+          reg.vehiculo?.propietario?.nombre_completo ||
+          reg.vehiculo?.propietario?.nombre ||
+          reg.nombre_conductor_manual ||
+          'Sin Especificar';
 
-        this.cargandoHistorial = false;
-        this.cdr.detectChanges();
-      },
-      error: (err) => {
-        console.error('Error cargando historial de la base de datos:', err);
-        alert('Hubo un problema de sincronización con Supabase.');
-        this.cargandoHistorial = false;
-        this.cdr.detectChanges();
-      }
-    });
-  }
+        const tipoVehiculoReal =
+          reg.vehiculo?.tipoVehiculo ||
+          reg.vehiculo?.tipo_vehiculo ||
+          reg.tipo_vehiculo ||
+          reg.vehiculo ||
+          'Peatonal';
+
+        let placaCapturada =
+          reg.placa ||
+          reg.vehiculo?.placa ||
+          reg.placa_vehiculo ||
+          reg.placa_texto ||
+          reg.placa_detectada ||
+          reg.placa_manual ||
+          reg.detalles?.placa ||
+          reg.vehiculo_placa;
+
+        if (!placaCapturada && typeof reg.vehiculo === 'string' && reg.vehiculo !== 'BICICLETA' && reg.vehiculo !== 'PATIN') {
+          placaCapturada = reg.vehiculo;
+        }
+
+        const tipoVehiculoNormalizado = String(tipoVehiculoReal).toUpperCase();
+        const placaLimpia = placaCapturada ? String(placaCapturada).trim().toUpperCase() : '';
+
+        const esVehiculoSinPlaca =
+          ['BICICLETA', 'PATIN', 'PATINETA', 'ELECTRICO', 'PEATONAL'].some(tipo => tipoVehiculoNormalizado.includes(tipo)) ||
+          ['S_PLACA', 'SIN_PLACA', 'SIN PLACA', 'UNDEFINED', 'NULL', ''].includes(placaLimpia);
+
+        const placaReal = esVehiculoSinPlaca ? 'N/A' : placaLimpia;
+
+        let fechaHoraFormateada = 'Fecha Desconocida';
+        if (reg.fecha_hora) {
+          const dateObj = new Date(reg.fecha_hora);
+          fechaHoraFormateada = `${dateObj.toLocaleDateString()} ${dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+        }
+
+        let metodo = 'Biometría Facial';
+        if (reg.metodo_validacion) {
+          metodo = reg.metodo_validacion;
+        } else if (reg.tipo_movimiento?.toUpperCase().includes('MANUAL')) {
+          metodo = 'Manual (Guarda)';
+        } else if (reg.vehiculo) {
+          metodo = 'OCR Placa';
+        }
+
+        const tipoMovString = (
+          reg.evento || 
+          reg.tipo_movimiento || 
+          reg.tipo_registro || 
+          reg.tipo || 
+          reg.sentido || 
+          ''
+        ).toString().toUpperCase();
+
+        let eventoReal = 'ENTRADA';
+
+        if (tipoMovString.includes('SALIDA') || tipoMovString.includes('EGRESO') || tipoMovString.includes('EXIT') || tipoMovString.includes('OUT')) {
+          eventoReal = 'SALIDA';
+        } else if (tipoMovString.includes('ENTRADA') || tipoMovString.includes('INGRESO') || tipoMovString.includes('ENTRY') || tipoMovString.includes('IN')) {
+          eventoReal = 'ENTRADA';
+        }
+
+        return {
+          fechaHora: fechaHoraFormateada,
+          usuario: usuarioReal,
+          tipoVehiculo: tipoVehiculoReal,
+          placa: placaReal,
+          metodoValidacion: metodo,
+          evento: eventoReal,
+          sincronizado: reg.sincronizado !== undefined ? reg.sincronizado : true
+        };
+      });
+
+      this.cargandoHistorial = false;
+      this.cdr.detectChanges();
+    },
+    error: (err) => {
+      console.error('Error cargando historial:', err);
+      this.cargandoHistorial = false;
+      this.cdr.detectChanges();
+    }
+  });
+}
 
   formatearPlaca(): void {
-  if (!this.formConductor.placa) return;
-  let limpia = this.formConductor.placa.replace(/[\s-]/g, '').toUpperCase();
-  if (limpia.length > 3) {
-    const letras = limpia.substring(0, 3);
-    const numeros = limpia.substring(3, 7);
-    this.formConductor.placa = `${letras}-${numeros}`;
-  } else {
-    this.formConductor.placa = limpia;
+    if (!this.formConductor.placa) return;
+    let limpia = this.formConductor.placa.replace(/[\s-]/g, '').toUpperCase();
+    if (limpia.length > 3) {
+      const letras = limpia.substring(0, 3);
+      const numeros = limpia.substring(3, 7);
+      this.formConductor.placa = `${letras}-${numeros}`;
+    } else {
+      this.formConductor.placa = limpia;
+    }
   }
-}
 
   exportar(formato: 'pdf' | 'excel'): void {
     console.log('Exportando historial en formato', formato, this.filtros);
