@@ -46,20 +46,56 @@
             </div>
         </div>
 
+        
         <div class="od-panel">
             <div class="corner c-tl"></div>
             <div class="corner c-tr"></div>
             <div class="corner c-bl"></div>
             <div class="corner c-br"></div>
 
-            <div class="panel-header">visor de cámara perimetral en vivo</div>
+            <div class="panel-header">visor de cámara perimetral y validación en vivo</div>
 
-            <div class="camera-box">
+            <div class="camera-box position-relative text-center overflow-hidden" style="min-height: 280px;">
                 <div class="camera-reticle"></div>
-                <i class="ti ti-video camera-icon" aria-hidden="true"></i>
-                <div class="camera-caption">visor de cámara perimetral en vivo</div>
-                <div class="camera-focus">enfoque: entrada vehicular principal</div>
+
+                <ng-container *ngIf="!modoEscaneoBiometrico && !evaluandoBiometria">
+                    <i class="ti ti-video camera-icon" aria-hidden="true"></i>
+                    <div class="camera-caption">visor de cámara perimetral en vivo</div>
+                    <div class="camera-focus">enfoque: entrada vehicular principal</div>
+                </ng-container>
+
+                <div *ngIf="modoEscaneoBiometrico" class="biometric-camera-live py-2">
+                    <app-biometria-camara (alCapturarBiometria)="onRostroEscaneado($any($event))"></app-biometria-camara>
+                </div>
+
+                <div *ngIf="evaluandoBiometria" class="py-5">
+                    <div class="spinner-border text-info" role="status"></div>
+                    <div class="camera-caption mt-3" style="color: var(--od-accent, #00ffcc);">[ PROCESANDO VECTOR BIOMÉTRICO Y REGISTROS... ]</div>
+                </div>
             </div>
+
+            <div class="input-scanner-controls my-3 d-flex gap-2 align-items-center">
+                <input 
+                    type="text" 
+                    class="od-input text-uppercase flex-grow-1" 
+                    [(ngModel)]="placaEscaneoInput" 
+                    placeholder="Placa opcional (ej. ABC-123 o vacío para peatonal)" 
+                />
+
+                <select class="od-input w-auto" [(ngModel)]="tipoMovimientoCamara" style="background: #0f172a; color: #fff;">
+                    <option value="ENTRADA">ENTRADA</option>
+                    <option value="SALIDA">SALIDA</option>
+                </select>
+
+                <button *ngIf="!modoEscaneoBiometrico" class="od-btn primary" (click)="iniciarEscaneoPorteria()">
+                    <i class="ti ti-camera"></i> Escanear Rostro
+                </button>
+
+                <button *ngIf="modoEscaneoBiometrico" class="od-btn danger" (click)="cancelarEscaneoPorteria()">
+                    Cancelar
+                </button>
+            </div>
+
 
             <div class="alert-banner" [ngClass]="estadoAcceso">
                 <i class="ti" [ngClass]="{
@@ -67,13 +103,12 @@
                     'ti-shield-check': estadoAcceso === 'ok',
                     'ti-scan': estadoAcceso === 'idle'
                 }" aria-hidden="true"></i>
-                <span *ngIf="estadoAcceso === 'idle'">esperando vehículo en talanquera...</span>
-                <span *ngIf="estadoAcceso === 'ok'">acceso autorizado — {{ ultimoResultado?.placa }} ({{
-                    ultimoResultado?.conductor }})</span>
-                <span *ngIf="estadoAcceso === 'deny'">alerta ia: vehículo no identificado / acceso denegado</span>
+                <span *ngIf="estadoAcceso === 'idle'">esperando vehículo o peatón en portería...</span>
+                <span *ngIf="estadoAcceso === 'ok'">acceso autorizado — {{ ultimoResultado?.placa }} ({{ ultimoResultado?.conductor }})</span>
+                <span *ngIf="estadoAcceso === 'deny'">alerta ia: {{ ultimoResultado?.conductor || 'vehículo no identificado / acceso denegado' }}</span>
             </div>
 
-            <div class="action-row">
+            <div class="action-row mt-3">
                 <button class="od-btn danger" (click)="abrirModalManual()">
                     <i class="ti ti-lock-open" aria-hidden="true"></i>
                     apertura manual forzada
@@ -110,12 +145,12 @@
                             <td>
                                 <span class="veh-chip">
                                     <i class="ti" [ngClass]="{
-                            'ti-car': ingreso.tipo_vehiculo === 'CARRO',
-                            'ti-motorbike': ingreso.tipo_vehiculo === 'MOTO',
-                            'ti-bike': ingreso.tipo_vehiculo === 'BICICLETA',
-                            'ti-scooter': ingreso.tipo_vehiculo === 'PATIN',
-                            'ti-bolt': ingreso.tipo_vehiculo === 'ELECTRICO'
-                        }" aria-hidden="true"></i>
+                                        'ti-car': ingreso.tipo_vehiculo === 'CARRO',
+                                        'ti-motorbike': ingreso.tipo_vehiculo === 'MOTO',
+                                        'ti-bike': ingreso.tipo_vehiculo === 'BICICLETA',
+                                        'ti-scooter': ingreso.tipo_vehiculo === 'PATIN',
+                                        'ti-bolt': ingreso.tipo_vehiculo === 'ELECTRICO'
+                                    }" aria-hidden="true"></i>
                                     {{ ingreso.tipo_vehiculo }}
                                 </span>
                             </td>
@@ -126,10 +161,10 @@
 
                             <td>
                                 <span class="od-chip" [ngClass]="{
-                        'residente-tag': ingreso.rol_acceso === 'RESIDENTE',
-                        'visitante-tag': ingreso.rol_acceso === 'VISITANTE',
-                        'apertura-tag': ingreso.rol_acceso === 'APERTURA_M'
-                    }" style="font-size: 0.75rem; padding: 4px 8px; border-radius: 4px; font-weight: bold; text-transform: uppercase; display: inline-block;">
+                                    'residente-tag': ingreso.rol_acceso === 'RESIDENTE' || ingreso.rol_acceso === 'APRENDIZ',
+                                    'visitante-tag': ingreso.rol_acceso === 'VISITANTE',
+                                    'apertura-tag': ingreso.rol_acceso === 'APERTURA_M' || ingreso.rol_acceso === 'DENEGADO'
+                                }" style="font-size: 0.75rem; padding: 4px 8px; border-radius: 4px; font-weight: bold; text-transform: uppercase; display: inline-block;">
                                     {{ ingreso.rol_acceso === 'APERTURA_M' ? 'Manual Forzado' : ingreso.rol_acceso }}
                                 </span>
                             </td>
@@ -137,8 +172,7 @@
                             <td>{{ ingreso.fecha_hora | date:'dd/MM/yyyy h:mm a' }}</td>
 
                             <td>
-                                <span class="mov-chip"
-                                    [ngClass]="{'entrada': ingreso.tipo_movimiento === 'ENTRADA', 'salida': ingreso.tipo_movimiento === 'SALIDA'}">
+                                <span class="mov-chip" [ngClass]="{'entrada': ingreso.tipo_movimiento === 'ENTRADA', 'salida': ingreso.tipo_movimiento === 'SALIDA'}">
                                     {{ ingreso.tipo_movimiento }}
                                 </span>
                             </td>
@@ -150,6 +184,7 @@
 
     </div>
 
+
     <div class="modal-overlay" *ngIf="mostrarModalManual" (click)="cerrarModales()">
         <div class="modal-box" (click)="$event.stopPropagation()">
             <div class="modal-title">apertura manual forzada</div>
@@ -158,8 +193,7 @@
             <input id="motivo" class="od-input" type="text" [(ngModel)]="aperturaManual.motivo" />
 
             <label class="field-label" for="tipoVehiculoManual">tipo de vehículo</label>
-            <select id="tipoVehiculoManual" class="od-input" [(ngModel)]="aperturaManual.tipoVehiculo"
-                style="color: #fff; background: #0f172a;">
+            <select id="tipoVehiculoManual" class="od-input" [(ngModel)]="aperturaManual.tipoVehiculo" style="color: #fff; background: #0f172a;">
                 <option value="carro">Automóvil</option>
                 <option value="moto">Motocicleta</option>
                 <option value="electrico">Eléctrico</option>
@@ -167,15 +201,12 @@
                 <option value="bicicleta">Bicicleta</option>
             </select>
 
-            <ng-container
-                *ngIf="aperturaManual.tipoVehiculo !== 'bicicleta' && aperturaManual.tipoVehiculo !== 'patin' && aperturaManual.tipoVehiculo !== 'electrico'">
+            <ng-container *ngIf="aperturaManual.tipoVehiculo !== 'bicicleta' && aperturaManual.tipoVehiculo !== 'patin' && aperturaManual.tipoVehiculo !== 'electrico'">
                 <label class="field-label" for="placaManual">Placa</label>
-                <input id="placaManual" class="od-input" type="text" [(ngModel)]="aperturaManual.placa"
-                    [placeholder]="aperturaManual.tipoVehiculo === 'moto' ? 'ABC-12D' : 'ABC-123'" />
+                <input id="placaManual" class="od-input" type="text" [(ngModel)]="aperturaManual.placa" [placeholder]="aperturaManual.tipoVehiculo === 'moto' ? 'ABC-12D' : 'ABC-123'" />
             </ng-container>
 
-            <div *ngIf="aperturaManual.tipoVehiculo === 'bicicleta' || aperturaManual.tipoVehiculo === 'patin' || aperturaManual.tipoVehiculo === 'electrico'"
-                style="margin-top: 15px; color: var(--od-accent, #00ffcc); font-size: 0.85rem; font-style: italic;">
+            <div *ngIf="aperturaManual.tipoVehiculo === 'bicicleta' || aperturaManual.tipoVehiculo === 'patin' || aperturaManual.tipoVehiculo === 'electrico'" style="margin-top: 15px; color: var(--od-accent, #00ffcc); font-size: 0.85rem; font-style: italic;">
                 * Este tipo de vehículo no requiere registro de placa reglamentaria.
             </div>
 
@@ -191,12 +222,10 @@
             <div class="modal-title">registro rápido de visitante</div>
 
             <label class="field-label" for="nombreVisitante">nombre completo</label>
-            <input id="nombreVisitante" class="od-input" type="text" [(ngModel)]="visitante.nombre"
-                placeholder="nombre del visitante" />
+            <input id="nombreVisitante" class="od-input" type="text" [(ngModel)]="visitante.nombre" placeholder="nombre del visitante" />
 
             <label class="field-label" for="tipoVehiculo">tipo de vehículo</label>
-            <select id="tipoVehiculo" class="od-input" [(ngModel)]="visitante.tipoVehiculo"
-                style="color: #fff; background: #0f172a;">
+            <select id="tipoVehiculo" class="od-input" [(ngModel)]="visitante.tipoVehiculo" style="color: #fff; background: #0f172a;">
                 <option value="carro">Automóvil</option>
                 <option value="moto">Motocicleta</option>
                 <option value="electrico">Eléctrico</option>
@@ -204,15 +233,12 @@
                 <option value="bicicleta">Bicicleta</option>
             </select>
 
-            <ng-container
-                *ngIf="visitante.tipoVehiculo !== 'bicicleta' && visitante.tipoVehiculo !== 'patin' && visitante.tipoVehiculo !== 'electrico'">
+            <ng-container *ngIf="visitante.tipoVehiculo !== 'bicicleta' && visitante.tipoVehiculo !== 'patin' && visitante.tipoVehiculo !== 'electrico'">
                 <label class="field-label" for="placaVisitante">placa</label>
-                <input id="placaVisitante" class="od-input" type="text" [(ngModel)]="visitante.placa"
-                    [placeholder]="visitante.tipoVehiculo === 'moto' ? 'ABC-12D' : 'ABC-123'" />
+                <input id="placaVisitante" class="od-input" type="text" [(ngModel)]="visitante.placa" [placeholder]="visitante.tipoVehiculo === 'moto' ? 'ABC-12D' : 'ABC-123'" />
             </ng-container>
 
-            <div *ngIf="visitante.tipoVehiculo === 'bicicleta' || visitante.tipoVehiculo === 'patin' || visitante.tipoVehiculo === 'electrico'"
-                style="margin-top: 15px; color: var(--od-accent, #00ffcc); font-size: 0.85rem; font-style: italic;">
+            <div *ngIf="visitante.tipoVehiculo === 'bicicleta' || visitante.tipoVehiculo === 'patin' || visitante.tipoVehiculo === 'electrico'" style="margin-top: 15px; color: var(--od-accent, #00ffcc); font-size: 0.85rem; font-style: italic;">
                 * Este tipo de vehículo no requiere registro de placa reglamentaria.
             </div>
 
@@ -228,8 +254,7 @@
             <div class="modal-title">Generar Informe de Fin de Turno</div>
 
             <div class="modal-info">
-                Las métricas de entradas, salidas y vehículos retenidos se calcularán de forma automática con la
-                actividad del software desde tu ingreso.
+                Las métricas de entradas, salidas y vehículos retenidos se calcularán de forma automática con la actividad del software desde tu ingreso.
             </div>
 
             <div class="modal-checkbox-row">
@@ -238,13 +263,11 @@
             </div>
 
             <label class="field-label" for="novedadesTurno">Bitácora / Observaciones de la Jornada</label>
-            <textarea id="novedadesTurno" class="od-input" [(ngModel)]="novedadesTexto" rows="4"
-                placeholder="Escribe incidentes con la talanquera, fallas en sensores IoT, vehículos pernoctando u observaciones para el siguiente turno..."></textarea>
+            <textarea id="novedadesTurno" class="od-input" [(ngModel)]="novedadesTexto" rows="4" placeholder="Escribe incidentes con la talanquera, fallas en sensores IoT, vehículos pernoctando u observaciones para el siguiente turno..."></textarea>
 
             <div class="modal-actions">
                 <button class="od-btn" (click)="cerrarModales()">Volver al Panel</button>
-                <button class="od-btn success" (click)="confirmarCierreTurno()"
-                    [disabled]="!sinNovedadCheck && !novedadesTexto.trim()">
+                <button class="od-btn success" (click)="confirmarCierreTurno()" [disabled]="!sinNovedadCheck && !novedadesTexto.trim()">
                     Firmar y Cerrar Turno
                 </button>
             </div>
@@ -254,26 +277,20 @@
     <div *ngIf="estadoAcceso === 'ok' && ultimoResultado" class="alerta-pantalla-contingencia contingencia-ok">
         <h1>ACCESO AUTORIZADO</h1>
         <div style="margin-top: 1.5rem;">
-            <p>Vehículo Placa: <strong
-                    style="font-size: 3rem; background: rgba(0,0,0,0.2); padding: 0.2rem 1rem; border-radius: 8px;">{{
-                    ultimoResultado.placa }}</strong></p>
+            <p>Vehículo Placa: <strong style="font-size: 3rem; background: rgba(0,0,0,0.2); padding: 0.2rem 1rem; border-radius: 8px;">{{ ultimoResultado.placa }}</strong></p>
             <p style="margin-top: 1rem;">Conductor / Motivo:</p>
             <p><strong>{{ ultimoResultado.conductor }}</strong></p>
         </div>
-        <p style="font-size: 1.2rem; margin-top: 3rem; opacity: 0.8; font-style: italic;">Retornando al panel en unos
-            segundos...</p>
+        <p style="font-size: 1.2rem; margin-top: 3rem; opacity: 0.8; font-style: italic;">Retornando al panel en unos segundos...</p>
     </div>
 
     <div *ngIf="estadoAcceso === 'deny' && ultimoResultado" class="alerta-pantalla-contingencia contingencia-deny">
         <h1>ACCESO DENEGADO / CANCELADO</h1>
         <div style="margin-top: 1.5rem;">
-            <p>Vehículo Placa: <strong
-                    style="font-size: 3rem; background: rgba(0,0,0,0.2); padding: 0.2rem 1rem; border-radius: 8px;">{{
-                    ultimoResultado.placa }}</strong></p>
+            <p>Vehículo Placa: <strong style="font-size: 3rem; background: rgba(0,0,0,0.2); padding: 0.2rem 1rem; border-radius: 8px;">{{ ultimoResultado.placa }}</strong></p>
             <p style="margin-top: 1rem; color: #ffcccc;">El ingreso no fue aprobado o no se encuentra en el sistema.</p>
         </div>
-        <p style="font-size: 1.2rem; margin-top: 3rem; opacity: 0.8; font-style: italic;">Retornando al panel en unos
-            segundos...</p>
+        <p style="font-size: 1.2rem; margin-top: 3rem; opacity: 0.8; font-style: italic;">Retornando al panel en unos segundos...</p>
     </div>
 
 </div>

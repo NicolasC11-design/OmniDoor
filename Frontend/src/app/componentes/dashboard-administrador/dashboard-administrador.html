@@ -244,19 +244,36 @@
           <table class="od-table">
             <thead>
               <tr>
-                <th>Fecha/Hora</th>
+                <th>Fecha / Hora</th>
+                <th>Usuario / Persona</th>
+                <th>Vehículo</th>
                 <th>Placa</th>
-                <th>Conductor</th>
-                <th>Validación</th>
+                <th>Método Validación</th>
+                <th>Evento</th>
                 <th>Sincronizado</th>
               </tr>
             </thead>
             <tbody>
               <tr *ngFor="let h of historial">
                 <td>{{ h.fechaHora }}</td>
-                <td>{{ h.placa }}</td>
-                <td>{{ h.conductor }}</td>
-                <td><span class="badge" [ngClass]="h.metodoValidacion">{{ h.metodoValidacion }}</span></td>
+                <td>{{ h.usuario }}</td>
+                <td>
+                  <span class="badge vehiculo">
+                    {{ h.tipoVehiculo | uppercase }}
+                  </span>
+                </td>
+                <td><span class="placa-text">{{ h.placa }}</span></td>
+                <td>
+                  <span class="badge" [ngClass]="h.metodoValidacion">
+                    {{ h.metodoValidacion }}
+                  </span>
+                </td>
+                <td>
+                  <span class="badge"
+                    [ngClass]="h.evento.toLowerCase() === 'entrada' ? 'residente-tag' : 'apertura-tag'">
+                    {{ h.evento }}
+                  </span>
+                </td>
                 <td>
                   <span class="badge" [ngClass]="h.sincronizado ? 'si' : 'no'">
                     {{ h.sincronizado ? '✓ sí' : '✕ no' }}
@@ -304,7 +321,8 @@
         </div>
         <div class="field-group">
           <label class="field-label" for="placaCond">número de placa</label>
-          <input id="placaCond" class="od-input" type="text" [(ngModel)]="formConductor.placa" (blur)="formatearPlaca()" maxlength="7" placeholder="XYZ-123" />
+          <input id="placaCond" class="od-input" type="text" [(ngModel)]="formConductor.placa" (blur)="formatearPlaca()"
+            maxlength="7" placeholder="XYZ-123" />
         </div>
       </div>
 
