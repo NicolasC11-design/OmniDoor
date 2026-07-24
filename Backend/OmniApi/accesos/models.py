@@ -1,4 +1,5 @@
 import uuid
+import json
 from django.db import models
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser, PermissionsMixin
 from django.utils import timezone
@@ -116,3 +117,26 @@ class InformeTurno(models.Model):
 
     def __str__(self):
         return f"Informe Turno - {self.vigilante.nombre_completo} - {self.fecha_hora_fin.strftime('%Y-%m-%d')}"
+
+class BiometriaUsuario(models.Model):
+    id_biometria = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    usuario = models.OneToOneField('Usuario', on_delete=models.CASCADE, related_name='biometria')
+    embedding_facial = models.TextField(help_text="Vector numérico biométrico codificado")
+    fecha_enrolamiento = models.DateTimeField(default=timezone.now)
+    activo = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = 'biometria_usuarios'
+
+    def set_descriptor(self, lista_floats):
+        """Convierte el arreglo [0.12, -0.45, ...] a un string JSON."""
+        self.embedding_facial = json.dumps(lista_floats)
+
+    def get_descriptor(self):
+        """Devuelve el arreglo numérico listo para comparar en Python o enviar al Frontend."""
+        if self.embedding_facial:
+            return json.loads(self.embedding_facial)
+        return []
+
+    def __str__(self):
+        return f"Biometría Facial - {self.usuario.nombre_completo}"

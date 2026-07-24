@@ -58,7 +58,12 @@
         <div class="divider-line"></div>
       </div>
 
-      <div class="face-scan-box" (click)="activateBiometric()" [class.scanning]="biometricActive">
+      <div 
+        *ngIf="!mostrarCamara"
+        class="face-scan-box" 
+        (click)="activateBiometric()" 
+        [class.scanning]="vectorBiometrico !== null"
+      >
         <div class="face-frame">
           <svg viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
             <rect x="4" y="4" width="12" height="2" fill="#1a8fff" opacity=".7"/>
@@ -79,6 +84,11 @@
           <div class="scan-bar"></div>
         </div>
         <div class="face-label">{{ biometricLabel }}</div>
+      </div>
+
+      <div *ngIf="mostrarCamara" class="my-3 text-center">
+        <app-biometria-camara (alCapturarBiometria)="onBiometriaCapturada($any($event))">
+        </app-biometria-camara>
       </div>
 
       <div class="alert-msg" *ngIf="errorMessage">

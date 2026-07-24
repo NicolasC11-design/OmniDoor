@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { VigilanteService } from '../../servicios/vigilante'; 
+import { BiometriaCamaraComponent } from '../biometria-camara/biometria-camara';
 
 export interface IngresoRegistro {
   medio: string;
@@ -16,7 +17,7 @@ export interface IngresoRegistro {
 @Component({
   selector: 'app-dashboard-vigilante',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, BiometriaCamaraComponent],
   templateUrl: './dashboard-vigilante.html',
   styleUrl: './dashboard-vigilante.css',
 })
@@ -32,6 +33,13 @@ export class DashboardVigilante implements OnInit {
   ultimosIngresos: any[] = [];
   mostrarModalManual = false;
   mostrarModalVisitante = false;
+  modoEscaneoBiometrico = false;
+  evaluandoBiometria = false;
+  placaEscaneoInput = '';
+  tipoMovimientoCamara: 'ENTRADA' | 'SALIDA' = 'ENTRADA';
+
+  guardandoVisitante = false;
+  guardandoManual = false;
 
   aperturaManual = {
     motivo: '',
@@ -71,7 +79,6 @@ export class DashboardVigilante implements OnInit {
   }
 
   private calcularMetricasBackend(): void {
-
     this.ingresosHoy = this.ultimosIngresos.filter(i => 
       i.tipo_movimiento === 'ENTRADA' || i.movimiento === 'ENTRADA'
     ).length;
@@ -128,112 +135,114 @@ export class DashboardVigilante implements OnInit {
     this.mostrarModalManual = false;
     this.mostrarModalVisitante = false;
     this.mostrarModalInforme = false;
-
     this.cdRef.detectChanges();
   }
 
   confirmarAperturaManual(): void {
-  if (!this.aperturaManual.motivo.trim()) {
-    alert('Por favor, ingresa el nombre del conductor o motivo en el campo correspondiente.');
-    return;
-  }
+    if (this.guardandoManual) return; 
 
-  const tipo = this.aperturaManual.tipoVehiculo;
-  const noRequierePlaca = tipo === 'bicicleta' || tipo === 'patin' || tipo === 'electrico';
-  
-  let placaValidacion = '';
-
-  if (noRequierePlaca) {
-    placaValidacion = 'S_PLACA'; 
-  } else {
-    if (!this.aperturaManual.placa || !this.aperturaManual.placa.trim()) {
-      alert('Por favor, ingresa la placa del vehículo para autorizar la apertura.');
+    if (!this.aperturaManual.motivo.trim()) {
+      alert('Por favor, ingresa el nombre del conductor o motivo en el campo correspondiente.');
       return;
     }
-    
-    placaValidacion = this.aperturaManual.placa.trim().toUpperCase();
-    if (tipo === 'moto') {
-      const regexMoto = /^[A-Z]{3}-\d{2}[A-Z]$/;
-      if (!regexMoto.test(placaValidacion)) {
-        alert('Error de Seguridad: El formato de placa no corresponde a una Motocicleta. Debe incluir guion y terminar en letra (ej. ABC-12D).');
+
+    const tipo = this.aperturaManual.tipoVehiculo;
+    const noRequierePlaca = tipo === 'bicicleta' || tipo === 'patin' || tipo === 'electrico';
+    let placaValidacion = '';
+
+    if (noRequierePlaca) {
+      placaValidacion = 'S_PLACA'; 
+    } else {
+      if (!this.aperturaManual.placa || !this.aperturaManual.placa.trim()) {
+        alert('Por favor, ingresa la placa del vehículo para autorizar la apertura.');
         return;
       }
-    } else if (tipo === 'carro') {
-      const regexCarro = /^[A-Z]{3}-\d{3}$/;
-      if (!regexCarro.test(placaValidacion)) {
-        alert('Error de Seguridad: El formato de placa no corresponde a un Automóvil. Debe incluir guion y terminar en 3 números (ej. ABC-123).');
-        return;
+      
+      placaValidacion = this.aperturaManual.placa.trim().toUpperCase();
+      if (tipo === 'moto') {
+        const regexMoto = /^[A-Z]{3}-\d{2}[A-Z]$/;
+        if (!regexMoto.test(placaValidacion)) {
+          alert('Error de Seguridad: El formato de placa no corresponde a una Motocicleta. Debe incluir guion y terminar en letra (ej. ABC-12D).');
+          return;
+        }
+      } else if (tipo === 'carro') {
+        const regexCarro = /^[A-Z]{3}-\d{3}$/;
+        if (!regexCarro.test(placaValidacion)) {
+          alert('Error de Seguridad: El formato de placa no corresponde a un Automóvil. Debe incluir guion y terminar en 3 números (ej. ABC-123).');
+          return;
+        }
       }
     }
-  }
 
-  const placaFinalDB = placaValidacion.replace('-', '');
+    this.guardandoManual = true; 
+    const placaFinalDB = placaValidacion.replace('-', '');
 
-  const payloadManual = { 
-    tipo_movimiento: 'APERTURA_MANUAL',
-    vehiculo: null,
-    placa_vehiculo_input: placaFinalDB,
-    tipo_vehiculo_input: tipo.toUpperCase(),
-    nombre_conductor_input: this.aperturaManual.motivo.trim(),
-    motivo_input: `Apertura Manual: ${this.aperturaManual.motivo}`
-  };
+    const payloadManual = { 
+      tipo_movimiento: 'APERTURA_MANUAL',
+      vehiculo: null,
+      placa_vehiculo_input: placaFinalDB,
+      tipo_vehiculo_input: tipo.toUpperCase(),
+      nombre_conductor_input: this.aperturaManual.motivo.trim(),
+      motivo_input: `Apertura Manual: ${this.aperturaManual.motivo}`
+    };
 
-  this.vigilanteService.registrarAccesoManual(payloadManual).subscribe({
-    next: (res: any) => {
-      this.estadoAcceso = 'ok';
-      this.ultimoResultado = { 
-        placa: placaValidacion, 
-        conductor: this.aperturaManual.motivo.toUpperCase()
-      };
+    this.vigilanteService.registrarAccesoManual(payloadManual).subscribe({
+      next: (res: any) => {
+        this.guardandoManual = false;
+        this.estadoAcceso = 'ok';
+        this.ultimoResultado = { 
+          placa: placaValidacion, 
+          conductor: this.aperturaManual.motivo.toUpperCase()
+        };
 
-      this.cerrarModales();
-      this.aperturaManual = { motivo: '', tipoVehiculo: 'carro', placa: '' };
-      this.cargarDatosDashboard();
-      this.cdRef.detectChanges();
+        this.cerrarModales();
+        this.aperturaManual = { motivo: '', tipoVehiculo: 'carro', placa: '' };
+        this.cargarDatosDashboard();
 
-      setTimeout(() => {
-        this.estadoAcceso = 'idle';
-        this.ultimoResultado = null;
-        this.cdRef.detectChanges();
-      }, 6000);
-    },
-    error: (err) => {
-      console.error('Error al registrar apertura manual:', err);
-      this.cerrarModales();
+        setTimeout(() => {
+          this.estadoAcceso = 'idle';
+          this.ultimoResultado = null;
+          this.cdRef.detectChanges();
+        }, 6000);
+      },
+      error: (err) => {
+        this.guardandoManual = false;
+        console.error('Error al registrar apertura manual:', err);
+        this.cerrarModales();
 
-      if (err.status === 400) {
-        let mensajeError = 'La placa ingresada no se encuentra registrada en el sistema.';
-        if (err.error) {
-          if (typeof err.error === 'string') mensajeError = err.error;
-          else if (Array.isArray(err.error)) mensajeError = err.error[0];
-          else if (err.error.non_field_errors) mensajeError = err.error.non_field_errors[0];
-          else if (typeof err.error === 'object') {
-            const llaves = Object.keys(err.error);
-            mensajeError = err.error[llaves[0]];
+        if (err.status === 400) {
+          let mensajeError = 'La placa ingresada no se encuentra registrada en el sistema.';
+          if (err.error) {
+            if (typeof err.error === 'string') mensajeError = err.error;
+            else if (Array.isArray(err.error)) mensajeError = err.error[0];
+            else if (err.error.non_field_errors) mensajeError = err.error.non_field_errors[0];
+            else if (typeof err.error === 'object') {
+              const llaves = Object.keys(err.error);
+              mensajeError = err.error[llaves[0]];
+            }
+          }
+
+          const forzar = confirm(`ALERTA: ${mensajeError}\n\n¿Desea FORZAR LA APERTURA de emergencia bajo su responsabilidad?`);
+          if (forzar) {
+            this.procederConAperturaDeContingencia(placaValidacion, 'ok', ' (FORZADO CON ÉXITO)', payloadManual);
+          } else {
+            this.procederConAperturaDeContingencia(placaValidacion, 'deny', ' (ACCESO RECHAZADO/CANCELADO)', payloadManual, mensajeError);
+          }
+
+        } else {
+          const forzarOffline = confirm('FALLA DE RED: Servidor fuera de línea.\n\n¿Desea proceder con la APERTURA FÍSICA LOCAL de emergencia?');
+          if (forzarOffline) {
+            this.procederConAperturaDeContingencia(placaValidacion, 'ok', ' (FORZADO - OFFLINE)', payloadManual);
+          } else {
+            this.procederConAperturaDeContingencia(placaValidacion, 'deny', ' (RECHAZADO - OFFLINE)', payloadManual, 'Servidor Offline');
           }
         }
-
-        const forzar = confirm(`ALERTA: ${mensajeError}\n\n¿Desea FORZAR LA APERTURA de emergencia bajo su responsabilidad?`);
-        if (forzar) {
-          this.procederConAperturaDeContingencia(placaValidacion, 'ok', ' (FORZADO CON ÉXITO)', payloadManual);
-        } else {
-          this.procederConAperturaDeContingencia(placaValidacion, 'deny', ' (ACCESO RECHAZADO/CANCELADO)', payloadManual, mensajeError);
-        }
-
-      } else {
-        const forzarOffline = confirm('FALLA DE RED: Servidor fuera de línea.\n\n¿Desea proceder con la APERTURA FÍSICA LOCAL de emergencia?');
-        if (forzarOffline) {
-          this.procederConAperturaDeContingencia(placaValidacion, 'ok', ' (FORZADO - OFFLINE)', payloadManual);
-        } else {
-          this.procederConAperturaDeContingencia(placaValidacion, 'deny', ' (RECHAZADO - OFFLINE)', payloadManual, 'Servidor Offline');
-        }
+        this.cdRef.detectChanges();
       }
-      this.cdRef.detectChanges();
-    }
-  });
-}
+    });
+  }
 
-private procederConAperturaDeContingencia(
+  private procederConAperturaDeContingencia(
     placa: string, 
     estadoDestino: 'ok' | 'deny', 
     sufijoTexto: string, 
@@ -264,7 +273,6 @@ private procederConAperturaDeContingencia(
 
     this.aperturaManual = { motivo: '', tipoVehiculo: 'carro', placa: '' };
     this.cargarDatosDashboard();
-    this.cdRef.detectChanges();
 
     setTimeout(() => {
       this.estadoAcceso = 'idle';
@@ -273,8 +281,9 @@ private procederConAperturaDeContingencia(
     }, 6000);
   }
 
-
   confirmarVisitante(): void {
+    if (this.guardandoVisitante) return;
+
     if (!this.visitante.nombre.trim()) {
       alert('Por favor, ingresa el nombre del visitante.');
       return;
@@ -308,6 +317,7 @@ private procederConAperturaDeContingencia(
       }
     }
     
+    this.guardandoVisitante = true;
     const placaFinalDB = placaValidacion.replace('-', '');
 
     const payloadVisitante = { 
@@ -321,7 +331,7 @@ private procederConAperturaDeContingencia(
 
     this.vigilanteService.registrarAccesoManual(payloadVisitante).subscribe({
       next: (res: any) => {
-
+        this.guardandoVisitante = false; 
         this.estadoAcceso = 'ok';
         this.ultimoResultado = { 
           placa: placaValidacion, 
@@ -331,6 +341,7 @@ private procederConAperturaDeContingencia(
         this.finalizarFlujoVisitante();
       },
       error: (err) => {
+        this.guardandoVisitante = false;
         console.error('Error en validación de visitante:', err);
         this.estadoAcceso = 'deny';
         this.ultimoResultado = { 
@@ -354,7 +365,6 @@ private procederConAperturaDeContingencia(
     this.cerrarModales();
     this.visitante = { nombre: '', tipoVehiculo: 'carro', placa: '' };
     this.cargarDatosDashboard();
-    this.cdRef.detectChanges(); 
 
     setTimeout(() => {
       this.estadoAcceso = 'idle';
@@ -368,5 +378,73 @@ private procederConAperturaDeContingencia(
     localStorage.removeItem('refresh');
     localStorage.removeItem('usuario');
     this.router.navigate(['/login']);
+  }
+
+  iniciarEscaneoPorteria(): void {
+    this.estadoAcceso = 'idle';
+    this.ultimoResultado = null;
+    this.modoEscaneoBiometrico = true;
+  }
+
+  cancelarEscaneoPorteria(): void {
+    this.modoEscaneoBiometrico = false;
+    this.evaluandoBiometria = false;
+  }
+
+  onRostroEscaneado(vector: number[]): void {
+    this.modoEscaneoBiometrico = false;
+    this.evaluandoBiometria = true;
+    this.cdRef.detectChanges();
+
+    const payload = {
+      placa: this.placaEscaneoInput.trim().toUpperCase(),
+      vector_biometrico: vector,
+      tipo_movimiento: this.tipoMovimientoCamara
+    };
+
+    this.vigilanteService.validarAccesoPorteria(payload).subscribe({
+      next: (res: any) => {
+        this.evaluandoBiometria = false;
+        this.estadoAcceso = 'ok';
+        
+        this.ultimoResultado = {
+          placa: res.vehiculo || (this.placaEscaneoInput ? this.placaEscaneoInput.toUpperCase() : 'PEATONAL'),
+          conductor: res.usuario ? res.usuario.nombre.toUpperCase() : 'USUARIO AUTORIZADO'
+        };
+
+        this.placaEscaneoInput = '';
+        this.cargarDatosDashboard();
+
+        setTimeout(() => {
+          this.estadoAcceso = 'idle';
+          this.ultimoResultado = null;
+          this.cdRef.detectChanges();
+        }, 6000);
+      },
+      error: (err: any) => {
+        this.evaluandoBiometria = false;
+        this.estadoAcceso = 'deny';
+
+        let mensajeError = 'ACCESO DENEGADO / NO AUTORIZADO';
+        if (err.error) {
+          if (typeof err.error === 'string') mensajeError = err.error;
+          else if (err.error.mensaje) mensajeError = err.error.mensaje;
+          else if (err.error.detail) mensajeError = err.error.detail;
+        }
+
+        this.ultimoResultado = {
+          placa: this.placaEscaneoInput ? this.placaEscaneoInput.toUpperCase() : 'S_PLACA',
+          conductor: mensajeError.toUpperCase()
+        };
+
+        this.cargarDatosDashboard();
+
+        setTimeout(() => {
+          this.estadoAcceso = 'idle';
+          this.ultimoResultado = null;
+          this.cdRef.detectChanges();
+        }, 6000);
+      }
+    });
   }
 }
