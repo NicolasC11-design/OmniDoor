@@ -23,7 +23,11 @@ export class AuthService {
   }
 
   login(credentials: any): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/auth/login/`, credentials).pipe(
+    const endpoint = credentials.vector_biometrico 
+      ? `${this.apiUrl}/auth/login-biometrico/`
+      : `${this.apiUrl}/auth/login/`;
+
+    return this.http.post<any>(endpoint, credentials).pipe(
       tap(response => {
         if (response?.access) {
           localStorage.setItem('access', response.access);
@@ -34,12 +38,11 @@ export class AuthService {
     );
   }
 
-
   getUsuariosPendientes(): Observable<any[]> {
-  return this.http.get<any[]>(`${this.apiUrl}/admin/usuarios-pendientes/`, { 
-    headers: this.getHeaders() 
-  });
-}
+    return this.http.get<any[]>(`${this.apiUrl}/admin/usuarios-pendientes/`, { 
+      headers: this.getHeaders() 
+    });
+  }
 
   aprobarUsuario(idUsuario: string): Observable<any> {
     return this.http.patch<any>(`${this.apiUrl}/admin/aprobar-usuario/${idUsuario}/`, {}, { headers: this.getHeaders() });
@@ -62,8 +65,15 @@ export class AuthService {
   }
 
   actualizarUsuarioAdmin(idUsuario: string, datos: any): Observable<any> {
-  return this.http.put<any>(`${this.apiUrl}/usuarios/${idUsuario}/`, datos);
-}
+    return this.http.put<any>(`${this.apiUrl}/usuarios/${idUsuario}/`, datos);
+  }
+
+  actualizarVehiculoAdmin(idVehiculo: string, datos: any): Observable<any> {
+    return this.http.patch<any>(`${this.apiUrl}/vehiculos/${idVehiculo}/`, datos, { 
+      headers: this.getHeaders() 
+    });
+  }
+
   eliminarUsuarioAdmin(idUsuario: string): Observable<any> {
     return this.http.delete<any>(`${this.apiUrl}/usuarios/${idUsuario}/`);
   }

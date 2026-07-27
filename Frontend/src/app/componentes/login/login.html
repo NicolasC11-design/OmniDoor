@@ -17,6 +17,7 @@
     </div>
 
     <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+      
       <div class="field-group">
         <label class="field-label" for="email">identificación / correo</label>
         <input
@@ -58,7 +59,12 @@
         <div class="divider-line"></div>
       </div>
 
-      <div class="face-scan-box" (click)="activateBiometric()" [class.scanning]="biometricActive">
+      <div 
+        *ngIf="!mostrarCamara"
+        class="face-scan-box" 
+        (click)="activateBiometric()" 
+        [class.scanning]="vectorBiometrico !== null"
+      >
         <div class="face-frame">
           <svg viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
             <rect x="4" y="4" width="12" height="2" fill="#1a8fff" opacity=".7"/>
@@ -81,6 +87,14 @@
         <div class="face-label">{{ biometricLabel }}</div>
       </div>
 
+      <div *ngIf="mostrarCamara" class="my-3 text-center">
+        <app-biometria-camara (rostroCapturado)="onBiometriaCapturada($any($event))">
+        </app-biometria-camara>
+        <button type="button" class="od-btn mt-2 py-1 px-3 text-xs" (click)="mostrarCamara = false; biometricLabel = 'INICIAR ESCANEO'">
+          [ CANCELAR ESCANEO ]
+        </button>
+      </div>
+
       <div class="alert-msg" *ngIf="errorMessage">
         <i class="ti ti-alert-triangle" aria-hidden="true"></i>
         {{ errorMessage }}
@@ -90,6 +104,7 @@
         <span *ngIf="!loading">ingresar al sistema</span>
         <span *ngIf="loading">[ verificando identidad... ]</span>
       </button>
+
     </form>
 
     <div class="sys-msg">

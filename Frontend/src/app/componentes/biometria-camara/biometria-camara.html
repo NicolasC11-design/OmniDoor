@@ -1,0 +1,17 @@
+<div class="camera-container text-center">
+    <video #videoElement autoplay playsinline muted [hidden]="!camaraActiva" class="video-preview">
+    </video>
+
+    <!-- Canvas oculto para procesar el fotograma -->
+    <canvas #canvasElement style="display: none;"></canvas>
+
+    <div class="controls mt-3">
+        <button *ngIf="!camaraActiva" type="button" class="od-btn primary" (click)="iniciarCamara()">
+            📷 Encender Cámara
+        </button>
+
+        <button *ngIf="camaraActiva" type="button" class="od-btn success" (click)="capturarRostro()">
+            ⚡ Capturar Rostro
+        </button>
+    </div>
+</div>
