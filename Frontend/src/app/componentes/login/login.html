@@ -17,6 +17,7 @@
     </div>
 
     <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+      
       <div class="field-group">
         <label class="field-label" for="email">identificación / correo</label>
         <input
@@ -87,8 +88,11 @@
       </div>
 
       <div *ngIf="mostrarCamara" class="my-3 text-center">
-        <app-biometria-camara (alCapturarBiometria)="onBiometriaCapturada($any($event))">
+        <app-biometria-camara (rostroCapturado)="onBiometriaCapturada($any($event))">
         </app-biometria-camara>
+        <button type="button" class="od-btn mt-2 py-1 px-3 text-xs" (click)="mostrarCamara = false; biometricLabel = 'INICIAR ESCANEO'">
+          [ CANCELAR ESCANEO ]
+        </button>
       </div>
 
       <div class="alert-msg" *ngIf="errorMessage">
@@ -100,6 +104,7 @@
         <span *ngIf="!loading">ingresar al sistema</span>
         <span *ngIf="loading">[ verificando identidad... ]</span>
       </button>
+
     </form>
 
     <div class="sys-msg">
