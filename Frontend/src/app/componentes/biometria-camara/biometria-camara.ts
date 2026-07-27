@@ -1,5 +1,6 @@
-import { Component, ElementRef, EventEmitter, Output, ViewChild, OnDestroy } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Output, ViewChild, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import * as faceapi from 'face-api.js';
 
 @Component({
   selector: 'app-biometria-camara',
@@ -8,61 +9,88 @@ import { CommonModule } from '@angular/common';
   templateUrl: './biometria-camara.html',
   styleUrls: ['./biometria-camara.css']
 })
-export class BiometriaCamaraComponent implements OnDestroy {
+export class BiometriaCamaraComponent implements OnInit, OnDestroy {
   @ViewChild('videoElement') videoElement!: ElementRef<HTMLVideoElement>;
   @ViewChild('canvasElement') canvasElement!: ElementRef<HTMLCanvasElement>;
 
   @Output() rostroCapturado = new EventEmitter<number[]>();
 
   camaraActiva = false;
+  modelosCargados = false;
+  cargandoModelos = true;
   private streamMedia: MediaStream | null = null;
+
+  async ngOnInit(): Promise<void> {
+    await this.cargarModelosIA();
+  }
+
+  async cargarModelosIA(): Promise<void> {
+    try {
+      this.cargandoModelos = true;
+      if (faceapi.tf) {
+        await faceapi.tf.setBackend('cpu');
+        await faceapi.tf.ready();
+      }
+
+      const MODEL_URL = '/models';
+      await Promise.all([
+        faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+        faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+        faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+      ]);
+
+      this.modelosCargados = true;
+      this.cargandoModelos = false;
+      console.log('✅ Modelos de face-api.js cargados en CPU sin warnings.');
+      
+      this.iniciarCamara();
+    } catch (error) {
+      console.error('Error al cargar los modelos de IA:', error);
+      this.cargandoModelos = false;
+    }
+  }
 
   async iniciarCamara(): Promise<void> {
     try {
       this.streamMedia = await navigator.mediaDevices.getUserMedia({
-        video: {
-          width: { ideal: 640 },
-          height: { ideal: 480 },
-          facingMode: 'user'
-        },
+        video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' },
         audio: false
       });
 
       this.camaraActiva = true;
       setTimeout(() => {
-        if (this.videoElement) {
-          this.videoElement.nativeElement.srcObject = this.streamMedia;
+        if (this.videoElement && this.videoElement.nativeElement) {
+          const video = this.videoElement.nativeElement;
+          video.srcObject = this.streamMedia;
+          video.muted = true;
+          video.play().catch(e => console.error('Error al reproducir el video:', e));
         }
       }, 100);
-
     } catch (error) {
-      console.error('Error al acceder a la cámara real:', error);
-      alert('No se pudo acceder a la cámara. Revisa los permisos del navegador.');
+      console.error('Error al acceder a la cámara:', error);
     }
   }
 
-  capturarRostro(): void {
-    if (!this.videoElement || !this.canvasElement) return;
+  async capturarRostro(): Promise<void> {
+    if (!this.videoElement || !this.modelosCargados) return;
 
     const video = this.videoElement.nativeElement;
-    const canvas = this.canvasElement.nativeElement;
-    const context = canvas.getContext('2d');
 
-    if (context && video.videoWidth > 0) {
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
+    const deteccion = await faceapi
+      .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+      .withFaceLandmarks()
+      .withFaceDescriptor();
 
-      context.drawImage(video, 0, 0, canvas.width, canvas.height);
-      console.log('Fotograma capturado con éxito de la cámara.');
-      const vector128 = this.generarEmbeddingDesdeFoto();
-      this.rostroCapturado.emit(vector128);
-
-      this.detenerCamara();
+    if (!deteccion) {
+      alert('No se detectó ningún rostro. Por favor, enfócate de frente a la cámara.');
+      return;
     }
-  }
+    const vector128Real: number[] = Array.from(deteccion.descriptor);
 
-  private generarEmbeddingDesdeFoto(): number[] {
-    return Array.from({ length: 128 }, () => parseFloat((Math.random() * 2 - 1).toFixed(6)));
+    console.log('📷 Vector biométrico generado:', vector128Real.slice(0, 5));
+
+    this.rostroCapturado.emit(vector128Real);
+    this.detenerCamara();
   }
 
   detenerCamara(): void {

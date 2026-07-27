@@ -1,56 +1,38 @@
+# Dependencias y entornos (Sin importar en qué carpeta o subcarpeta estén)
+**/node_modules/
+**/venv/
+**/env/
+**/ENV/
+**/.angular/
+**/dist/
+**/build/
+**/tmp/
+**/out-tsc/
+**/*.egg-info/
 
-
-backend/venv/
-backend/env/
-backend/ENV/
-backend/dist/
-backend/build/
-backend/*.egg-info/
-
-
+# Archivos compilados de Python
 **/__pycache__/
 *.pyc
 *.pyo
 *.pyd
 
-
-frontend/node_modules/
-frontend/.angular/
-frontend/dist/
-frontend/tmp/
-frontend/out-tsc/
-frontend/bazel-out/
-
-
-
-
-
+# Logs
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-frontend/.npm/
 
-
+# Variables de entorno y configuraciones sensibles/locales
 .env
-.env.local
-.env.*.local
-backend/omnidoor_api/local_settings.py
-backend/OmniApi/venv/
+.env.*
+**/local_settings.py
 
-
+# Archivos de Editores e IDEs
 .vscode/
 .idea/
 *.suo
-*.ntvs*
-*.njsproj
 *.sln
-*.sw?
 
-
+# Archivos del Sistema Operativo
 .DS_Store
-.DS_Store?
-._*
 Thumbs.db
-ehthumbs.db
-Desktop.ini
