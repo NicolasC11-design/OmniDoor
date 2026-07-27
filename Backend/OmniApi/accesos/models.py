@@ -121,7 +121,7 @@ class InformeTurno(models.Model):
 class BiometriaUsuario(models.Model):
     id_biometria = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     usuario = models.OneToOneField('Usuario', on_delete=models.CASCADE, related_name='biometria')
-    embedding_facial = models.TextField(help_text="Vector numérico biométrico codificado")
+    vector_facial = models.TextField(help_text="Vector numérico biométrico codificado")   
     fecha_enrolamiento = models.DateTimeField(default=timezone.now)
     activo = models.BooleanField(default=True)
 
@@ -130,12 +130,12 @@ class BiometriaUsuario(models.Model):
 
     def set_descriptor(self, lista_floats):
         """Convierte el arreglo [0.12, -0.45, ...] a un string JSON."""
-        self.embedding_facial = json.dumps(lista_floats)
+        self.vector_facial = json.dumps(lista_floats)
 
     def get_descriptor(self):
         """Devuelve el arreglo numérico listo para comparar en Python o enviar al Frontend."""
-        if self.embedding_facial:
-            return json.loads(self.embedding_facial)
+        if self.vector_facial:
+            return json.loads(self.vector_facial)
         return []
 
     def __str__(self):

@@ -140,32 +140,44 @@
         </div>
 
         <div class="face-scan-box-container mb-3">
-          <div *ngIf="!biometricCapturing" class="face-scan-box" (click)="captureBiometric()"
-            [class.scanning]="biometricCaptured">
+          <div *ngIf="!biometricCapturing" class="face-scan-box" [class.captured]="biometricCaptured"
+            (click)="captureBiometric()">
+
             <div class="face-frame">
-              <svg viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="4" y="4" width="12" height="2" fill="#1a8fff" opacity=".7" />
-                <rect x="4" y="4" width="2" height="12" fill="#1a8fff" opacity=".7" />
-                <rect x="56" y="4" width="12" height="2" fill="#1a8fff" opacity=".7" />
-                <rect x="66" y="4" width="2" height="12" fill="#1a8fff" opacity=".7" />
-                <rect x="4" y="66" width="12" height="2" fill="#1a8fff" opacity=".7" />
-                <rect x="4" y="56" width="2" height="12" fill="#1a8fff" opacity=".7" />
-                <rect x="56" y="66" width="12" height="2" fill="#1a8fff" opacity=".7" />
-                <rect x="66" y="56" width="2" height="12" fill="#1a8fff" opacity=".7" />
-                <circle cx="36" cy="30" r="12" stroke="#00d4aa" stroke-width="1.2" stroke-dasharray="3 3" />
-                <circle cx="36" cy="30" r="4" fill="#00d4aa" opacity=".2" />
-                <line x1="28" y1="27" x2="30" y2="27" stroke="#00d4aa" stroke-width="1.5" />
-                <line x1="42" y1="27" x2="44" y2="27" stroke="#00d4aa" stroke-width="1.5" />
-                <path d="M31 33 Q36 36 41 33" stroke="#00d4aa" stroke-width="1.2" fill="none" />
-                <ellipse cx="36" cy="50" rx="16" ry="8" stroke="#00d4aa" stroke-width="1.2" stroke-dasharray="3 3" />
-              </svg>
-              <div class="scan-bar"></div>
+              <ng-container *ngIf="biometricCaptured; else iconoEscaneo">
+                <div class="success-checkmark">
+                  <i class="ti ti-check"></i>
+                </div>
+              </ng-container>
+
+              <ng-template #iconoEscaneo>
+                <svg viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="4" y="4" width="12" height="2" fill="#1a8fff" opacity=".7" />
+                  <rect x="4" y="4" width="2" height="12" fill="#1a8fff" opacity=".7" />
+                  <rect x="56" y="4" width="12" height="2" fill="#1a8fff" opacity=".7" />
+                  <rect x="66" y="4" width="2" height="12" fill="#1a8fff" opacity=".7" />
+                  <rect x="4" y="66" width="12" height="2" fill="#1a8fff" opacity=".7" />
+                  <rect x="4" y="56" width="2" height="12" fill="#1a8fff" opacity=".7" />
+                  <rect x="56" y="66" width="12" height="2" fill="#1a8fff" opacity=".7" />
+                  <rect x="66" y="56" width="2" height="12" fill="#1a8fff" opacity=".7" />
+                  <circle cx="36" cy="30" r="12" stroke="#00d4aa" stroke-width="1.2" stroke-dasharray="3 3" />
+                  <circle cx="36" cy="30" r="4" fill="#00d4aa" opacity=".2" />
+                  <line x1="28" y1="27" x2="30" y2="27" stroke="#00d4aa" stroke-width="1.5" />
+                  <line x1="42" y1="27" x2="44" y2="27" stroke="#00d4aa" stroke-width="1.5" />
+                  <path d="M31 33 Q36 36 41 33" stroke="#00d4aa" stroke-width="1.2" fill="none" />
+                  <ellipse cx="36" cy="50" rx="16" ry="8" stroke="#00d4aa" stroke-width="1.2" stroke-dasharray="3 3" />
+                </svg>
+                <div class="scan-bar"></div>
+              </ng-template>
             </div>
-            <div class="face-label">{{ biometricLabel }}</div>
+
+            <div class="face-label" [class.label-success]="biometricCaptured">
+              {{ biometricLabel }}
+            </div>
           </div>
 
           <div *ngIf="biometricCapturing" class="biometric-camera-wrapper text-center my-3">
-            <app-biometria-camara (alCapturarBiometria)="onRostroCapturado($any($event))"></app-biometria-camara>
+            <app-biometria-camara (rostroCapturado)="onRostroCapturado($any($event))"></app-biometria-camara>
             <button type="button" class="od-btn mt-2 py-1 px-3 text-xs" (click)="cancelarCapturaBiometrica()">
               [ CANCELAR ESCANEO ]
             </button>
@@ -205,6 +217,16 @@
         </div>
 
         <!-- Alerta de Éxito -->
+        <div class="alert-box success" *ngIf="successMessage">
+          <i class="ti ti-check"></i>
+          <span>{{ successMessage }}</span>
+        </div>
+
+        <div class="alert-box error" *ngIf="errorMessage">
+          <i class="ti ti-alert-circle"></i>
+          <span>{{ errorMessage }}</span>
+        </div>
+        
         <div class="alert-box success" *ngIf="successMessage">
           <i class="ti ti-check"></i>
           <span>{{ successMessage }}</span>

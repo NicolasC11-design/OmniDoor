@@ -31,10 +31,18 @@ class RegisterView(APIView):
     authentication_classes = []
 
     def post(self, request):
-        serializer = RegisterSerializer(data=request.data)
+        data = request.data.copy()
+        vector_biometrico = data.pop("vector_biometrico", None)
+
+        serializer = RegisterSerializer(data=data)
         if serializer.is_valid():
             with transaction.atomic():
                 user = serializer.save()
+                if vector_biometrico and isinstance(vector_biometrico, list):
+                    vector_json = json.dumps(vector_biometrico)
+                    BiometriaUsuario.objects.update_or_create(
+                        usuario=user, defaults={"vector_facial": vector_json}
+                    )
 
             return Response(
                 {
@@ -599,7 +607,7 @@ class ValidarAccesoPorteriaView(APIView):
                 vehiculo_obj = Vehiculo.objects.get(
                     placa=placa.upper().strip()
                 )
-                usuario_identificado = vehiculo_obj.usuario
+                usuario_identificado = vehiculo_obj.propietario
             except Vehiculo.DoesNotExist:
                 return Response(
                     {
@@ -672,7 +680,6 @@ class ValidarAccesoPorteriaView(APIView):
             )
 
         registro = RegistroAcceso.objects.create(
-            usuario=usuario_identificado,
             vehiculo=vehiculo_obj,
             tipo_movimiento=tipo_movimiento,
             vigilante=request.user,
@@ -684,12 +691,83 @@ class ValidarAccesoPorteriaView(APIView):
                 "acceso_permitido": True,
                 "mensaje": f"Acceso concedido. [{tipo_movimiento}]",
                 "usuario": {
-                    "nombre": f"{usuario_identificado.first_name} {usuario_identificado.last_name}",
+                    "nombre": usuario_identificado.nombre_completo,
                     "rol": getattr(usuario_identificado, "rol", "Aprendiz"),
-                    "correo": usuario_identificado.email,
+                    "correo": usuario_identificado.correo,
                 },
                 "vehiculo": vehiculo_obj.placa if vehiculo_obj else "Peatonal",
                 "hora": registro.fecha_hora.strftime("%H:%M:%S"),
             },
             status=status.HTTP_200_OK,
+        )
+
+class LoginBiometricoView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def post(self, request):
+        vector_capturado = request.data.get("vector_biometrico")
+
+        if not vector_capturado or not isinstance(vector_capturado, list):
+            return Response(
+                {"error": "Se requiere un vector biométrico válido."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        print("DEBUG INPUT -> Tipo:", type(vector_capturado))
+        print("DEBUG INPUT -> Longitud:", len(vector_capturado))
+        print("DEBUG INPUT -> Primeros 5 elementos:", vector_capturado[:5])
+
+        vec_input = np.array(vector_capturado, dtype=np.float32).flatten()
+
+        vec_input = np.array(vector_capturado)
+
+        biometrias = BiometriaUsuario.objects.select_related("usuario").filter(
+            activo=True, 
+            usuario__is_active=True
+        )
+
+        mejor_coincidencia = None
+        distancia_minima = 999.0
+
+        for bio in biometrias:
+            vec_guardado_list = bio.get_descriptor()
+            if not vec_guardado_list:
+                continue
+
+            try:
+                vec_guardado = np.array(vec_guardado_list)
+                if vec_guardado.shape == vec_input.shape:
+                    dist = np.linalg.norm(vec_guardado - vec_input)
+
+                    print(f"DEBUG -> Coincidencia: {bio.usuario.correo} | Distancia: {dist:.4f}")
+                    
+                    if dist < distancia_minima:
+                        distancia_minima = dist
+                        mejor_coincidencia = bio.usuario
+            except Exception as e:
+                print(f"Error procesando biometría {bio.id_biometria}: {e}")
+                continue
+
+        UMBRAL_TOLERANCIA = 0.60
+
+        print(f"DEBUG -> Distancia final: {distancia_minima:.4f} (Máximo permitido: {UMBRAL_TOLERANCIA})")
+
+        if mejor_coincidencia and distancia_minima <= UMBRAL_TOLERANCIA:
+            user = mejor_coincidencia
+
+            refresh = RefreshToken.for_user(user)
+
+            return Response(
+                {
+                    "mensaje": f"¡Bienvenido de nuevo, {user.nombre_completo}!",
+                    "access": str(refresh.access_token),
+                    "refresh": str(refresh),
+                    "usuario": userSerializer(user).data,
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        return Response(
+            {"error": "Rostro no reconocido. Utiliza tu correo y contraseña o vuelve a intentarlo."},
+            status=status.HTTP_401_UNAUTHORIZED,
         )
