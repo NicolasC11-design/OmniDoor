@@ -176,6 +176,57 @@ export class Register implements OnInit {
   });
 }
 
+  if (!this.vectorBiometrico || this.vectorBiometrico.length === 0) {
+    this.errorMessage = '⚠️ Debes capturar tus datos biométricos faciales antes de solicitar el acceso.';
+    alert('Atención: Debes realizar el escaneo facial antes de enviar la solicitud.');
+    this.cdr.detectChanges();
+    return;
+  }
+  this.loading = true;
+  this.backendPlacaError = null;
+
+  const { confirmPassword, ...data } = this.registerForm.value;
+  const payload = {
+    ...data,
+    tipoVehiculo: this.selectedVehicle,
+    vector_biometrico: this.vectorBiometrico
+  };
+
+  console.log('Enviando petición POST a Django con datos biométricos:', payload);
+  this.authService.register(payload).subscribe({
+    next: (res) => {
+      this.loading = false;
+      this.registroEnviado = true;
+      this.successMessage =
+        'Solicitud recibida. Tu registro está en proceso de verificación y será habilitado cuando el administrador apruebe tu cuenta.';
+      this.registerForm.disable();
+      this.cdr.detectChanges();
+
+      setTimeout(() => this.router.navigate(['/login']), 8000);
+    },
+    error: (err) => {
+      this.loading = false;
+      this.registroEnviado = false;
+      console.error('Error del servidor:', err);
+
+      if (err.error && err.error.placa) {
+        this.backendPlacaError = Array.isArray(err.error.placa) ? err.error.placa[0] : err.error.placa;
+        this.registerForm.get('placa')?.setErrors({ placaDuplicada: true });
+        this.errorMessage = `La placa ingresada ya se encuentra registrada.`;
+      } 
+      else if (err.error && err.error.correo) {
+        this.registerForm.get('correo')?.setErrors({ unique: true });
+        this.errorMessage = Array.isArray(err.error.correo) ? err.error.correo[0] : err.error.correo;
+      } 
+      else {
+        this.errorMessage = 'Error en el servidor: ' + (err.error?.detail || err.message || JSON.stringify(err.error));
+      }
+
+      this.cdr.detectChanges();
+    }
+  });
+}
+
   captureOCR(): void {
     if (this.registroEnviado) return;
     if (this.selectedVehicle === 'bici' || this.selectedVehicle === 'patin' || this.selectedVehicle === 'electr') return;
