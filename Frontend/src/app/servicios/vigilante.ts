@@ -42,4 +42,8 @@ export class VigilanteService {
     };
     return this.http.post<any>(`${this.apiUrl}/informes-turno/`, body, { headers: this.getHeaders() });
   }
+
+  validarAccesoPorteria(payload: { placa: string; vector_biometrico: number[]; tipo_movimiento: string }): Observable<any> {
+    return this.http.post(`${this.apiUrl}/accesos/validar-porteria/`, payload);
+  }
 }
