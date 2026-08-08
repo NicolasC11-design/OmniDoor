@@ -1,0 +1,92 @@
+<div class="od-panel">
+    <div class="corner c-tl"></div>
+    <div class="corner c-tr"></div>
+    <div class="corner c-bl"></div>
+    <div class="corner c-br"></div>
+
+    <div class="panel-header">
+        <div>
+            <div class="panel-title">Historial logístico y auditoría</div>
+            <div class="panel-subtitle">Consultas globales de tráfico y exportación de documentos</div>
+        </div>
+    </div>
+
+    <div class="filters-row">
+        <div class="filter-group">
+            <label class="filter-label" for="desde">filtrar desde</label>
+            <input id="desde" type="date" class="od-input" [(ngModel)]="filtros.desde" />
+        </div>
+        <div class="filter-group">
+            <label class="filter-label" for="hasta">hasta</label>
+            <input id="hasta" type="date" class="od-input" [(ngModel)]="filtros.hasta" />
+        </div>
+        <div class="filter-group">
+            <label class="filter-label" for="tipoMov">tipo de movimiento</label>
+            <select id="tipoMov" class="od-select" [(ngModel)]="filtros.tipoMovimiento">
+                <option value="todos">Todos los movimientos</option>
+                <option value="entrada">Entrada</option>
+                <option value="salida">Salida</option>
+            </select>
+        </div>
+        <div class="export-actions">
+            <button class="export-btn" (click)="exportar('pdf')">
+                <i class="ti ti-file-type-pdf" aria-hidden="true"></i> PDF
+            </button>
+            <button class="export-btn" (click)="exportar('excel')">
+                <i class="ti ti-file-type-xls" aria-hidden="true"></i> Excel
+            </button>
+        </div>
+    </div>
+
+    <div class="loading-state" *ngIf="cargando">Cargando historial de accesos...</div>
+
+    <div class="empty-state" *ngIf="!cargando && historialFiltrado.length === 0">
+        <i class="ti ti-history" aria-hidden="true"></i>
+        <p>No hay registros para el período seleccionado</p>
+    </div>
+
+    <div class="table-wrap" *ngIf="!cargando && historialFiltrado.length > 0">
+        <table class="od-table">
+            <thead>
+                <tr>
+                    <th>Fecha / Hora</th>
+                    <th>Usuario / Persona</th>
+                    <th>Vehículo</th>
+                    <th>Placa</th>
+                    <th>Método Validación</th>
+                    <th>Evento</th>
+                    <th>Sincronizado</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let h of historialFiltrado">
+                    <td>{{ h.fechaHora }}</td>
+                    <td>{{ h.usuario }}</td>
+                    <td>
+                        <span class="badge vehiculo">
+                            {{ h.tipoVehiculo | uppercase }}
+                        </span>
+                    </td>
+                    <td><span class="placa-text">{{ h.placa }}</span></td>
+                    <td>
+                        <span class="badge" [ngClass]="h.metodoValidacion">
+                            {{ h.metodoValidacion }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge"
+                            [ngClass]="h.evento.toLowerCase() === 'entrada' ? 'residente-tag' : 'apertura-tag'">
+                            {{ h.evento }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge" [ngClass]="h.sincronizado ? 'si' : 'no'">
+                            {{ h.sincronizado ? '✓ sí' : '✕ no' }}
+                        </span>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="note-box">Mostrando {{ historialFiltrado.length }} registros del período seleccionado</div>
+    </div>
+</div>
