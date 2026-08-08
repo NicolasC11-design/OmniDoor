@@ -590,112 +590,103 @@ class ValidarAccesoPorteriaView(APIView):
         vector_capturado = request.data.get("vector_biometrico")
         tipo_movimiento = request.data.get("tipo_movimiento", "ENTRADA")
 
-        if not vector_capturado:
+        if not vector_capturado or not isinstance(vector_capturado, list):
             return Response(
-                {
-                    "acceso_permitido": False,
-                    "mensaje": "Se requiere captura biométrica facial.",
-                },
+                {"mensaje": "Se requiere captura biométrica facial válida (128 dimensiones)."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         usuario_identificado = None
         vehiculo_obj = None
+        UMBRAL = 0.55
 
-        if placa and placa.upper() != "N/A":
+        if placa and placa.strip().upper() not in ["N/A", "S_PLACA", ""]:
+            placa_clean = placa.strip().upper()
             try:
-                vehiculo_obj = Vehiculo.objects.get(
-                    placa=placa.upper().strip()
-                )
+                vehiculo_obj = Vehiculo.objects.get(placa=placa_clean, activo=True)
                 usuario_identificado = vehiculo_obj.propietario
             except Vehiculo.DoesNotExist:
                 return Response(
-                    {
-                        "acceso_permitido": False,
-                        "mensaje": f"Vehículo con placa {placa} no está registrado en el sistema.",
-                    },
+                    {"mensaje": f"Vehículo con placa '{placa_clean}' no está registrado en el sistema."},
                     status=status.HTTP_404_NOT_FOUND,
                 )
 
+        vec_input = np.array(vector_capturado)
         if not usuario_identificado:
-            biometrias = BiometriaUsuario.objects.all()
-            vec_input = np.array(vector_capturado)
+            biometrias = BiometriaUsuario.objects.select_related("usuario").filter(
+                activo=True, usuario__is_active=True
+            )
             mejor_coincidencia = None
             distancia_minima = 999.0
 
             for bio in biometrias:
-                vec_guardado = np.array(json.loads(bio.vector_facial))
-                dist = np.linalg.norm(vec_guardado - vec_input)
-                if dist < distancia_minima:
-                    distancia_minima = dist
-                    mejor_coincidencia = bio.usuario
+                descriptor = bio.get_descriptor()
+                if not descriptor:
+                    continue
+                
+                vec_guardado = np.array(descriptor)
+                if vec_guardado.shape == vec_input.shape:
+                    dist = np.linalg.norm(vec_guardado - vec_input)
+                    if dist < distancia_minima:
+                        distancia_minima = dist
+                        mejor_coincidencia = bio.usuario
 
-            UMBRAL = 0.55
             if distancia_minima <= UMBRAL and mejor_coincidencia:
                 usuario_identificado = mejor_coincidencia
             else:
                 return Response(
-                    {
-                        "acceso_permitido": False,
-                        "mensaje": "Rostro no reconocido en el sistema.",
-                    },
+                    {"mensaje": "Rostro no reconocido en la base de datos."},
                     status=status.HTTP_401_UNAUTHORIZED,
                 )
+
         else:
             try:
                 biometria = BiometriaUsuario.objects.get(
-                    usuario=usuario_identificado
+                    usuario=usuario_identificado, activo=True
                 )
-                vec_guardado = np.array(json.loads(biometria.vector_facial))
-                vec_input = np.array(vector_capturado)
+                descriptor = biometria.get_descriptor()
+                if not descriptor:
+                    raise BiometriaUsuario.DoesNotExist
 
+                vec_guardado = np.array(descriptor)
                 distancia = np.linalg.norm(vec_guardado - vec_input)
-                UMBRAL = 0.55
 
                 if distancia > UMBRAL:
                     return Response(
-                        {
-                            "acceso_permitido": False,
-                            "mensaje": f"Sustitución detectada: El conductor no coincide con el registrado para la placa {placa}.",
-                        },
+                        {"mensaje": f"Sustitución detectada: El conductor no coincide con el registrado para la placa {placa}."},
                         status=status.HTTP_401_UNAUTHORIZED,
                     )
 
             except BiometriaUsuario.DoesNotExist:
                 return Response(
-                    {
-                        "acceso_permitido": False,
-                        "mensaje": "El propietario del vehículo no posee biometría registrada.",
-                    },
+                    {"mensaje": "El propietario del vehículo no posee biometría registrada en el sistema."},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-        if not usuario_identificado.is_active:
+        if not usuario_identificado.is_active or not usuario_identificado.estado:
             return Response(
-                {
-                    "acceso_permitido": False,
-                    "mensaje": "Usuario inactivo o pendiente de aprobación por administración.",
-                },
+                {"mensaje": "Usuario inactivo o pendiente de aprobación por la administración."},
                 status=status.HTTP_403_FORBIDDEN,
             )
 
         registro = RegistroAcceso.objects.create(
             vehiculo=vehiculo_obj,
+            placa_manual=None if vehiculo_obj else (placa if placa else "PEATONAL"),
+            nombre_conductor_manual=usuario_identificado.nombre_completo,
             tipo_movimiento=tipo_movimiento,
-            vigilante=request.user,
+            vigilante=request.user if request.user.is_authenticated else None,
             fecha_hora=timezone.now(),
         )
 
         return Response(
             {
-                "acceso_permitido": True,
-                "mensaje": f"Acceso concedido. [{tipo_movimiento}]",
+                "mensaje": f"Acceso concedido [{tipo_movimiento}]",
                 "usuario": {
                     "nombre": usuario_identificado.nombre_completo,
                     "rol": getattr(usuario_identificado, "rol", "Aprendiz"),
                     "correo": usuario_identificado.correo,
                 },
-                "vehiculo": vehiculo_obj.placa if vehiculo_obj else "Peatonal",
+                "vehiculo": vehiculo_obj.placa if vehiculo_obj else "PEATONAL",
                 "hora": registro.fecha_hora.strftime("%H:%M:%S"),
             },
             status=status.HTTP_200_OK,

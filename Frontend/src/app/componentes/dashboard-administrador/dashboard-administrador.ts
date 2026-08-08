@@ -2,8 +2,9 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { AdminService } from '../../servicios/admin';
-import { AuthService } from '../../servicios/auth';
+import { AdminService } from '../../servicios/admin/admin';
+import { AuthService } from '../../servicios/auth/auth';
+import { HistorialReportesComponent } from '../historial-reportes/historial-reportes';
 
 type Vista = 'panel' | 'solicitudes' | 'usuarios' | 'reportes';
 
@@ -32,7 +33,7 @@ export interface RegistroHistorial {
 @Component({
   selector: 'app-dashboard-administrador',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, HistorialReportesComponent],
   templateUrl: './dashboard-administrador.html',
   styleUrls: ['./dashboard-administrador.css']
 })
@@ -377,6 +378,7 @@ export class AdminDashboard implements OnInit {
         }
 
         return {
+          fechaRaw: reg.fecha_hora ? new Date(reg.fecha_hora) : undefined,
           fechaHora: fechaHoraFormateada,
           usuario: usuarioReal,
           tipoVehiculo: tipoVehiculoReal,

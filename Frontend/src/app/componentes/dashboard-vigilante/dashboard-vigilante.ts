@@ -2,7 +2,7 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { VigilanteService } from '../../servicios/vigilante'; 
+import { VigilanteService } from '../../servicios/vigilante/vigilante'; 
 import { BiometriaCamaraComponent } from '../biometria-camara/biometria-camara';
 
 export interface IngresoRegistro {
