@@ -1,17 +1,29 @@
-<div class="camera-container text-center">
-    <video #videoElement autoplay playsinline muted [hidden]="!camaraActiva" class="video-preview">
-    </video>
+<div class="biometria-container">
+    
+    <div class="status-badge" [ngClass]="{'success': modelosCargados, 'error': !modelosCargados && !cargandoModelos}">
+        {{ cargandoModelos ? 'CARGANDO RED NEURONAL CPU...' : (modelosCargados ? 'SISTEMA LISTO PARA ESCANEO' : 'ERROR DE MODELO') }}
+    </div>
 
-    <!-- Canvas oculto para procesar el fotograma -->
-    <canvas #canvasElement style="display: none;"></canvas>
+    <div class="video-wrapper">
+        <video #videoElement class="video-stream" autoplay playsinline muted [hidden]="!camaraActiva"></video>
+        
+        <canvas #canvasElement style="display: none;"></canvas>
 
-    <div class="controls mt-3">
-        <button *ngIf="!camaraActiva" type="button" class="od-btn primary" (click)="iniciarCamara()">
-            📷 Encender Cámara
+        <div *ngIf="cargandoModelos" class="loading-overlay">
+            <div class="spinner"></div>
+            <span class="status-badge">CARGANDO MODELOS FACE-API...</span>
+        </div>
+
+        <div *ngIf="camaraActiva && modelosCargados" class="scan-line"></div>
+    </div>
+
+    <div class="controls">
+        <button *ngIf="!camaraActiva" type="button" class="btn-cyber" [disabled]="cargandoModelos" (click)="iniciarCamara()">
+            📷 ENCENDER CÁMARA
         </button>
 
-        <button *ngIf="camaraActiva" type="button" class="od-btn success" (click)="capturarRostro()">
-            ⚡ Capturar Rostro
+        <button *ngIf="camaraActiva" type="button" class="btn-cyber" [disabled]="!modelosCargados" (click)="capturarRostro()">
+            ⚡ CAPTURAR BIOMETRÍA
         </button>
     </div>
 </div>

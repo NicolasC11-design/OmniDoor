@@ -1,4 +1,4 @@
-import { Component, ElementRef, EventEmitter, Output, ViewChild, OnDestroy, OnInit } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Output, ViewChild, OnDestroy, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import * as faceapi from 'face-api.js';
 
@@ -13,12 +13,14 @@ export class BiometriaCamaraComponent implements OnInit, OnDestroy {
   @ViewChild('videoElement') videoElement!: ElementRef<HTMLVideoElement>;
   @ViewChild('canvasElement') canvasElement!: ElementRef<HTMLCanvasElement>;
 
-  @Output() rostroCapturado = new EventEmitter<number[]>();
+  @Output() alCapturarBiometria = new EventEmitter<number[]>();
 
   camaraActiva = false;
   modelosCargados = false;
   cargandoModelos = true;
   private streamMedia: MediaStream | null = null;
+
+  constructor(private cdRef: ChangeDetectorRef) {}
 
   async ngOnInit(): Promise<void> {
     await this.cargarModelosIA();
@@ -42,11 +44,13 @@ export class BiometriaCamaraComponent implements OnInit, OnDestroy {
       this.modelosCargados = true;
       this.cargandoModelos = false;
       console.log('✅ Modelos de face-api.js cargados en CPU sin warnings.');
+      this.cdRef.detectChanges(); 
       
       this.iniciarCamara();
     } catch (error) {
       console.error('Error al cargar los modelos de IA:', error);
       this.cargandoModelos = false;
+      this.cdRef.detectChanges();
     }
   }
 
@@ -58,6 +62,8 @@ export class BiometriaCamaraComponent implements OnInit, OnDestroy {
       });
 
       this.camaraActiva = true;
+      this.cdRef.detectChanges();
+
       setTimeout(() => {
         if (this.videoElement && this.videoElement.nativeElement) {
           const video = this.videoElement.nativeElement;
@@ -89,7 +95,7 @@ export class BiometriaCamaraComponent implements OnInit, OnDestroy {
 
     console.log('📷 Vector biométrico generado:', vector128Real.slice(0, 5));
 
-    this.rostroCapturado.emit(vector128Real);
+    this.alCapturarBiometria.emit(vector128Real);
     this.detenerCamara();
   }
 
@@ -99,6 +105,7 @@ export class BiometriaCamaraComponent implements OnInit, OnDestroy {
       this.streamMedia = null;
     }
     this.camaraActiva = false;
+    this.cdRef.detectChanges();
   }
 
   ngOnDestroy(): void {

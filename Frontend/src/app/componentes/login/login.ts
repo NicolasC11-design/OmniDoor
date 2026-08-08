@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { AuthService } from '../../servicios/auth'; 
+import { AuthService } from '../../servicios/auth/auth'; 
 import { Router, RouterLink } from '@angular/router';
 import { BiometriaCamaraComponent } from '../biometria-camara/biometria-camara';
 

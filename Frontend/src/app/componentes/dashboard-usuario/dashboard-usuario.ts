@@ -2,8 +2,8 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { AuthService } from '../../servicios/auth';
-import { UsuarioService } from '../../servicios/usuarios';
+import { AuthService } from '../../servicios/auth/auth';
+import { UsuarioService } from '../../servicios/usuarios/usuarios';
 
 export interface MiVehiculo {
   id_vehiculo?: string;

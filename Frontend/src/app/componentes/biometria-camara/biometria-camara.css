@@ -29,24 +29,31 @@
     border-radius: 4px;
     font-family: var(--sans);
     color: var(--text);
+    gap: 1.2rem;
 }
 
 .video-wrapper {
     position: relative;
-    display: inline-block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     border: 1px solid var(--border);
     box-shadow: 0 0 15px rgba(0, 213, 255, 0.15);
     background: #000;
     overflow: hidden;
+    width: 100%;
+    max-width: 480px;
+    min-height: 280px;
+    border-radius: 4px;
 }
 
 .video-stream {
     display: block;
     width: 100%;
-    max-width: 480px;
     height: auto;
     transform: scaleX(-1);
     filter: contrast(1.05) brightness(0.95);
+    object-fit: cover;
 }
 
 .video-wrapper::before,
@@ -58,7 +65,7 @@
     border-color: var(--border);
     border-style: solid;
     pointer-events: none;
-    z-index: 2;
+    z-index: 3;
 }
 
 .video-wrapper::before {
@@ -71,6 +78,50 @@
     bottom: 4px;
     right: 4px;
     border-width: 0 2px 2px 0;
+}
+
+.scan-line {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: var(--accent2);
+    box-shadow: 0 0 12px var(--accent2);
+    animation: scan 2.2s infinite ease-in-out;
+    pointer-events: none;
+    z-index: 2;
+}
+
+@keyframes scan {
+    0% { top: 0%; opacity: 0.3; }
+    50% { top: 96%; opacity: 1; }
+    100% { top: 0%; opacity: 0.3; }
+}
+
+.loading-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(5, 9, 15, 0.92);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    z-index: 4;
+}
+
+.spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid rgba(0, 213, 255, 0.2);
+    border-top-color: var(--border);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
 }
 
 .status-badge {
@@ -103,15 +154,24 @@
     text-transform: uppercase;
     cursor: pointer;
     transition: all 0.25s ease-in-out;
+    border-radius: 3px;
 }
 
-.btn-cyber:hover {
+.btn-cyber:hover:not(:disabled) {
     background: rgba(0, 213, 255, 0.15);
     border-color: var(--border);
     color: #ffffff;
     box-shadow: 0 0 15px rgba(0, 213, 255, 0.3);
 }
 
-.btn-cyber:active {
+.btn-cyber:active:not(:disabled) {
     transform: scale(0.98);
+}
+
+.btn-cyber:disabled {
+    opacity: 0.4;
+    border-color: rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.3);
+    cursor: not-allowed;
+    box-shadow: none;
 }
