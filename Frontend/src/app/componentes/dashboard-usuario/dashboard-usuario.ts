@@ -40,7 +40,7 @@ export class DashboardUsuario implements OnInit {
   cargando = false;
 
   formVehiculo: MiVehiculo = { tipoVehiculo: 'auto', placa: '', marca: '', modelo: '' };
-  formDatos = { nombre_completo: '', correo: '', telefono: '', direccion: '' };
+  formDatos = { nombre_completo: '', correo: '', telefono: '', direccion: '', ficha: '' };
   formPassword = { actual: '', nueva: '', confirmar: '' };
 
   private iconosVehiculo: Record<string, string> = {
@@ -67,7 +67,8 @@ export class DashboardUsuario implements OnInit {
       nombre_completo: this.usuario.nombre_completo || '',
       correo: this.usuario.correo || '',
       telefono: this.usuario.telefono || '',
-      direccion: this.usuario.direccion || ''
+      direccion: this.usuario.direccion || '',
+      ficha: this.usuario.ficha || ''
     };
   }
 
@@ -94,6 +95,8 @@ export class DashboardUsuario implements OnInit {
       }
     });
   }
+
+
 
   iniciales(): string {
     const nombre = this.usuario?.nombre_completo || '';
@@ -195,13 +198,20 @@ export class DashboardUsuario implements OnInit {
   
   guardarDatos(): void {
     if (this.cargando) return;
-    if (!this.formDatos.nombre_completo.trim() || !this.formDatos.correo.trim() || !this.formDatos.telefono.trim()) {
-      alert('Los campos Nombre, Correo y Teléfono son obligatorios.');
+    if (!this.formDatos.nombre_completo.trim() || !this.formDatos.telefono.trim()) {
+      alert('Los campos Nombre y Teléfono son obligatorios.');
       return;
     }
 
     this.cargando = true;
-    this.usuarioService.updateMiPerfil(this.formDatos).subscribe({
+    const payload = {
+      nombre_completo: this.formDatos.nombre_completo.trim(),
+      telefono: this.formDatos.telefono.trim(),
+      direccion: this.formDatos.direccion.trim(),
+      ficha: this.formDatos.ficha.trim()
+    };
+
+    this.usuarioService.updateMiPerfil(payload).subscribe({
       next: (data) => {
         this.cargando = false;
         this.usuario = { ...this.usuario, ...data };

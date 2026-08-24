@@ -6,7 +6,7 @@ import { Observable } from 'rxjs';
   providedIn: 'root'
 })
 export class VigilanteService {
-  private apiUrl = 'http://127.0.0.1:8000/api'; 
+  private apiUrl = 'http://127.0.0.1:8000/api';
 
   constructor(private http: HttpClient) { }
 
@@ -23,8 +23,8 @@ export class VigilanteService {
   }
 
   registrarAccesoManual(datos: any) {
-    return this.http.post<any>(`${this.apiUrl}/accesos/`, datos); 
-}
+    return this.http.post<any>(`${this.apiUrl}/accesos/`, datos);
+  }
 
   registrarAcceso(vehiculoId: string, tipoMovimiento: 'ENTRADA' | 'SALIDA'): Observable<any> {
     const body = {
@@ -43,7 +43,12 @@ export class VigilanteService {
     return this.http.post<any>(`${this.apiUrl}/informes-turno/`, body, { headers: this.getHeaders() });
   }
 
-  validarAccesoPorteria(payload: { placa: string; vector_biometrico: number[]; tipo_movimiento: string }): Observable<any> {
+  validarAccesoPorteria(payload: {
+    placa: string;
+    vector_biometrico?: number[];
+    id_usuario?: number | string;
+    tipo_movimiento: string
+  }): Observable<any> {
     return this.http.post(`${this.apiUrl}/accesos/validar-porteria/`, payload);
   }
 }

@@ -43,16 +43,20 @@ export class DashboardVigilante implements OnInit {
 
   aperturaManual = {
     motivo: '',
-    tipoVehiculo: 'carro',
+    tipoVehiculo: 'PEATONAL',
     placa: ''
   };
 
-  visitante = { nombre: '', tipoVehiculo: 'carro', placa: '' };
+  visitante = { nombre: '', tipoVehiculo: 'PEATONAL', placa: '' };
 
   mostrarModalInforme = false;
   novedadesTexto: string = '';
   sinNovedadCheck: boolean = true;
   horaInicioTurno!: string;
+
+  mostrarModalSeleccionCuentas = false;
+  cuentasCoincidentes: any[] = [];
+  vectorBiometricoPendiente: number[] = [];
 
   constructor(
     private router: Router, 
@@ -98,12 +102,12 @@ export class DashboardVigilante implements OnInit {
   }
 
   abrirModalManual(): void {
-    this.aperturaManual = { motivo: '', tipoVehiculo: 'carro', placa: '' };
+    this.aperturaManual = { motivo: '', tipoVehiculo: 'PEATONAL', placa: '' };
     this.mostrarModalManual = true;
   }
 
   abrirModalVisitante(): void {
-    this.visitante = { nombre: '', tipoVehiculo: 'carro', placa: '' };
+    this.visitante = { nombre: '', tipoVehiculo: 'PEATONAL', placa: '' };
     this.mostrarModalVisitante = true;
   }
 
@@ -147,11 +151,11 @@ export class DashboardVigilante implements OnInit {
     }
 
     const tipo = this.aperturaManual.tipoVehiculo;
-    const noRequierePlaca = tipo === 'bicicleta' || tipo === 'patin' || tipo === 'electrico';
+    const esPeatonOSinPlaca = tipo === 'PEATONAL' || tipo === 'bicicleta' || tipo === 'patin' || tipo === 'electrico';
     let placaValidacion = '';
 
-    if (noRequierePlaca) {
-      placaValidacion = 'S_PLACA'; 
+    if (esPeatonOSinPlaca) {
+      placaValidacion = tipo === 'PEATONAL' ? 'PEATONAL' : 'S_PLACA'; 
     } else {
       if (!this.aperturaManual.placa || !this.aperturaManual.placa.trim()) {
         alert('Por favor, ingresa la placa del vehículo para autorizar la apertura.');
@@ -175,7 +179,7 @@ export class DashboardVigilante implements OnInit {
     }
 
     this.guardandoManual = true; 
-    const placaFinalDB = placaValidacion.replace('-', '');
+    const placaFinalDB = placaValidacion.includes('-') ? placaValidacion.replace('-', '') : placaValidacion;
 
     const payloadManual = { 
       tipo_movimiento: 'APERTURA_MANUAL',
@@ -196,7 +200,7 @@ export class DashboardVigilante implements OnInit {
         };
 
         this.cerrarModales();
-        this.aperturaManual = { motivo: '', tipoVehiculo: 'carro', placa: '' };
+        this.aperturaManual = { motivo: '', tipoVehiculo: 'PEATONAL', placa: '' };
         this.cargarDatosDashboard();
 
         setTimeout(() => {
@@ -211,7 +215,7 @@ export class DashboardVigilante implements OnInit {
         this.cerrarModales();
 
         if (err.status === 400) {
-          let mensajeError = 'La placa ingresada no se encuentra registrada en el sistema.';
+          let mensajeError = 'La placa o registro ingresado no es válido o no existe.';
           if (err.error) {
             if (typeof err.error === 'string') mensajeError = err.error;
             else if (Array.isArray(err.error)) mensajeError = err.error[0];
@@ -271,7 +275,7 @@ export class DashboardVigilante implements OnInit {
       });
     }
 
-    this.aperturaManual = { motivo: '', tipoVehiculo: 'carro', placa: '' };
+    this.aperturaManual = { motivo: '', tipoVehiculo: 'PEATONAL', placa: '' };
     this.cargarDatosDashboard();
 
     setTimeout(() => {
@@ -291,10 +295,10 @@ export class DashboardVigilante implements OnInit {
 
     const tipo = this.visitante.tipoVehiculo;
     let placaValidacion = '';
-    const noRequierePlaca = tipo === 'bicicleta' || tipo === 'patin' || tipo === 'electrico';
+    const esPeatonOSinPlaca = tipo === 'PEATONAL' || tipo === 'bicicleta' || tipo === 'patin' || tipo === 'electrico';
 
-    if (noRequierePlaca) {
-      placaValidacion = 'S_PLACA'; 
+    if (esPeatonOSinPlaca) {
+      placaValidacion = tipo === 'PEATONAL' ? 'PEATONAL' : 'S_PLACA'; 
     } else {
       if (!this.visitante.placa || !this.visitante.placa.trim()) {
         alert('Por favor, ingresa la placa del vehículo.');
@@ -318,7 +322,7 @@ export class DashboardVigilante implements OnInit {
     }
     
     this.guardandoVisitante = true;
-    const placaFinalDB = placaValidacion.replace('-', '');
+    const placaFinalDB = placaValidacion.includes('-') ? placaValidacion.replace('-', '') : placaValidacion;
 
     const payloadVisitante = { 
       tipo_movimiento: 'REGISTRO_VISITANTE', 
@@ -363,7 +367,7 @@ export class DashboardVigilante implements OnInit {
 
   private finalizarFlujoVisitante(): void {
     this.cerrarModales();
-    this.visitante = { nombre: '', tipoVehiculo: 'carro', placa: '' };
+    this.visitante = { nombre: '', tipoVehiculo: 'PEATONAL', placa: '' };
     this.cargarDatosDashboard();
 
     setTimeout(() => {
@@ -391,59 +395,105 @@ export class DashboardVigilante implements OnInit {
     this.evaluandoBiometria = false;
   }
 
-  onRostroEscaneado(vector: number[]): void {
+  
+
+  seleccionarUsuarioBiometrico(cuentaSeleccionada: any): void {
+    this.mostrarModalSeleccionCuentas = false;
+    this.evaluandoBiometria = true;
+
+    const payloadConfirmado = {
+      placa: this.placaEscaneoInput.trim().toUpperCase(),
+      id_usuario: cuentaSeleccionada.id_usuario,
+      tipo_movimiento: this.tipoMovimientoCamara
+    };
+
+    this.vigilanteService.validarAccesoPorteria(payloadConfirmado).subscribe({
+      next: (res: any) => {
+        this.evaluandoBiometria = false;
+        this.procesarAccesoExitoso(res.vehiculo, cuentaSeleccionada.nombre);
+      },
+      error: (err: any) => {
+        this.evaluandoBiometria = false;
+        this.procesarAccesoDenegado(err);
+      }
+    });
+  }
+
+  procesarAccesoExitoso(vehiculo: string, conductorNombre: string): void {
+    this.estadoAcceso = 'ok';
+    this.ultimoResultado = {
+      placa: vehiculo || (this.placaEscaneoInput ? this.placaEscaneoInput.toUpperCase() : 'PEATONAL'),
+      conductor: conductorNombre ? conductorNombre.toUpperCase() : 'USUARIO AUTORIZADO'
+    };
+
+    this.placaEscaneoInput = '';
+    this.cargarDatosDashboard();
+
+    setTimeout(() => {
+      this.estadoAcceso = 'idle';
+      this.ultimoResultado = null;
+      this.cdRef.detectChanges();
+    }, 6000);
+  }
+
+  procesarAccesoDenegado(err: any): void {
+    this.estadoAcceso = 'deny';
+    let mensajeError = 'ACCESO DENEGADO / NO AUTORIZADO';
+    if (err.error) {
+      if (typeof err.error === 'string') mensajeError = err.error;
+      else if (err.error.mensaje) mensajeError = err.error.mensaje;
+      else if (err.error.detail) mensajeError = err.error.detail;
+    }
+
+    this.ultimoResultado = {
+      placa: this.placaEscaneoInput ? this.placaEscaneoInput.toUpperCase() : 'S_PLACA',
+      conductor: mensajeError.toUpperCase()
+    };
+
+    this.cargarDatosDashboard();
+
+    setTimeout(() => {
+      this.estadoAcceso = 'idle';
+      this.ultimoResultado = null;
+      this.cdRef.detectChanges();
+    }, 6000);
+  }
+
+  onRostroEscaneado(vector: any): void {
     this.modoEscaneoBiometrico = false;
     this.evaluandoBiometria = true;
     this.cdRef.detectChanges();
+    const vectorFinal = Array.isArray(vector) ? vector : (vector?.vector || []);
+    this.vectorBiometricoPendiente = vectorFinal;
 
     const payload = {
       placa: this.placaEscaneoInput.trim().toUpperCase(),
-      vector_biometrico: vector,
+      vector_biometrico: vectorFinal,
       tipo_movimiento: this.tipoMovimientoCamara
     };
 
     this.vigilanteService.validarAccesoPorteria(payload).subscribe({
       next: (res: any) => {
         this.evaluandoBiometria = false;
-        this.estadoAcceso = 'ok';
-        
-        this.ultimoResultado = {
-          placa: res.vehiculo || (this.placaEscaneoInput ? this.placaEscaneoInput.toUpperCase() : 'PEATONAL'),
-          conductor: res.usuario ? res.usuario.nombre.toUpperCase() : 'USUARIO AUTORIZADO'
-        };
 
-        this.placaEscaneoInput = '';
-        this.cargarDatosDashboard();
-
-        setTimeout(() => {
-          this.estadoAcceso = 'idle';
-          this.ultimoResultado = null;
+        if (res.multiple_matches || res.cuentas) {
+          this.cuentasCoincidentes = res.cuentas || [];
+          this.mostrarModalSeleccionCuentas = true;
           this.cdRef.detectChanges();
-        }, 6000);
+          return;
+        }
+        this.procesarAccesoExitoso(res.vehiculo, res.usuario?.nombre);
       },
       error: (err: any) => {
         this.evaluandoBiometria = false;
-        this.estadoAcceso = 'deny';
-
-        let mensajeError = 'ACCESO DENEGADO / NO AUTORIZADO';
-        if (err.error) {
-          if (typeof err.error === 'string') mensajeError = err.error;
-          else if (err.error.mensaje) mensajeError = err.error.mensaje;
-          else if (err.error.detail) mensajeError = err.error.detail;
+        if (err.status === 300 && err.error?.cuentas) {
+          this.cuentasCoincidentes = err.error.cuentas;
+          this.mostrarModalSeleccionCuentas = true;
+          this.cdRef.detectChanges();
+          return;
         }
 
-        this.ultimoResultado = {
-          placa: this.placaEscaneoInput ? this.placaEscaneoInput.toUpperCase() : 'S_PLACA',
-          conductor: mensajeError.toUpperCase()
-        };
-
-        this.cargarDatosDashboard();
-
-        setTimeout(() => {
-          this.estadoAcceso = 'idle';
-          this.ultimoResultado = null;
-          this.cdRef.detectChanges();
-        }, 6000);
+        this.procesarAccesoDenegado(err);
       }
     });
   }

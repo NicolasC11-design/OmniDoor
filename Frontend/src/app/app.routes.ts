@@ -12,20 +12,23 @@ export const routes: Routes = [
     loadComponent: () => import('./componentes/registrer/registrer').then(m => m.Register)
   },
 
+  {
+    path: 'control-accesos',
+    loadComponent: () => import('./componentes/control-accesos/control-accesos').then(m => m.ControlAccesosComponent),
+    canActivate: [authGuard]
+  },
 
   {
     path: 'dashboardAdministrador',
     loadComponent: () => import('./componentes/dashboard-administrador/dashboard-administrador').then(m => m.AdminDashboard),
     canActivate: [authGuard]
   },
-
-
+  
   {
     path: 'dashboardVigilante',
     loadComponent: () => import('./componentes/dashboard-vigilante/dashboard-vigilante').then(m => m.DashboardVigilante),
     canActivate: [authGuard]
   },
-
 
   {
     path: 'dashboardUsuario',

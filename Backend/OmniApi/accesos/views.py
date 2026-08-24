@@ -23,6 +23,7 @@ from .serializers import (
     RegistroAccesoSerializer,
     VehiculoSerializer,
     userSerializer,
+    UsuarioUpdateSerializer
 )
 
 
@@ -107,8 +108,6 @@ class LoginView(APIView):
                     },
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-
-        # Generación de Tokens JWT
         refresh = RefreshToken.for_user(user)
 
         return Response(
@@ -264,12 +263,13 @@ class PerfilUsuarioView(APIView):
     permission_classes = [IsAuthenticated]
 
     def put(self, request):
-        serializer = userSerializer(
-            request.user, data=request.data, partial=True
-        )
+        serializer = UsuarioUpdateSerializer(data=request.data, partial=True)
+        
         if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            Usuario.objects.filter(pk=request.user.pk).update(**serializer.validated_data)
+            usuario_actualizado = Usuario.objects.get(pk=request.user.pk)
+            return Response(UsuarioUpdateSerializer(usuario_actualizado).data, status=status.HTTP_200_OK)
+            
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -379,9 +379,13 @@ class MisRegistrosAccesoView(APIView):
 
     def get(self, request):
         try:
+            placas_usuario = request.user.vehiculos.values_list('placa', flat=True)
             accesos = RegistroAcceso.objects.filter(
-                vehiculo__propietario=request.user
-            ).order_by("-fecha_hora")
+                Q(vehiculo__propietario=request.user) | 
+                Q(placa_manual__in=placas_usuario) |
+                Q(nombre_conductor_manual__icontains=request.user.nombre_completo)
+            ).order_by("-fecha_hora").distinct()
+
             serializer = RegistroAccesoSerializer(accesos, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
@@ -704,21 +708,14 @@ class LoginBiometricoView(APIView):
                 {"error": "Se requiere un vector biométrico válido."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        print("DEBUG INPUT -> Tipo:", type(vector_capturado))
-        print("DEBUG INPUT -> Longitud:", len(vector_capturado))
-        print("DEBUG INPUT -> Primeros 5 elementos:", vector_capturado[:5])
 
         vec_input = np.array(vector_capturado, dtype=np.float32).flatten()
-
-        vec_input = np.array(vector_capturado)
-
         biometrias = BiometriaUsuario.objects.select_related("usuario").filter(
-            activo=True, 
-            usuario__is_active=True
+            activo=True, usuario__is_active=True
         )
 
-        mejor_coincidencia = None
-        distancia_minima = 999.0
+        UMBRAL_TOLERANCIA = 0.60
+        coincidencias = []
 
         for bio in biometrias:
             vec_guardado_list = bio.get_descriptor()
@@ -726,30 +723,46 @@ class LoginBiometricoView(APIView):
                 continue
 
             try:
-                vec_guardado = np.array(vec_guardado_list)
+                vec_guardado = np.array(vec_guardado_list, dtype=np.float32).flatten()
                 if vec_guardado.shape == vec_input.shape:
                     dist = np.linalg.norm(vec_guardado - vec_input)
-
-                    print(f"DEBUG -> Coincidencia: {bio.usuario.correo} | Distancia: {dist:.4f}")
-                    
-                    if dist < distancia_minima:
-                        distancia_minima = dist
-                        mejor_coincidencia = bio.usuario
+                    if dist <= UMBRAL_TOLERANCIA:
+                        coincidencias.append({
+                            "usuario": bio.usuario,
+                            "distancia": dist
+                        })
             except Exception as e:
                 print(f"Error procesando biometría {bio.id_biometria}: {e}")
                 continue
 
-        UMBRAL_TOLERANCIA = 0.60
-
-        print(f"DEBUG -> Distancia final: {distancia_minima:.4f} (Máximo permitido: {UMBRAL_TOLERANCIA})")
-
-        if mejor_coincidencia and distancia_minima <= UMBRAL_TOLERANCIA:
-            user = mejor_coincidencia
-
-            refresh = RefreshToken.for_user(user)
-
+        coincidencias.sort(key=lambda x: x["distancia"])
+        if len(coincidencias) > 1:
+            cuentas = [
+                {
+                    "id_usuario": c["usuario"].id_usuario,
+                    "nombre": c["usuario"].nombre_completo,
+                    "correo": c["usuario"].correo,
+                    "rol": getattr(c["usuario"], "rol", "Aprendiz"),
+                    "ficha": getattr(c["usuario"], "ficha", None),
+                    "distancia": round(float(c["distancia"]), 4)
+                }
+                for c in coincidencias
+            ]
             return Response(
                 {
+                    "multiple_matches": True,
+                    "mensaje": "Se encontraron múltiples coincidencias biométricas.",
+                    "cuentas": cuentas,
+                },
+                status=status.HTTP_300_MULTIPLE_CHOICES,
+            )
+
+        elif len(coincidencias) == 1:
+            user = coincidencias[0]["usuario"]
+            refresh = RefreshToken.for_user(user)
+            return Response(
+                {
+                    "multiple_matches": False,
                     "mensaje": f"¡Bienvenido de nuevo, {user.nombre_completo}!",
                     "access": str(refresh.access_token),
                     "refresh": str(refresh),
@@ -757,7 +770,7 @@ class LoginBiometricoView(APIView):
                 },
                 status=status.HTTP_200_OK,
             )
-
+        
         return Response(
             {"error": "Rostro no reconocido. Utiliza tu correo y contraseña o vuelve a intentarlo."},
             status=status.HTTP_401_UNAUTHORIZED,
