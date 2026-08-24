@@ -34,7 +34,7 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
     nombre_completo = models.CharField(max_length=150)
     correo = models.EmailField(max_length=100, unique=True)
     rol = models.CharField(max_length=20, default='aprendiz')
-    
+    ficha = models.CharField(max_length=20, blank=True, null=True, help_text="Número de ficha del aprendiz SENA")
     telefono = models.CharField(max_length=15, blank=True, null=True)
     contacto_emergencia = models.CharField(max_length=15, blank=True, null=True)
     nombre_emergencia = models.CharField(max_length=100, blank=True, null=True)

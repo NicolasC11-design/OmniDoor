@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../servicios/auth/auth'; 
@@ -25,7 +25,8 @@ export class Login implements OnInit {
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -60,49 +61,57 @@ export class Login implements OnInit {
   }
 
   onSubmit(): void {
-    this.errorMessage = null; 
-    if (this.vectorBiometrico) {
-      this.loading = true;
-      const payloadBiometrico = {
-        vector_biometrico: this.vectorBiometrico
-      };
+  this.errorMessage = null;
 
-      console.log('Enviando biometría rápida a Django:', payloadBiometrico);
+  if (this.vectorBiometrico) {
+    this.loading = true;
+    const payloadBiometrico = { vector_biometrico: this.vectorBiometrico };
 
-      this.authService.login(payloadBiometrico).subscribe({
-        next: (response) => this.procesarRespuestaExitosa(response),
-        error: (err) => {
-          this.loading = false;
-          this.errorMessage = err.error?.error || 'Rostro no reconocido o cuenta inactiva.';
-          console.error('Error en el login biométrico:', err);
-        }
-      });
-      return;
-    }
-
-    if (this.loginForm.invalid) {
-      this.loginForm.markAllAsTouched(); 
-      return;
-    }
-
-    this.loading = true; 
-
-    const datosMapeados = {
-      correo: this.loginForm.value.email, 
-      password: this.loginForm.value.password
-    };
-
-    console.log('Datos credenciales enviados a Django:', datosMapeados);
-
-    this.authService.login(datosMapeados).subscribe({
+    this.authService.login(payloadBiometrico).subscribe({
       next: (response) => this.procesarRespuestaExitosa(response),
       error: (err) => {
         this.loading = false;
-        this.errorMessage = err.error?.error || 'Error de autenticación. Verifica tus credenciales.';
-        console.error('Error en el login:', err);
+        this.errorMessage = err.error?.error || err.error?.detail || 'Rostro no reconocido o cuenta inactiva.';
+        console.error('Error en el login biométrico:', err);
+        
+        this.cdr.detectChanges();
       }
     });
+    return;
   }
+
+  if (this.loginForm.invalid) {
+    this.loginForm.markAllAsTouched();
+    return;
+  }
+
+  this.loading = true;
+  const datosMapeados = {
+    correo: this.loginForm.value.email, 
+    password: this.loginForm.value.password
+  };
+
+  this.authService.login(datosMapeados).subscribe({
+    next: (response) => this.procesarRespuestaExitosa(response),
+    error: (err) => {
+      this.loading = false;
+      
+      if (err.error?.error) {
+        this.errorMessage = err.error.error;
+      } else if (err.error?.detail) {
+        this.errorMessage = err.error.detail;
+      } else if (err.error && typeof err.error === 'object') {
+        const primerCampo = Object.keys(err.error)[0];
+        const msg = Array.isArray(err.error[primerCampo]) ? err.error[primerCampo][0] : err.error[primerCampo];
+        this.errorMessage = `${primerCampo.toUpperCase()}: ${msg}`;
+      } else {
+        this.errorMessage = 'Error de autenticación. Verifica tus credenciales.';
+      }
+      console.error('Error en el login:', err);
+      this.cdr.detectChanges();
+    }
+  });
+}
 
   private procesarRespuestaExitosa(response: any): void {
     this.loading = false;

@@ -17,16 +17,27 @@ function passwordMatchValidator(control: AbstractControl): ValidationErrors | nu
 }
 
 function placaValidator(control: AbstractControl): ValidationErrors | null {
-  if (!control.value || control.value === 'N/A' || control.value.trim() === '') {
+  const value = control.value;
+  if (!value || value === 'N/A' || String(value).trim() === '') {
     return null;
   }
-  const autoRegex = /^[A-Za-z]{3}-\d{3}$/;
-  const motoRegex = /^[A-Za-z]{3}-\d{2}[A-Za-z]{1}$/;
+  const autoRegex = /^[A-Za-z]{3}-?\d{3}$/;
+  const motoRegex = /^[A-Za-z]{3}-?\d{2}[A-Za-z]{1}$/;
 
-  if (autoRegex.test(control.value) || motoRegex.test(control.value)) {
-    return null;
+  const form = control.parent;
+  const tipo = form ? form.get('tipoVehiculo')?.value : null;
+
+  if (tipo === 'MOTO' || tipo === 'MOTOCICLETA') {
+    if (!motoRegex.test(value)) {
+      return { placaInvalid: true, mensaje: 'Formato de moto debe ser ABC12D o ABC-12D' };
+    }
+  } else {
+    if (!autoRegex.test(value)) {
+      return { placaInvalid: true, mensaje: 'Formato de auto debe ser ABC123 o ABC-123' };
+    }
   }
-  return { placaInvalid: true };
+
+  return null;
 }
 
 export interface VehicleType {
@@ -86,6 +97,7 @@ export class Register implements OnInit {
       apellidos: ['', [Validators.required, Validators.minLength(2)]],
       correo: ['', [Validators.required, Validators.email]],
       rol: ['', Validators.required],
+      ficha: [''],
       placa: ['', [Validators.required, placaValidator]],
       telefono: ['', [Validators.required, Validators.pattern(/^\d+$/)]],
       direccion: ['', Validators.required],
@@ -102,83 +114,78 @@ export class Register implements OnInit {
 
     this.evaluarRequerimientoPlaca(this.selectedVehicle);
     this.registerForm.get('placa')?.valueChanges.subscribe(() => this.backendPlacaError = null);
+    this.registerForm.get('rol')?.valueChanges.subscribe(rolSeleccionado => {
+    const fichaControl = this.registerForm.get('ficha');
+    if (rolSeleccionado === 'aprendiz' || rolSeleccionado === 'instructor') {
+      fichaControl?.setValidators([Validators.required, Validators.pattern(/^\d+$/)]);
+    } else {
+      fichaControl?.clearValidators();
+    }
+    fichaControl?.updateValueAndValidity();
+  });
   }
 
   onSubmit(): void {
-    this.errorMessage = '';
-    this.successMessage = '';
+  this.errorMessage = '';
+  this.successMessage = '';
 
-    if (this.registerForm.invalid) {
-      this.registerForm.markAllAsTouched();
-      this.errorMessage = '⚠️ Por favor revisa los campos en rojo. Hay datos inválidos o incompletos.';
-
-      console.error('El formulario tiene errores en los campos.');
-      Object.keys(this.registerForm.controls).forEach(key => {
-        const control = this.registerForm.get(key);
-        if (control?.errors) {
-          console.warn(`Campo con error ['${key}']:`, control.errors);
-        }
-      });
-
-      if (this.registerForm.errors) {
-        console.warn('⚠️ Error de formulario global:', this.registerForm.errors);
-      }
-
-      this.cdr.detectChanges();
-      return;
-    }
-
-    if (!this.vectorBiometrico || this.vectorBiometrico.length === 0) {
-      this.errorMessage = '⚠️ Debes capturar tus datos biométricos faciales antes de solicitar el acceso.';
-      alert('Atención: Debes realizar el escaneo facial antes de enviar la solicitud.');
-      this.cdr.detectChanges();
-      return;
-    }
-
-    this.loading = true;
-    this.backendPlacaError = null;
-
-    const { confirmPassword, ...data } = this.registerForm.value;
-    const payload = {
-      ...data,
-      tipoVehiculo: this.selectedVehicle,
-      vector_biometrico: this.vectorBiometrico
-    };
-
-    console.log('Enviando petición POST a Django con datos biométricos:', payload);
-    this.authService.register(payload).subscribe({
-      next: (res) => {
-        this.loading = false;
-        this.registroEnviado = true;
-        this.successMessage =
-          'Solicitud recibida. Tu registro está en proceso de verificación y será habilitado cuando el administrador apruebe tu cuenta.';
-        this.registerForm.disable();
-        this.cdr.detectChanges();
-
-        setTimeout(() => this.router.navigate(['/login']), 8000);
-      },
-      error: (err) => {
-        this.loading = false;
-        this.registroEnviado = false;
-        console.error('Error del servidor:', err);
-
-        if (err.error && err.error.placa) {
-          this.backendPlacaError = Array.isArray(err.error.placa) ? err.error.placa[0] : err.error.placa;
-          this.registerForm.get('placa')?.setErrors({ placaDuplicada: true });
-          this.errorMessage = `La placa ingresada ya se encuentra registrada.`;
-        } 
-        else if (err.error && err.error.correo) {
-          this.registerForm.get('correo')?.setErrors({ unique: true });
-          this.errorMessage = Array.isArray(err.error.correo) ? err.error.correo[0] : err.error.correo;
-        } 
-        else {
-          this.errorMessage = 'Error en el servidor: ' + (err.error?.detail || err.message || JSON.stringify(err.error));
-        }
-
-        this.cdr.detectChanges();
-      }
-    });
+  if (this.registerForm.invalid) {
+    this.registerForm.markAllAsTouched();
+    this.errorMessage = '⚠️ Por favor revisa los campos en rojo. Hay datos inválidos o incompletos.';
+    this.cdr.detectChanges();
+    return;
   }
+
+  if (!this.vectorBiometrico || this.vectorBiometrico.length === 0) {
+    this.errorMessage = '⚠️ Debes capturar tus datos biométricos faciales antes de solicitar el acceso.';
+    alert('Atención: Debes realizar el escaneo facial antes de enviar la solicitud.');
+    this.cdr.detectChanges();
+    return;
+  }
+
+  this.loading = true;
+  this.backendPlacaError = null;
+
+  const { confirmPassword, ...data } = this.registerForm.value;
+  const payload = {
+    ...data,
+    vector_biometrico: this.vectorBiometrico
+  };
+
+  console.log('Enviando petición POST a Django:', payload);
+  this.authService.register(payload).subscribe({
+    next: (res) => {
+      this.loading = false;
+      this.registroEnviado = true;
+      this.successMessage =
+        'Solicitud recibida. Tu registro está en proceso de verificación y será habilitado cuando el administrador apruebe tu cuenta.';
+      this.registerForm.disable();
+      this.cdr.detectChanges();
+
+      setTimeout(() => this.router.navigate(['/login']), 8000);
+    },
+    error: (err) => {
+      this.loading = false;
+      this.registroEnviado = false;
+      console.error('Error del servidor:', err);
+
+      if (err.error && err.error.placa) {
+        this.backendPlacaError = Array.isArray(err.error.placa) ? err.error.placa[0] : err.error.placa;
+        this.registerForm.get('placa')?.setErrors({ placaDuplicada: true });
+        this.errorMessage = this.backendPlacaError || 'La placa ingresada ya se encuentra registrada.';
+      } 
+      else if (err.error && err.error.correo) {
+        this.registerForm.get('correo')?.setErrors({ unique: true });
+        this.errorMessage = Array.isArray(err.error.correo) ? err.error.correo[0] : err.error.correo;
+      } 
+      else {
+        this.errorMessage = 'Error en el servidor: ' + (err.error?.detail || err.message || JSON.stringify(err.error));
+      }
+
+      this.cdr.detectChanges();
+    }
+  });
+}
 
   captureOCR(): void {
     if (this.registroEnviado) return;
@@ -209,7 +216,7 @@ export class Register implements OnInit {
       return;
     }
 
-    this.vectorBiometrico = vectorReal;
+    this.vectorBiometrico = vectorReal; 
     this.biometricCaptured = true;
     this.biometricCapturing = false;
     this.biometricLabel = '✓ Biometría registrada correctamente (Clic para recapturar)';
@@ -237,9 +244,10 @@ export class Register implements OnInit {
   }
 
   selectVehicle(value: string): void {
-    this.selectedVehicle = value;
-    const tipoParaBackend = value === 'auto' ? 'AUTOMOVIL' : value.toUpperCase();
-    this.registerForm.patchValue({ tipoVehiculo: tipoParaBackend });
-    this.evaluarRequerimientoPlaca(value);
-  }
+  this.selectedVehicle = value;
+  const tipoParaBackend = value === 'auto' ? 'AUTOMOVIL' : value.toUpperCase();
+  this.registerForm.patchValue({ tipoVehiculo: tipoParaBackend });
+  this.evaluarRequerimientoPlaca(value);
+  this.registerForm.get('placa')?.updateValueAndValidity();
+}
 }
