@@ -18,7 +18,11 @@
             <div class="id-avatar">{{ iniciales() }}</div>
             <div class="id-info">
                 <div class="id-name">{{ usuario.nombre_completo || 'Usuario' }}</div>
-                <div class="id-role">{{ usuario.rol || 'aprendiz' }} · {{ usuario.correo }}</div>
+                <div class="id-role">
+                    {{ usuario.rol || 'aprendiz' }} 
+                    <span *ngIf="usuario.ficha">· Ficha: {{ usuario.ficha }}</span> 
+                    · {{ usuario.correo }}
+                </div>
             </div>
             <div class="id-status" [ngClass]="usuario.estado ? 'activo' : 'restringido'">
                 {{ usuario.estado ? 'acceso activo' : 'acceso restringido' }}
@@ -167,6 +171,12 @@
             </div>
 
             <div class="field-group">
+                <label class="field-label" for="datFicha">número de ficha sena</label>
+                <input id="datFicha" class="od-input" type="text" [(ngModel)]="formDatos.ficha"
+                    name="ficha" placeholder="Ej: 2670123" />
+            </div>
+
+            <div class="field-group">
                 <label class="field-label" for="datTelefono">teléfono</label>
                 <input id="datTelefono" class="od-input" type="text" [(ngModel)]="formDatos.telefono" name="telefono"
                     required placeholder="Número de celular" />
@@ -199,7 +209,7 @@
             <div class="field-group">
                 <label class="field-label" for="passNueva">nueva contraseña</label>
                 <input id="passNueva" class="od-input" type="password" [(ngModel)]="formPassword.nueva" name="nueva"
-                    required placeholder="Mínimo 6 caracteres" />
+                    required placeholder="Mínimo 8 caracteres" />
             </div>
 
             <div class="field-group">
@@ -211,7 +221,7 @@
             <div class="modal-actions">
                 <button type="button" class="od-btn" (click)="cerrarModales()">cancelar</button>
                 <button type="button" class="od-btn primary" [disabled]="passwordForm.invalid"
-                    (click)="guardarPassword(); mostrarModalPassword = false">
+                    (click)="guardarPassword()">
                     actualizar
                 </button>
             </div>

@@ -6,10 +6,41 @@ from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 from .models import Usuario, Vehiculo, RegistroAcceso, InformeTurno
 
+
+
+def validar_formato_placa(placa, tipo_vehiculo):
+    placa_limpia = str(placa).strip().replace('-', '').upper()
+    tipo = str(tipo_vehiculo).strip().upper() if tipo_vehiculo else "AUTOMOVIL"
+
+    patron_carro = r'^[A-Z]{3}\d{3}$'
+    patron_moto = r'^[A-Z]{3}\d{2}[A-Z]$'
+
+    if tipo in ['MOTO', 'MOTOCICLETA']:
+        if not re.match(patron_moto, placa_limpia):
+            raise serializers.ValidationError(
+                f"La placa '{placa}' no es válida para MOTO. Debe ser formato 3 letras, 2 números y 1 letra (ej. ABC12D)."
+            )
+    else:
+        if not re.match(patron_carro, placa_limpia):
+            raise serializers.ValidationError(
+                f"La placa '{placa}' no es válida para AUTOMÓVIL. Debe ser formato 3 letras y 3 números (ej. ABC123)."
+            )
+    
+    return placa_limpia
+
 class VehiculoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Vehiculo
         fields = ['id_vehiculo', 'tipoVehiculo', 'placa', 'marca', 'modelo', 'fecha_registro']
+
+    def validate(self, data):
+        placa = data.get('placa')
+        tipo = data.get('tipoVehiculo')
+
+        if placa:
+            data['placa'] = validar_formato_placa(placa, tipo)
+            
+        return data
 
 class userSerializer(serializers.ModelSerializer):
     vehiculos = VehiculoSerializer(many=True, read_only=True)
@@ -18,7 +49,7 @@ class userSerializer(serializers.ModelSerializer):
     class Meta:
         model = Usuario
         fields = [
-            'id_usuario', 'nombre_completo', 'correo', 'rol', 'estado', 
+            'id_usuario', 'nombre_completo', 'correo', 'rol', 'ficha', 'estado', 
             'telefono', 'direccion', 'vehiculos'
         ]
     
@@ -34,6 +65,15 @@ class RegisterSerializer(serializers.ModelSerializer):
     placa = serializers.CharField(write_only=True, required=False, allow_blank=True)
     tipoVehiculo = serializers.CharField(write_only=True, required=False, allow_blank=True)
 
+    class Meta:
+        model = Usuario
+        fields = [
+            'nombres', 'apellidos', 'correo', 'password', 'rol', 'ficha', 
+            'telefono', 'contacto_emergencia', 'nombre_emergencia', 'direccion',
+            'placa', 'tipoVehiculo'
+        ]
+        extra_kwargs = {'password': {'write_only': True}}
+
     def validate_password(self, value):
         if len(value) < 8:
             raise serializers.ValidationError("La contraseña debe tener al menos 8 caracteres.")
@@ -44,23 +84,60 @@ class RegisterSerializer(serializers.ModelSerializer):
             )
         return value
 
-    def validate_placa(self, value):
-        if value and str(value).strip():
-            placa_limpia = str(value).strip().replace('-', '').upper()
+    def validate(self, data):
+        placa_input = data.get('placa')
+        tipo_input = data.get('tipoVehiculo')
+
+        if placa_input and str(placa_input).strip():
+            placa_limpia = validar_formato_placa(placa_input, tipo_input)
             placa_duplicada = Vehiculo.objects.annotate(
                 placa_sin_guion=Replace('placa', Value('-'), Value(''))
             ).filter(placa_sin_guion=placa_limpia).exists()
-            
+
             if placa_duplicada:
                 raise serializers.ValidationError(
-                    f"Inconsistencia de seguridad: La placa '{value.upper()}' ya está registrada por otro usuario vehicular."
+                    {"placa": f"Inconsistencia de seguridad: La placa '{placa_limpia}' ya está registrada por otro usuario vehicular."}
                 )
-        return value
+
+            data['placa'] = placa_limpia
+
+        return data
+
+    def create(self, validated_data):
+        nombres = validated_data.pop('nombres')
+        apellidos = validated_data.pop('apellidos')
+        placa_input = validated_data.pop('placa', None)
+        tipo_input = validated_data.pop('tipoVehiculo', None)
+        print(f"=== DATOS DETECTADOS => Placa: '{placa_input}', Tipo: '{tipo_input}' ===")
+
+        try:
+            user = Usuario.objects.create_user(
+                nombre_completo=f"{nombres} {apellidos}",
+                **validated_data
+            )
+            user.is_active = False
+            user.save()
+            if placa_input and str(placa_input).strip():
+                placa_final = str(placa_input).strip().replace('-', '').upper()
+                
+                vehiculo_creado = Vehiculo.objects.create(
+                    propietario=user,
+                    placa=placa_final,
+                    tipoVehiculo=str(tipo_input).strip().upper() if tipo_input else "AUTOMOVIL"
+                )
+                print(f"=== VEHÍCULO GUARDADO EN BASE DE DATOS: {vehiculo_creado} ===")
+            
+            return user
+
+        except IntegrityError as e:
+            if 'correo' in str(e).lower():
+                raise serializers.ValidationError({"correo": "Este correo electrónico ya está registrado."})
+            raise serializers.ValidationError({"error": f"Error de base de datos: {str(e)}"})
 
     class Meta:
         model = Usuario
         fields = [
-            'nombres', 'apellidos', 'correo', 'password', 'rol', 
+            'nombres', 'apellidos', 'correo', 'password', 'rol', 'ficha', 
             'telefono', 'contacto_emergencia', 'nombre_emergencia', 'direccion',
             'placa', 'tipoVehiculo'
         ]
@@ -273,3 +350,19 @@ class InformeTurnoSerializer(serializers.ModelSerializer):
             'vehiculos_quedados', 'novedades_observaciones', 'entrega_sin_novedad'
         ]
         read_only_fields = ['total_entradas', 'total_salidas', 'vehiculos_quedados']
+
+class UsuarioUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Usuario
+        fields = ['nombre_completo', 'telefono', 'direccion', 'ficha']
+
+    def update(self, instance, validated_data):
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        for bool_field in ['estado', 'is_active', 'is_admin', 'is_staff']:
+            val = getattr(instance, bool_field, None)
+            if isinstance(val, str):
+                setattr(instance, bool_field, val.lower() in ['true', '1', 't'])
+        campos_a_actualizar = list(validated_data.keys())
+        instance.save(update_fields=campos_a_actualizar)
+        return instance

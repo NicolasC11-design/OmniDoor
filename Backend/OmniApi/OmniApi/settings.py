@@ -10,8 +10,6 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
-from pathlib import Path
-BASE_DIR = Path(__file__).resolve().parent.parent
 
 import os
 
@@ -25,6 +23,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 load_dotenv(os.path.join(BASE_DIR, '.env'))
+
+load_dotenv()
 
 
 # Quick-start development settings - unsuitable for production
@@ -89,8 +89,6 @@ WSGI_APPLICATION = 'OmniApi.wsgi.application'
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
 
-load_dotenv()
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -100,8 +98,7 @@ DATABASES = {
         'HOST': os.getenv('DB_HOST'),
         'PORT': os.getenv('DB_PORT'),
         'OPTIONS': {
-            # Supabase requiere SSL para conexiones externas, esto está perfecto
-            'sslmode': 'require',
+            'sslmode': 'prefer',
             'connect_timeout': 10,
         },
     }

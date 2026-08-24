@@ -1,1 +1,70 @@
-<p>control-accesos works!</p>
+<div class="container py-4">
+    <h2 class="mb-4 text-primary"><i class="ti ti-shield-check me-2"></i>Control de Acceso - Portería</h2>
+
+    <div class="row g-4">
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="card-title mb-0"><i class="ti ti-camera me-2"></i>Escaner Biométrico Facial</h5>
+                </div>
+                <div class="card-body text-center">
+                    <app-biometria-camara (rostroCapturado)="onRostroCapturado($event)"></app-biometria-camara>
+
+                    <div *ngIf="vectorBiometrico" class="alert alert-success mt-3 mb-0">
+                        <i class="ti ti-check-circle me-1"></i> Rostro capturado y listo para validación.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0"><i class="ti ti-id me-2"></i>Validación de Ingreso / Salida</h5>
+                </div>
+                <div class="card-body">
+                    <form (ngSubmit)="procesarAcceso()">
+                        <div class="mb-3">
+                            <label class="form-label font-weight-bold">Placa del Vehículo (Opcional si es
+                                Peatonal):</label>
+                            <input type="text" class="form-control form-control-lg text-uppercase"
+                                [(ngModel)]="placaInput" name="placaInput" placeholder="Ej. ABC123 o ABC12D"
+                                maxlength="10">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label font-weight-bold">Tipo de Movimiento:</label>
+                            <select class="form-select" [(ngModel)]="tipoMovimiento" name="tipoMovimiento">
+                                <option value="ENTRADA">ENTRADA</option>
+                                <option value="SALIDA">SALIDA</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-lg w-100 mt-2"
+                            [disabled]="cargando || !vectorBiometrico">
+                            <span *ngIf="cargando" class="spinner-border spinner-border-sm me-2"></span>
+                            Procesar Acceso en Portería
+                        </button>
+                    </form>
+
+
+                    <div *ngIf="mensajeRespuesta" class="alert alert-success mt-4">
+                        <h5 class="alert-heading"><i class="ti ti-circle-check me-1"></i> ¡Acceso Autorizado!</h5>
+                        <p class="mb-0">{{ mensajeRespuesta }}</p>
+                        <hr *ngIf="datosUsuario">
+                        <div *ngIf="datosUsuario">
+                            <small><strong>Conductor:</strong> {{ datosUsuario.nombre }}</small><br>
+                            <small><strong>Rol:</strong> {{ datosUsuario.rol }}</small>
+                        </div>
+                    </div>
+
+                    <div *ngIf="errorRespuesta" class="alert alert-danger mt-4">
+                        <h5 class="alert-heading"><i class="ti ti-alert-triangle me-1"></i> Acceso Denegado</h5>
+                        <p class="mb-0">{{ errorRespuesta }}</p>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
