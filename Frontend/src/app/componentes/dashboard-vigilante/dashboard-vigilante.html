@@ -4,6 +4,7 @@
 
     <div class="od-content">
 
+        <!-- Topbar Navigation -->
         <header class="od-topbar">
             <div class="topbar-logo">
                 <h1>OmniDoor</h1>
@@ -14,15 +15,16 @@
                 <div class="status-pill" [class.online]="online">
                     <span class="status-dot"></span> {{ online ? 'online' : 'offline' }}
                 </div>
-                <button class="od-btn success" (click)="abrirModalInforme()">
-                    <i class="ti ti-report-analytics"></i> Entregar Turno
+                <button type="button" class="od-btn success" (click)="abrirModalInforme()">
+                    <i class="ti ti-report-analytics" aria-hidden="true"></i> Entregar Turno
                 </button>
-                <button class="logout-btn" (click)="cerrarSesion()">
-                    <i class="ti ti-logout"></i> Cerrar sesión
+                <button type="button" class="logout-btn" (click)="cerrarSesion()">
+                    <i class="ti ti-logout" aria-hidden="true"></i> Cerrar sesión
                 </button>
             </div>
         </header>
 
+        <!-- Dynamic Statistics -->
         <div class="stats-row">
             <div class="stat-card">
                 <div class="stat-value">{{ ingresosHoy }}</div>
@@ -46,6 +48,7 @@
             </div>
         </div>
 
+        <!-- Camera & Scanner Control Panel -->
         <div class="od-panel">
             <div class="corner c-tl"></div>
             <div class="corner c-tr"></div>
@@ -70,26 +73,30 @@
 
                 <div *ngIf="evaluandoBiometria" class="py-5">
                     <div class="spinner-border text-info" role="status"></div>
-                    <div class="camera-caption mt-3" style="color: var(--od-accent, #00ffcc);">[ PROCESANDO VECTOR
-                        BIOMÉTRICO Y REGISTROS... ]</div>
+                    <div class="camera-caption mt-3" style="color: var(--od-accent, #00ffcc);">
+                        [ PROCESANDO VECTOR BIOMÉTRICO Y REGISTROS... ]
+                    </div>
                 </div>
             </div>
 
             <div class="input-scanner-controls my-3 d-flex gap-2 align-items-center">
                 <input type="text" class="od-input text-uppercase flex-grow-1" [(ngModel)]="placaEscaneoInput"
-                    placeholder="Placa opcional (ej. ABC-123 o vacío para peatonal)" />
+                    (input)="placaInput = placaEscaneoInput" placeholder="Placa opcional (ej. ABC-123)" />
 
                 <select class="od-input w-auto" [(ngModel)]="tipoMovimientoCamara"
+                    (change)="tipoMovimientoSeleccionado = tipoMovimientoCamara"
                     style="background: #0f172a; color: #fff;">
                     <option value="ENTRADA">ENTRADA</option>
                     <option value="SALIDA">SALIDA</option>
                 </select>
 
-                <button *ngIf="!modoEscaneoBiometrico" class="od-btn primary" (click)="iniciarEscaneoPorteria()">
-                    <i class="ti ti-camera"></i> Escanear Rostro
+                <button type="button" *ngIf="!modoEscaneoBiometrico" class="od-btn primary"
+                    (click)="tipoMovimientoSeleccionado = tipoMovimientoCamara; iniciarEscaneoPorteria()">
+                    <i class="ti ti-camera" aria-hidden="true"></i> Escanear Rostro
                 </button>
 
-                <button *ngIf="modoEscaneoBiometrico" class="od-btn danger" (click)="cancelarEscaneoPorteria()">
+                <button type="button" *ngIf="modoEscaneoBiometrico" class="od-btn danger"
+                    (click)="cancelarEscaneoPorteria()">
                     Cancelar
                 </button>
             </div>
@@ -100,25 +107,27 @@
                     'ti-shield-check': estadoAcceso === 'ok',
                     'ti-scan': estadoAcceso === 'idle'
                 }" aria-hidden="true"></i>
-                <span *ngIf="estadoAcceso === 'idle'">esperando vehículo o peatón en portería...</span>
-                <span *ngIf="estadoAcceso === 'ok'">acceso autorizado — {{ ultimoResultado?.placa }} ({{
-                    ultimoResultado?.conductor }})</span>
-                <span *ngIf="estadoAcceso === 'deny'">alerta ia: {{ ultimoResultado?.conductor || 'vehículo no
-                    identificado / acceso denegado' }}</span>
+
+                <span *ngIf="estadoAcceso === 'idle'">esperando vehículo en portería...</span>
+                <span *ngIf="estadoAcceso === 'ok'">
+                    acceso autorizado — {{ ultimoResultado?.placa }} ({{ ultimoResultado?.conductor }})
+                </span>
+                <span *ngIf="estadoAcceso === 'deny'">
+                    alerta ia: {{ ultimoResultado?.conductor || 'vehículo no identificado / acceso denegado' }}
+                </span>
             </div>
 
             <div class="action-row mt-3">
-                <button class="od-btn danger" (click)="abrirModalManual()">
-                    <i class="ti ti-lock-open" aria-hidden="true"></i>
-                    apertura manual forzada
+                <button type="button" class="od-btn danger" (click)="abrirModalManual()">
+                    <i class="ti ti-lock-open" aria-hidden="true"></i> apertura manual forzada
                 </button>
-                <button class="od-btn" (click)="abrirModalVisitante()">
-                    <i class="ti ti-user-plus" aria-hidden="true"></i>
-                    registrar visitante
+                <button type="button" class="od-btn" (click)="abrirModalVisitante()">
+                    <i class="ti ti-user-plus" aria-hidden="true"></i> registrar visitante
                 </button>
             </div>
         </div>
 
+        <!-- Real-time Movement History Table -->
         <div class="od-panel">
             <div class="corner c-tl"></div>
             <div class="corner c-tr"></div>
@@ -143,46 +152,28 @@
                         <tr *ngFor="let ingreso of ultimosIngresos">
                             <td>
                                 <span class="veh-chip">
-                                    <i class="ti" [ngClass]="{
-                                        'ti-user': ingreso.placa_vehiculo === 'PEATONAL' || ingreso.tipo_vehiculo === 'PEATONAL',
-                                        'ti-car': ingreso.tipo_vehiculo === 'CARRO' && ingreso.placa_vehiculo !== 'PEATONAL',
-                                        'ti-motorbike': ingreso.tipo_vehiculo === 'MOTO',
-                                        'ti-bike': ingreso.tipo_vehiculo === 'BICICLETA',
-                                        'ti-scooter': ingreso.tipo_vehiculo === 'PATIN',
-                                        'ti-bolt': ingreso.tipo_vehiculo === 'ELECTRICO'
-                                    }" aria-hidden="true"></i>
-                                    {{ (ingreso.placa_vehiculo === 'PEATONAL' || ingreso.tipo_vehiculo === 'PEATONAL') ?
-                                    'PEATÓN' : ingreso.tipo_vehiculo }}
+                                    <i class="ti" [ngClass]="getIconoVehiculo(ingreso)" aria-hidden="true"></i>
+                                    {{ getTipoVehiculo(ingreso) }}
                                 </span>
                             </td>
-
                             <td>
-                                <span class="placa-text"
-                                    [ngClass]="{'opacity-50': ingreso.placa_vehiculo === 'PEATONAL' || ingreso.placa_vehiculo === 'S_PLACA'}">
-                                    {{ (ingreso.placa_vehiculo === 'PEATONAL' || ingreso.placa_vehiculo === 'S_PLACA') ?
-                                    'SIN PLACA' : ingreso.placa_vehiculo }}
+                                <span class="placa-text" [ngClass]="{'opacity-50': esSinPlaca(ingreso)}">
+                                    {{ getPlacaTexto(ingreso) }}
                                 </span>
                             </td>
-
-                            <td>{{ ingreso.nombre_conductor }}</td>
-
+                            <td>{{ ingreso.conductor || ingreso.nombre_conductor || 'No Registrado' }}</td>
                             <td>
-                                <span class="od-chip" [ngClass]="{
-                                    'residente-tag': ingreso.rol_acceso === 'RESIDENTE' || ingreso.rol_acceso === 'APRENDIZ',
-                                    'visitante-tag': ingreso.rol_acceso === 'VISITANTE',
-                                    'apertura-tag': ingreso.rol_acceso === 'APERTURA_M' || ingreso.rol_acceso === 'DENEGADO'
-                                }"
+                                <span class="od-chip" [ngClass]="getClaseAcreditacion(ingreso)"
                                     style="font-size: 0.75rem; padding: 4px 8px; border-radius: 4px; font-weight: bold; text-transform: uppercase; display: inline-block;">
-                                    {{ ingreso.rol_acceso === 'APERTURA_M' ? 'Manual Forzado' : ingreso.rol_acceso }}
+                                    {{ ingreso.acreditacion || ingreso.rol_acceso || 'VISITANTE' }}
                                 </span>
                             </td>
-
-                            <td>{{ ingreso.fecha_hora | date:'dd/MM/yyyy h:mm a' }}</td>
-
                             <td>
-                                <span class="mov-chip"
-                                    [ngClass]="{'entrada': ingreso.tipo_movimiento === 'ENTRADA', 'salida': ingreso.tipo_movimiento === 'SALIDA'}">
-                                    {{ ingreso.tipo_movimiento }}
+                                {{ getFechaIngreso(ingreso) }}
+                            </td>
+                            <td>
+                                <span class="mov-chip" [ngClass]="getClaseMovimiento(ingreso)">
+                                    {{ ingreso.tipo_movimiento || ingreso.movimiento || 'ENTRADA' }}
                                 </span>
                             </td>
                         </tr>
@@ -193,44 +184,52 @@
 
     </div>
 
+    <!-- Modal: Apertura Manual -->
     <div class="modal-overlay" *ngIf="mostrarModalManual" (click)="cerrarModales()">
         <div class="modal-box" (click)="$event.stopPropagation()">
             <div class="modal-title">apertura manual forzada</div>
 
-            <label class="field-label" for="motivo">Nombre del conductor / motivo</label>
-            <input id="motivo" class="od-input" type="text" [(ngModel)]="aperturaManual.motivo"
-                placeholder="Ej. Juan Pérez / Fallo cámara" />
+            <label class="field-label" for="nombreConductorManual">Nombre del conductor / Persona que ingresa</label>
+            <input id="nombreConductorManual" class="od-input" type="text" [(ngModel)]="aperturaManual.conductor"
+                placeholder="Ej. Juan Pérez" />
 
-            <label class="field-label" for="tipoVehiculoManual">tipo de vehículo</label>
+            <label class="field-label" for="motivoAperturaManual" style="margin-top: 12px;">Motivo de apertura /
+                Justificación</label>
+            <input id="motivoAperturaManual" class="od-input" type="text" [(ngModel)]="aperturaManual.motivo"
+                placeholder="Ej. Fallo de sensor / Emergencia / Talanquera bloqueada" />
+
+            <label class="field-label" for="tipoVehiculoManual" style="margin-top: 12px;">Tipo de vehículo</label>
             <select id="tipoVehiculoManual" class="od-input" [(ngModel)]="aperturaManual.tipoVehiculo"
                 style="color: #fff; background: #0f172a;">
-                <option value="PEATONAL">Peatón (Sin vehículo)</option>
-                <option value="carro">Automóvil</option>
-                <option value="moto">Motocicleta</option>
-                <option value="electrico">Eléctrico</option>
-                <option value="patin">Patín / Scooter</option>
-                <option value="bicicleta">Bicicleta</option>
+                <option value="AUTO">Automóvil</option>
+                <option value="MOTO">Motocicleta</option>
+                <option value="ELECTRICO">Eléctrico</option>
+                <option value="PATIN">Patín / Scooter</option>
+                <option value="BICICLETA">Bicicleta</option>
             </select>
 
-            <ng-container
-                *ngIf="aperturaManual.tipoVehiculo !== 'PEATONAL' && aperturaManual.tipoVehiculo !== 'bicicleta' && aperturaManual.tipoVehiculo !== 'patin' && aperturaManual.tipoVehiculo !== 'electrico'">
-                <label class="field-label" for="placaManual">Placa</label>
+            <ng-container *ngIf="requierePlaca(aperturaManual.tipoVehiculo)">
+                <label class="field-label" for="placaManual" style="margin-top: 12px;">Placa</label>
                 <input id="placaManual" class="od-input" type="text" [(ngModel)]="aperturaManual.placa"
-                    [placeholder]="aperturaManual.tipoVehiculo === 'moto' ? 'ABC-12D' : 'ABC-123'" />
+                    [placeholder]="aperturaManual.tipoVehiculo === 'MOTO' ? 'ABC-12D' : 'ABC-123'" />
             </ng-container>
 
-            <div *ngIf="aperturaManual.tipoVehiculo === 'PEATONAL' || aperturaManual.tipoVehiculo === 'bicicleta' || aperturaManual.tipoVehiculo === 'patin' || aperturaManual.tipoVehiculo === 'electrico'"
+            <div *ngIf="!requierePlaca(aperturaManual.tipoVehiculo)"
                 style="margin-top: 15px; color: var(--od-accent, #00ffcc); font-size: 0.85rem; font-style: italic;">
                 * No requiere registro de placa reglamentaria.
             </div>
 
             <div class="modal-actions" style="margin-top: 20px;">
-                <button class="od-btn" (click)="cerrarModales()">cancelar</button>
-                <button class="od-btn danger" (click)="confirmarAperturaManual()">confirmar apertura</button>
+                <button type="button" class="od-btn" (click)="cerrarModales()">cancelar</button>
+                <button type="button" class="od-btn danger" [disabled]="guardandoManual"
+                    (click)="confirmarAperturaManual()">
+                    {{ guardandoManual ? 'procesando...' : 'confirmar apertura' }}
+                </button>
             </div>
         </div>
     </div>
 
+    <!-- Modal: Registro Visitante -->
     <div class="modal-overlay" *ngIf="mostrarModalVisitante" (click)="cerrarModales()">
         <div class="modal-box" (click)="$event.stopPropagation()">
             <div class="modal-title">registro rápido de visitante</div>
@@ -242,33 +241,35 @@
             <label class="field-label" for="tipoVehiculo">tipo de vehículo</label>
             <select id="tipoVehiculo" class="od-input" [(ngModel)]="visitante.tipoVehiculo"
                 style="color: #fff; background: #0f172a;">
-                <option value="PEATONAL">Peatón (Sin vehículo)</option>
-                <option value="carro">Automóvil</option>
-                <option value="moto">Motocicleta</option>
-                <option value="electrico">Eléctrico</option>
-                <option value="patin">Patín / Scooter</option>
-                <option value="bicicleta">Bicicleta</option>
+                <option value="AUTO">Automóvil</option>
+                <option value="MOTO">Motocicleta</option>
+                <option value="ELECTRICO">Eléctrico</option>
+                <option value="PATIN">Patín / Scooter</option>
+                <option value="BICICLETA">Bicicleta</option>
             </select>
 
-            <ng-container
-                *ngIf="visitante.tipoVehiculo !== 'PEATONAL' && visitante.tipoVehiculo !== 'bicicleta' && visitante.tipoVehiculo !== 'patin' && visitante.tipoVehiculo !== 'electrico'">
+            <ng-container *ngIf="requierePlaca(visitante.tipoVehiculo)">
                 <label class="field-label" for="placaVisitante">placa</label>
                 <input id="placaVisitante" class="od-input" type="text" [(ngModel)]="visitante.placa"
-                    [placeholder]="visitante.tipoVehiculo === 'moto' ? 'ABC-12D' : 'ABC-123'" />
+                    [placeholder]="visitante.tipoVehiculo === 'MOTO' ? 'ABC-12D' : 'ABC-123'" />
             </ng-container>
 
-            <div *ngIf="visitante.tipoVehiculo === 'PEATONAL' || visitante.tipoVehiculo === 'bicicleta' || visitante.tipoVehiculo === 'patin' || visitante.tipoVehiculo === 'electrico'"
+            <div *ngIf="!requierePlaca(visitante.tipoVehiculo)"
                 style="margin-top: 15px; color: var(--od-accent, #00ffcc); font-size: 0.85rem; font-style: italic;">
                 * No requiere registro de placa reglamentaria.
             </div>
 
             <div class="modal-actions" style="margin-top: 20px;">
-                <button class="od-btn" (click)="cerrarModales()">cancelar</button>
-                <button class="od-btn success" (click)="confirmarVisitante()">registrar e ingresar</button>
+                <button type="button" class="od-btn" (click)="cerrarModales()">cancelar</button>
+                <button type="button" class="od-btn success" [disabled]="guardandoVisitante"
+                    (click)="confirmarVisitante()">
+                    {{ guardandoVisitante ? 'guardando...' : 'registrar e ingresar' }}
+                </button>
             </div>
         </div>
     </div>
 
+    <!-- Modal: Informe Fin de Turno -->
     <div class="modal-overlay" *ngIf="mostrarModalInforme" (click)="cerrarModales()">
         <div class="modal-box" (click)="$event.stopPropagation()">
             <div class="modal-title">Generar Informe de Fin de Turno</div>
@@ -288,8 +289,8 @@
                 placeholder="Escribe incidentes con la talanquera, fallas en sensores IoT, vehículos pernoctando u observaciones para el siguiente turno..."></textarea>
 
             <div class="modal-actions">
-                <button class="od-btn" (click)="cerrarModales()">Volver al Panel</button>
-                <button class="od-btn success" (click)="confirmarCierreTurno()"
+                <button type="button" class="od-btn" (click)="cerrarModales()">Volver al Panel</button>
+                <button type="button" class="od-btn success" (click)="confirmarCierreTurno()"
                     [disabled]="!sinNovedadCheck && !novedadesTexto.trim()">
                     Firmar y Cerrar Turno
                 </button>
@@ -297,6 +298,7 @@
         </div>
     </div>
 
+    <!-- Banner Pantalla Completa: OK -->
     <div *ngIf="estadoAcceso === 'ok' && ultimoResultado" class="alerta-pantalla-contingencia contingencia-ok">
         <h1>ACCESO AUTORIZADO</h1>
         <div style="margin-top: 1.5rem;">
@@ -308,16 +310,25 @@
             </div>
 
             <div
-                style="font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1.5px; opacity: 0.8; margin-top: 1.5rem;">
-                Conductor / Motivo:</div>
-            <div style="font-size: 2rem; font-weight: 700; margin-top: 0.3rem;">
+                style="font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1.5px; opacity: 0.8; margin-top: 1rem;">
+                Conductor / Autorizado:</div>
+            <div style="font-size: 2rem; font-weight: 700; margin-top: 0.2rem;">
                 {{ ultimoResultado.conductor }}
             </div>
+
+            <div *ngIf="ultimoResultado.motivo"
+                style="font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1.5px; opacity: 0.8; margin-top: 1rem;">
+                Motivo / Justificación:</div>
+            <div *ngIf="ultimoResultado.motivo"
+                style="font-size: 1.4rem; font-weight: 500; color: #f4f8f6; margin-top: 0.2rem;">
+                {{ ultimoResultado.motivo }}
+            </div>
         </div>
-        <p style="font-size: 1.1rem; margin-top: 2.5rem; opacity: 0.75; font-style: italic;">Retornando al panel en unos
+        <p style="font-size: 1.1rem; margin-top: 2rem; opacity: 0.75; font-style: italic;">Retornando al panel en unos
             segundos...</p>
     </div>
 
+    <!-- Banner Pantalla Completa: DENY -->
     <div *ngIf="estadoAcceso === 'deny' && ultimoResultado" class="alerta-pantalla-contingencia contingencia-deny">
         <h1>ACCESO DENEGADO / CANCELADO</h1>
         <div style="margin-top: 1.5rem;">
@@ -336,26 +347,50 @@
             segundos...</p>
     </div>
 
-    <div class="modal-overlay" *ngIf="mostrarModalSeleccionCuentas">
-        <div class="modal-container">
-            <button class="btn-cerrar" (click)="mostrarModalSeleccionCuentas = false">×</button>
-            <h3>Múltiples Coincidencias Encontradas</h3>
-            <p>El rostro escaneado coincide con varios usuarios registrados. Seleccione el correspondiente:</p>
+    <!-- Modal: Selección de Coincidencias Biométricas -->
+    <div class="modal-overlay" *ngIf="coincidenciasPorteria && coincidenciasPorteria.length > 0">
+        <div class="modal-box modal-coincidencias">
 
-            <div class="lista-cuentas">
-                <div class="card-cuenta" *ngFor="let cuenta of cuentasCoincidentes"
-                    (click)="seleccionarUsuarioBiometrico(cuenta)">
-                    <div class="info-cuenta">
-                        <strong>{{ cuenta.nombre || cuenta.nombre_completo }}</strong>
-                        <span>{{ cuenta.correo }}</span>
-                        <small>Rol: {{ cuenta.rol }} <span *ngIf="cuenta.ficha">| Ficha: {{ cuenta.ficha
-                                }}</span></small>
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i class="ti ti-users"></i> MÚLTIPLES COINCIDENCIAS DETECTADAS
+                </div>
+                <button type="button" class="close-btn" (click)="coincidenciasPorteria = []">&times;</button>
+            </div>
+
+            <p class="modal-description">
+                El rostro escaneado coincide con varias cuentas. Selecciona la persona que va a ingresar o salir:
+            </p>
+
+            <div class="coincidencias-lista">
+                <div *ngFor="let c of coincidenciasPorteria" class="coincidencia-card"
+                    (click)="confirmarSeleccionPorteria(c)">
+                    <div class="coincidencia-avatar">
+                        <i class="ti ti-user"></i>
                     </div>
-                    <button class="btn-seleccionar">Seleccionar</button>
+
+                    <div class="coincidencia-details">
+                        <div class="coincidencia-nombre">{{ c.nombre }}</div>
+                        <div class="coincidencia-meta">
+                            <span>{{ c.correo }}</span>
+                            <span *ngIf="c.ficha"> · Ficha: {{ c.ficha }}</span>
+                            <span *ngIf="c.placa && c.placa !== 'S_PLACA'"> · Placa: <strong>{{ c.placa
+                                    }}</strong></span>
+                        </div>
+                    </div>
+
+                    <button type="button" class="od-btn primary btn-seleccionar">
+                        SELECCIONAR
+                    </button>
                 </div>
             </div>
 
-            <button class="btn-secundario" (click)="mostrarModalSeleccionCuentas = false">Cancelar</button>
+            <div class="modal-footer">
+                <button type="button" class="od-btn" (click)="coincidenciasPorteria = []">
+                    CANCELAR
+                </button>
+            </div>
+
         </div>
     </div>
 

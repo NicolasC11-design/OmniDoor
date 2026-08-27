@@ -41,7 +41,8 @@
             <label class="field-label" for="apellidos">apellidos</label>
             <input id="apellidos" class="od-input" type="text" formControlName="apellidos" placeholder="Apellidos"
               [class.input-error]="f['apellidos'].invalid && f['apellidos'].touched" />
-            <span class="error-msg" *ngIf="f['apellidos'].invalid && f['apellidos'].touched">este campo es requerido</span>
+            <span class="error-msg" *ngIf="f['apellidos'].invalid && f['apellidos'].touched">este campo es
+              requerido</span>
           </div>
         </div>
 
@@ -50,13 +51,15 @@
             <label class="field-label" for="telefono">teléfono</label>
             <input id="telefono" class="od-input" type="text" formControlName="telefono" placeholder="3001234567"
               [class.input-error]="f['telefono'].invalid && f['telefono'].touched" />
-            <span class="error-msg" *ngIf="f['telefono'].invalid && f['telefono'].touched">ingresa un número válido</span>
+            <span class="error-msg" *ngIf="f['telefono'].invalid && f['telefono'].touched">ingresa un número
+              válido</span>
           </div>
           <div class="field-group">
             <label class="field-label" for="direccion">dirección residencia</label>
             <input id="direccion" class="od-input" type="text" formControlName="direccion"
               placeholder="Carrera 7A # 12-45" [class.input-error]="f['direccion'].invalid && f['direccion'].touched" />
-            <span class="error-msg" *ngIf="f['direccion'].invalid && f['direccion'].touched">este campo es requerido</span>
+            <span class="error-msg" *ngIf="f['direccion'].invalid && f['direccion'].touched">este campo es
+              requerido</span>
           </div>
         </div>
 
@@ -66,14 +69,16 @@
             <input id="nombre_emergencia" class="od-input" type="text" formControlName="nombre_emergencia"
               placeholder="James Rodriguez"
               [class.input-error]="f['nombre_emergencia'].invalid && f['nombre_emergencia'].touched" />
-            <span class="error-msg" *ngIf="f['nombre_emergencia'].invalid && f['nombre_emergencia'].touched">este campo es requerido</span>
+            <span class="error-msg" *ngIf="f['nombre_emergencia'].invalid && f['nombre_emergencia'].touched">este campo
+              es requerido</span>
           </div>
           <div class="field-group">
             <label class="field-label" for="contacto_emergencia">teléfono emergencia</label>
             <input id="contacto_emergencia" class="od-input" type="text" formControlName="contacto_emergencia"
               placeholder="3002324424"
               [class.input-error]="f['contacto_emergencia'].invalid && f['contacto_emergencia'].touched" />
-            <span class="error-msg" *ngIf="f['contacto_emergencia'].invalid && f['contacto_emergencia'].touched">ingresa un número válido</span>
+            <span class="error-msg" *ngIf="f['contacto_emergencia'].invalid && f['contacto_emergencia'].touched">ingresa
+              un número válido</span>
           </div>
         </div>
 
@@ -82,16 +87,18 @@
             <label class="field-label" for="correo">correo electrónico</label>
             <input id="correo" class="od-input" type="email" formControlName="correo" placeholder="usuario@gmail.com"
               [class.input-error]="f['correo'].invalid && f['correo'].touched" />
-            <span class="error-msg" *ngIf="f['correo'].invalid && f['correo'].touched">ingresa un correo electrónico válido</span>
+            <span class="error-msg" *ngIf="f['correo'].invalid && f['correo'].touched">ingresa un correo electrónico
+              válido</span>
           </div>
-          
+
           <div class="field-group">
             <label class="field-label" for="ficha">
               número de ficha <span *ngIf="f['rol'].value === 'aprendiz'">*</span>
             </label>
             <input id="ficha" class="od-input" type="text" formControlName="ficha" placeholder="2670123"
               [class.input-error]="f['ficha'].invalid && f['ficha'].touched" />
-            <span class="error-msg" *ngIf="f['ficha'].invalid && f['ficha'].touched">ingresa un número de ficha válido</span>
+            <span class="error-msg" *ngIf="f['ficha'].invalid && f['ficha'].touched">ingresa un número de ficha
+              válido</span>
           </div>
         </div>
 
@@ -182,7 +189,8 @@
           </div>
 
           <div *ngIf="biometricCapturing" class="biometric-camera-wrapper text-center my-3">
-            <app-biometria-camara (rostroCapturado)="onRostroCapturado($any($event))"></app-biometria-camara>
+            <app-biometria-camara (alCapturarBiometria)="onRostroCapturado($any($event))"></app-biometria-camara>
+
             <button type="button" class="od-btn mt-2 py-1 px-3 text-xs" (click)="cancelarCapturaBiometrica()">
               [ CANCELAR ESCANEO ]
             </button>
@@ -198,7 +206,8 @@
             <span class="error-msg" *ngIf="f['password'].invalid && f['password'].touched">
               <span *ngIf="f['password'].errors?.['required']">la contraseña es requerida</span>
               <span *ngIf="f['password'].errors?.['minlength']">mínimo 8 caracteres</span>
-              <span *ngIf="f['password'].errors?.['pattern']">debe incluir una mayúscula, minúscula, número y símbolo</span>
+              <span *ngIf="f['password'].errors?.['pattern']">debe incluir una mayúscula, minúscula, número y
+                símbolo</span>
             </span>
           </div>
           <div class="field-group">
@@ -207,9 +216,11 @@
               placeholder="••••••••"
               [class.input-error]="(registerForm.errors?.['passwordMismatch'] || f['confirmPassword'].invalid) && f['confirmPassword'].touched" />
             <span class="error-msg"
-              *ngIf="registerForm.errors?.['passwordMismatch'] && f['confirmPassword'].touched">las contraseñas no coinciden</span>
+              *ngIf="registerForm.errors?.['passwordMismatch'] && f['confirmPassword'].touched">las contraseñas no
+              coinciden</span>
             <span class="error-msg"
-              *ngIf="!registerForm.errors?.['passwordMismatch'] && f['confirmPassword'].errors?.['required'] && f['confirmPassword'].touched">este campo es requerido</span>
+              *ngIf="!registerForm.errors?.['passwordMismatch'] && f['confirmPassword'].errors?.['required'] && f['confirmPassword'].touched">este
+              campo es requerido</span>
           </div>
         </div>
 

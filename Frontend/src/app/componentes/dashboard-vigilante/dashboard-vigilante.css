@@ -693,3 +693,140 @@ textarea.od-input {
     animation: parpadeoRojo 1.5s infinite ease-in-out;
     background-color: rgb(220, 53, 69);
 }
+
+/* Modal de Coincidencias Biométricas */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(5, 9, 15, 0.85);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.modal-box.modal-coincidencias {
+    max-width: 580px;
+    width: 90%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    box-shadow: 0 0 30px rgba(0, 213, 255, 0.2);
+    border-radius: 4px;
+    padding: 24px;
+    font-family: var(--sans);
+    color: var(--text);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(0, 213, 255, 0.2);
+    padding-bottom: 12px;
+    margin-bottom: 16px;
+}
+
+.modal-title {
+    color: var(--accent2);
+    font-family: var(--mono);
+    font-size: 1.1rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.close-btn {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.close-btn:hover {
+    color: var(--error);
+}
+
+.modal-description {
+    color: var(--text);
+    font-size: 0.88rem;
+    margin-bottom: 16px;
+    line-height: 1.4;
+}
+
+.coincidencias-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 340px;
+    overflow-y: auto;
+    margin-bottom: 16px;
+    padding-right: 4px;
+}
+
+.coincidencia-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: var(--surface2);
+    border: 1px solid rgba(0, 213, 255, 0.2);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.coincidencia-card:hover {
+    border-color: var(--accent2);
+    background: rgba(0, 212, 170, 0.08);
+    transform: translateX(3px);
+}
+
+.coincidencia-details {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.coincidencia-nombre {
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.coincidencia-meta {
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 0.8rem;
+}
+
+.btn-seleccionar {
+    font-family: var(--mono) !important;
+    background: transparent !important;
+    border: 1px solid var(--accent2) !important;
+    color: var(--accent2) !important;
+    padding: 6px 14px !important;
+    font-size: 0.8rem !important;
+    border-radius: 2px !important;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.coincidencia-card:hover .btn-seleccionar {
+    background: var(--accent2) !important;
+    color: var(--bg) !important;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    border-top: 1px solid rgba(0, 213, 255, 0.2);
+    padding-top: 14px;
+}

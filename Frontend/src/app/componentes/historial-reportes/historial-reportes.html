@@ -16,23 +16,42 @@
             <label class="filter-label" for="desde">filtrar desde</label>
             <input id="desde" type="date" class="od-input" [(ngModel)]="filtros.desde" />
         </div>
+
         <div class="filter-group">
             <label class="filter-label" for="hasta">hasta</label>
             <input id="hasta" type="date" class="od-input" [(ngModel)]="filtros.hasta" />
         </div>
+
+        <div class="filter-group">
+            <label class="filter-label" for="tipoVeh">vehículo</label>
+            <select id="tipoVeh" class="od-select" [(ngModel)]="filtros.tipoVehiculo">
+                <option value="todos">Todos los vehículos</option>
+                <option value="auto">Automóvil</option>
+                <option value="moto">Motocicleta</option>
+                <option value="bici">Bicicleta</option>
+                <option value="patin">Patín / Patineta</option>
+                <option value="electr">Eléctrico</option>
+            </select>
+        </div>
+
         <div class="filter-group">
             <label class="filter-label" for="tipoMov">tipo de movimiento</label>
             <select id="tipoMov" class="od-select" [(ngModel)]="filtros.tipoMovimiento">
                 <option value="todos">Todos los movimientos</option>
                 <option value="entrada">Entrada</option>
                 <option value="salida">Salida</option>
+                <option value="APERTURA_MANUAL">Apertura Manual</option>
             </select>
         </div>
+
         <div class="export-actions">
-            <button class="export-btn" (click)="exportar('pdf')">
+            <button class="export-btn" (click)="limpiarFiltros()" title="Restablecer filtros">
+                <i class="ti ti-filter-off" aria-hidden="true"></i> Limpiar
+            </button>
+            <button class="export-btn" (click)="exportar('pdf')" [disabled]="historialFiltrado.length === 0">
                 <i class="ti ti-file-type-pdf" aria-hidden="true"></i> PDF
             </button>
-            <button class="export-btn" (click)="exportar('excel')">
+            <button class="export-btn" (click)="exportar('excel')" [disabled]="historialFiltrado.length === 0">
                 <i class="ti ti-file-type-xls" aria-hidden="true"></i> Excel
             </button>
         </div>
@@ -42,7 +61,7 @@
 
     <div class="empty-state" *ngIf="!cargando && historialFiltrado.length === 0">
         <i class="ti ti-history" aria-hidden="true"></i>
-        <p>No hay registros para el período seleccionado</p>
+        <p>No hay registros para el período o criterio seleccionado</p>
     </div>
 
     <div class="table-wrap" *ngIf="!cargando && historialFiltrado.length > 0">

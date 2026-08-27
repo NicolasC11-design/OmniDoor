@@ -1,27 +1,29 @@
+from uuid import UUID
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.exceptions import AuthenticationFailed
-from uuid import UUID
 from .models import Usuario
+
 
 class UUIDJWTAuthentication(JWTAuthentication):
     def get_user(self, validated_token):
+        user_id = validated_token.get("user_id")
+        if not user_id:
+            raise AuthenticationFailed("El token no contiene un ID de usuario válido.")
         try:
-            user_id = validated_token.get("user_id")
-            print(f"DEBUG: Token recibido con user_id: {user_id}")
-            if not user_id:
-                raise AuthenticationFailed("El token no contiene un user_id válido.")
+            if isinstance(user_id, int) or str(user_id).isdigit():
+                lookup_id = int(user_id)
+            else:
+                lookup_id = UUID(str(user_id))
+        except (ValueError, TypeError):
+            raise AuthenticationFailed("Formato de identificador de usuario inválido en el token.")
 
-            try:
-                uuid_obj = UUID(str(user_id))
-            except ValueError:
-                raise AuthenticationFailed("Formato de UUID inválido en el token.")
-
-            user = Usuario.objects.get(id_usuario=uuid_obj)
+        try:
+            user = Usuario.objects.get(id_usuario=lookup_id)
             
             if not user.is_active:
-                raise AuthenticationFailed("Este usuario está inactivo.")
+                raise AuthenticationFailed("Este usuario está inactivo o suspendido.")
                 
             return user
 
         except Usuario.DoesNotExist:
-            raise AuthenticationFailed("Usuario no encontrado asociado a este token.")
+            raise AuthenticationFailed("Usuario no encontrado o fue eliminado del sistema.")

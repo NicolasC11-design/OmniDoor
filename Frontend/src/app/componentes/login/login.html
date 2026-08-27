@@ -88,19 +88,44 @@
       </div>
 
       <div *ngIf="mostrarCamara" class="my-3 text-center">
-        <app-biometria-camara (rostroCapturado)="onBiometriaCapturada($any($event))">
+        <app-biometria-camara (alCapturarBiometria)="onBiometriaCapturada($event)">
         </app-biometria-camara>
         <button type="button" class="od-btn mt-2 py-1 px-3 text-xs" (click)="mostrarCamara = false; biometricLabel = 'INICIAR ESCANEO'">
           [ CANCELAR ESCANEO ]
         </button>
       </div>
+      
+      <!-- Listado de coincidencia biométrica -->
+      <div *ngIf="coincidencias.length > 0" class="coincidencias-selector" style="margin-top: 15px;">
+        <span class="selector-title" style="font-size: 0.75rem; color: #8a99ad; display: block; margin-bottom: 8px;">
+          CUENTAS DETECTADAS:
+        </span>
+        <div 
+          *ngFor="let user of coincidencias" 
+          class="cuenta-card"
+          [class.selected]="(usuarioSeleccionado?.id_usuario || usuarioSeleccionado?.id) === (user.id_usuario || user.id)"
+          (click)="seleccionarCuenta(user)"
+        >
+          <div class="cuenta-info">
+            <span class="cuenta-email" style="display: block; font-weight: bold;">{{ user.correo }}</span>
+            <span class="cuenta-nombre" style="font-size: 0.8rem; color: #8a99ad;">
+              {{ user.nombre_completo || user.nombre || 'Usuario' }}
+            </span>
+          </div>
+          
+          <!-- Checkmark que solo aparece si coincide el ID del usuario seleccionado -->
+          <span class="check-icon" *ngIf="(usuarioSeleccionado?.id_usuario || usuarioSeleccionado?.id) === (user.id_usuario || user.id)">
+            ✓
+          </span>
+        </div>
+      </div>
 
-      <div class="alert-msg" *ngIf="errorMessage">
+      <div class="alert-msg" *ngIf="errorMessage" style="margin-top: 15px;">
         <i class="ti ti-alert-triangle" aria-hidden="true"></i>
         {{ errorMessage }}
       </div>
 
-      <button type="submit" class="od-btn" [disabled]="loading">
+      <button type="submit" class="od-btn" [disabled]="loading" style="margin-top: 20px;">
         <span *ngIf="!loading">ingresar al sistema</span>
         <span *ngIf="loading">[ verificando identidad... ]</span>
       </button>
