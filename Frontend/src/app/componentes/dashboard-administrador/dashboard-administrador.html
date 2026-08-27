@@ -18,12 +18,12 @@
           Ir al panel
         </button>
         <button class="logout-btn" (click)="cerrarSesion()" aria-label="Cerrar sesión" title="Cerrar sesión">
-          <i class="ti ti-logout" aria-hidden="true">Cerrar sesion</i>
+          <i class="ti ti-logout" aria-hidden="true"></i> Cerrar sesión
         </button>
       </div>
     </div>
-    <ng-container *ngIf="vistaActual === 'panel'">
 
+    <ng-container *ngIf="vistaActual === 'panel'">
       <div class="kpi-row">
         <div class="kpi-card">
           <i class="ti ti-car kpi-icon" aria-hidden="true"></i>
@@ -67,8 +67,8 @@
           <div class="module-desc">Consulta el historial de accesos, filtra por fecha y exporta a PDF o Excel.</div>
         </button>
       </div>
-
     </ng-container>
+
     <ng-container *ngIf="vistaActual === 'solicitudes'">
       <div class="od-panel">
         <div class="corner c-tl"></div>
@@ -117,7 +117,8 @@
         </div>
 
         <div class="note-box">
-          <strong>Nota:</strong> las solicitudes aprobadas permitirán al usuario acceder al sistema con las credenciales que proporcionó durante el registro.
+          <strong>Nota:</strong> las solicitudes aprobadas permitirán al usuario acceder al sistema con las credenciales
+          que proporcionó durante el registro.
         </div>
       </div>
     </ng-container>
@@ -186,57 +187,103 @@
     </ng-container>
 
     <ng-container *ngIf="vistaActual === 'reportes'">
-      <app-historial-reportes 
-        [historial]="historial" 
-        [cargando]="cargandoHistorial">
+      <app-historial-reportes [historial]="historial" [cargando]="cargandoHistorial">
       </app-historial-reportes>
     </ng-container>
 
   </div>
 
-  <div class="modal-overlay" *ngIf="mostrarModalConductor" (click)="cerrarModalConductor()">
+  <div class="modal-overlay" *ngIf="mostrarModal" (click)="cerrarModal()">
     <div class="modal-box" (click)="$event.stopPropagation()">
-      <div class="modal-title">{{ conductorEnEdicion ? 'editar conductor' : 'nuevo conductor' }}</div>
-      <div class="modal-subtitle">Alta y modificación de usuarios con mapeo de IA</div>
-
-      <div class="field-group">
-        <label class="field-label" for="nombreCond">nombre completo</label>
-        <input id="nombreCond" class="od-input" type="text" [(ngModel)]="formConductor.nombre" placeholder="Nombre completo" />
+      <div class="modal-title">
+        {{ editando ? 'EDITAR CONDUCTOR / USUARIO' : 'REGISTRAR CONDUCTOR' }}
+      </div>
+      <div class="modal-subtitle" style="font-size: 0.8rem; color: #8a99ad; margin-bottom: 15px;">
+        Gestión de perfil, contactos de emergencia y asignación vehicular
       </div>
 
-      <div class="field-group">
-        <label class="field-label">token facial (biometría)</label>
-        <div class="biometric-box" (click)="capturarBiometria()">
-          <i class="ti" [ngClass]="formConductor.biometriaCapturada ? 'ti-check' : 'ti-camera'" aria-hidden="true"></i>
-          {{ formConductor.biometriaCapturada ? 'token facial capturado' : 'capturar rostro' }}
+      <form (ngSubmit)="guardarUsuario()" #formAdmin="ngForm">
+
+        <div class="input-row">
+          <div class="field-group">
+            <label class="field-label">nombre completo *</label>
+            <input type="text" class="od-input" [(ngModel)]="formConductor.nombre" name="nombre_completo" required
+              placeholder="Nombres y Apellidos" />
+          </div>
+          <div class="field-group">
+            <label class="field-label">correo electrónico *</label>
+            <input type="email" class="od-input" [(ngModel)]="formConductor.correo" name="correo" required
+              placeholder="usuario@gmail.com" />
+          </div>
         </div>
-      </div>
 
-      <div class="input-row">
-        <div class="field-group">
-          <label class="field-label" for="tipoVehCond">tipo de vehículo</label>
-          <select id="tipoVehCond" class="od-select" [(ngModel)]="formConductor.tipoVehiculo" style="width:100%">
-            <option value="auto">Automóvil</option>
-            <option value="moto">Motocicleta</option>
-            <option value="bici">Bicicleta</option>
-            <option value="patin">Patín / Patineta</option>
-            <option value="electr">Eléctrico</option>
-          </select>
+        <div class="input-row">
+          <div class="field-group">
+            <label class="field-label">teléfono</label>
+            <input type="text" class="od-input" [(ngModel)]="formConductor.telefono" name="telefono"
+              placeholder="3001234567" />
+          </div>
+          <div class="field-group">
+            <label class="field-label">dirección residencia</label>
+            <input type="text" class="od-input" [(ngModel)]="formConductor.direccion" name="direccion"
+              placeholder="Carrera 7A # 12-45" />
+          </div>
         </div>
-        <div class="field-group">
-          <label class="field-label" for="placaCond">número de placa</label>
-          <input id="placaCond" class="od-input" type="text" [(ngModel)]="formConductor.placa" (blur)="formatearPlaca()" maxlength="7" placeholder="XYZ-123" />
-        </div>
-      </div>
 
-      <div class="modal-actions">
-        <button class="od-btn" (click)="cerrarModalConductor()">
-          <i class="ti ti-x" aria-hidden="true"></i> cancelar
-        </button>
-        <button class="od-btn primary" (click)="guardarConductor()">
-          <i class="ti ti-device-floppy" aria-hidden="true"></i> guardar
-        </button>
-      </div>
+        <div class="input-row">
+          <div class="field-group">
+            <label class="field-label">contacto emergencia (nombre)</label>
+            <input type="text" class="od-input" [(ngModel)]="formConductor.nombre_emergencia" name="nombre_emergencia"
+              placeholder="Nombre del contacto" />
+          </div>
+          <div class="field-group">
+            <label class="field-label">teléfono emergencia</label>
+            <input type="text" class="od-input" [(ngModel)]="formConductor.contacto_emergencia"
+              name="contacto_emergencia" placeholder="3002324424" />
+          </div>
+        </div>
+
+        <div class="input-row">
+          <div class="field-group">
+            <label class="field-label">rol en el sistema</label>
+            <select class="od-select" [(ngModel)]="formConductor.rol" name="rol">
+              <option value="aprendiz">Aprendiz</option>
+              <option value="empleado">Coordinador</option>
+              <option value="seguridad">Personal de seguridad</option>
+              <option value="admin">Administrador</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field-label">número de ficha SENA</label>
+            <input type="text" class="od-input" [(ngModel)]="formConductor.ficha" name="ficha" placeholder="2670123" />
+          </div>
+        </div>
+
+        <div class="input-row">
+          <div class="field-group">
+            <label class="field-label">tipo de vehículo</label>
+            <select class="od-select" [(ngModel)]="formConductor.tipoVehiculo" name="tipo_vehiculo">
+              <option value="AUTOMOVIL">Automóvil</option>
+              <option value="MOTOCICLETA">Motocicleta</option>
+              <option value="BICICLETA">Bicicleta</option>
+              <option value="PATIN">Patín / Patineta</option>
+              <option value="ELECTRICO">Eléctrico</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field-label">placa del vehículo</label>
+            <input type="text" class="od-input" [(ngModel)]="formConductor.placa" name="placa" placeholder="ABC124" />
+          </div>
+        </div>
+
+        <div class="modal-actions" style="margin-top: 20px;">
+          <button type="button" class="od-btn" (click)="cerrarModal()">CANCELAR</button>
+          <button type="submit" class="od-btn primary" [disabled]="formAdmin.invalid || cargando">
+            {{ cargando ? 'GUARDANDO...' : 'GUARDAR CAMBIOS' }}
+          </button>
+        </div>
+
+      </form>
     </div>
   </div>
 

@@ -11,16 +11,22 @@ type Vista = 'panel' | 'solicitudes' | 'usuarios' | 'reportes';
 export interface Conductor {
   id_usuario?: string;
   id_vehiculo?: string;
-  cedula: string;
+  cedula?: string;
   nombre: string;
   correo: string;
   rol: string;
+  telefono?: string;
+  direccion?: string;
+  ficha?: string;
+  nombre_emergencia?: string;
+  contacto_emergencia?: string;
   tipoVehiculo: string;
   placa: string;
   biometriaCapturada: boolean;
 }
 
 export interface RegistroHistorial {
+  fechaRaw?: Date;
   fechaHora: string;
   usuario: string;
   tipoVehiculo: string;
@@ -66,13 +72,70 @@ export class AdminDashboard implements OnInit {
 
   constructor(
     private authService: AuthService,
+    private adminService: AdminService,
     private cdr: ChangeDetectorRef,
-    private router: Router,
+    private router: Router
   ) { }
 
   ngOnInit(): void {
     this.cargarKpis();
     this.cargarUsuariosPendientes();
+    this.cargarHistorial();
+  }
+
+  get mostrarModal(): boolean {
+    return this.mostrarModalConductor;
+  }
+
+  set mostrarModal(val: boolean) {
+    this.mostrarModalConductor = val;
+  }
+
+  get editando(): boolean {
+    return !!this.conductorEnEdicion;
+  }
+
+  get cargando(): boolean {
+    return this.cargandoSolicitudes;
+  }
+
+  get formUsuario(): any {
+    return {
+      id_usuario: this.formConductor.id_usuario,
+      nombre_completo: this.formConductor.nombre,
+      correo: this.formConductor.correo,
+      telefono: this.formConductor.telefono || '',
+      direccion: this.formConductor.direccion || '',
+      ficha: this.formConductor.ficha || '',
+      rol: this.formConductor.rol,
+      nombre_emergencia: this.formConductor.nombre_emergencia || '',
+      contacto_emergencia: this.formConductor.contacto_emergencia || '',
+      tipo_vehiculo: this.formConductor.tipoVehiculo,
+      placa: this.formConductor.placa
+    };
+  }
+
+  set formUsuario(val: any) {
+    if (!val) return;
+    this.formConductor.id_usuario = val.id_usuario;
+    this.formConductor.nombre = val.nombre_completo || val.nombre || '';
+    this.formConductor.correo = val.correo || '';
+    this.formConductor.telefono = val.telefono || '';
+    this.formConductor.direccion = val.direccion || '';
+    this.formConductor.ficha = val.ficha || '';
+    this.formConductor.rol = val.rol || 'aprendiz';
+    this.formConductor.nombre_emergencia = val.nombre_emergencia || '';
+    this.formConductor.contacto_emergencia = val.contacto_emergencia || '';
+    this.formConductor.tipoVehiculo = val.tipo_vehiculo || val.tipoVehiculo || 'auto';
+    this.formConductor.placa = val.placa || '';
+  }
+
+  cerrarModal(): void {
+    this.cerrarModalConductor();
+  }
+
+  guardarUsuario(): void {
+    this.guardarConductor();
   }
 
   irA(vista: Vista): void {
@@ -146,7 +209,7 @@ export class AdminDashboard implements OnInit {
 
   rechazarCuenta(idUsuario: string): void {
     this.authService.rechazarUsuario(idUsuario).subscribe({
-      next: (res: any) => {
+      next: () => {
         this.usuariosPendientes = this.usuariosPendientes.filter(u => u.id_usuario !== idUsuario);
         this.mensajeExito = 'Solicitud rechazada y eliminada del sistema';
         this.cdr.detectChanges();
@@ -157,7 +220,7 @@ export class AdminDashboard implements OnInit {
       },
       error: (err) => {
         console.error('Error al rechazar el usuario en el backend:', err);
-        alert('Hubo un error al rechazar la solicitud. Revisa la consola.');
+        alert('Hubo un error al rechazar la solicitud.');
       }
     });
   }
@@ -166,16 +229,22 @@ export class AdminDashboard implements OnInit {
     this.cargandoSolicitudes = true;
     this.authService.getUsuarios().subscribe({
       next: (data: any[]) => {
-        this.conductores = data.map(u => ({
+        const usuariosArray = Array.isArray(data) ? data : [];
+        this.conductores = usuariosArray.map(u => ({
           id_usuario: u.id_usuario || u.id,
           id_vehiculo: u.vehiculos && u.vehiculos.length > 0 ? (u.vehiculos[0].id_vehiculo || u.vehiculos[0].id) : undefined,
           cedula: u.cedula || 'N/A',
           nombre: (u.nombre_completo || u.nombre || 'Sin Nombre').toUpperCase(),
           correo: u.correo || '',
           rol: u.rol || 'aprendiz',
-          tipoVehiculo: u.vehiculos && u.vehiculos.length > 0 ? u.vehiculos[0].tipoVehiculo : 'auto',
+          telefono: u.telefono || '',
+          direccion: u.direccion || '',
+          ficha: u.ficha || '',
+          nombre_emergencia: u.nombre_emergencia || '',
+          contacto_emergencia: u.contacto_emergencia || '',
+          tipoVehiculo: u.vehiculos && u.vehiculos.length > 0 ? (u.vehiculos[0].tipo_vehiculo || u.vehiculos[0].tipoVehiculo || 'auto') : 'auto',
           placa: u.vehiculos && u.vehiculos.length > 0 ? u.vehiculos[0].placa : 'N/A',
-          biometriaCapturada: u.estado === 'activo'
+          biometriaCapturada: u.estado === 'activo' || u.is_active === true
         }));
         this.cargandoSolicitudes = false;
         this.cdr.detectChanges();
@@ -192,8 +261,13 @@ export class AdminDashboard implements OnInit {
     return {
       cedula: '',
       nombre: '',
-      rol: 'aprendiz',
       correo: '',
+      rol: 'aprendiz',
+      telefono: '',
+      direccion: '',
+      ficha: '',
+      nombre_emergencia: '',
+      contacto_emergencia: '',
       tipoVehiculo: 'auto',
       placa: '',
       biometriaCapturada: false
@@ -222,50 +296,101 @@ export class AdminDashboard implements OnInit {
   }
 
   guardarConductor(): void {
-    if (!this.formConductor.nombre || !this.formConductor.nombre.trim()) {
-      alert('Por favor, ingresa el nombre completo.');
-      return;
-    }
-
-    if (this.conductorEnEdicion && this.conductorEnEdicion.id_usuario) {
-      this.cargandoSolicitudes = true;
-      const usuarioPayload = {
-        nombre_completo: this.formConductor.nombre.trim(),
-        rol: this.formConductor.rol,
-        correo: this.formConductor.correo
-      };
-      const vehiculoPayload = {
-        placa: this.formConductor.placa.trim(),
-        tipoVehiculo: this.formConductor.tipoVehiculo
-      };
-      this.authService.actualizarUsuarioAdmin(this.conductorEnEdicion.id_usuario, usuarioPayload).subscribe({
-        next: () => {
-          if (this.conductorEnEdicion?.id_vehiculo) {
-            this.authService.actualizarVehiculoAdmin(this.conductorEnEdicion.id_vehiculo, vehiculoPayload).subscribe({
-              next: () => {
-                alert('¡Conductor y Vehículo actualizados correctamente!');
-                this.finalizarGuardado();
-              },
-              error: (vErr) => {
-                console.error('Error al actualizar el vehículo:', vErr);
-                alert('Se actualizó el usuario, pero falló la actualización del vehículo.');
-                this.finalizarGuardado();
-              }
-            });
-          } else {
-            alert('¡Usuario actualizado con éxito!');
-            this.finalizarGuardado();
-          }
-        },
-        error: (err) => {
-          console.error('Error al actualizar usuario:', err);
-          alert('Error al actualizar el usuario.');
-          this.cargandoSolicitudes = false;
-          this.cdr.detectChanges();
-        }
-      });
-    }
+  if (!this.formConductor.nombre || !this.formConductor.nombre.trim()) {
+    alert('Por favor, ingresa el nombre completo.');
+    return;
   }
+
+  if (!this.formConductor.correo || !this.formConductor.correo.trim()) {
+    alert('Por favor, ingresa el correo electrónico.');
+    return;
+  }
+
+  this.cargandoSolicitudes = true;
+
+  const placaLimpia = this.formConductor.placa 
+    ? this.formConductor.placa.trim().replace(/[- ]/g, '').toUpperCase() 
+    : '';
+
+  const idObjetivo = this.conductorEnEdicion?.id_usuario || this.formConductor.id_usuario;
+  
+  if (this.editando && idObjetivo) {
+    const usuarioPayload = {
+      id_usuario: idObjetivo,
+      nombre_completo: this.formConductor.nombre.trim(),
+      correo: this.formConductor.correo.trim(),
+      rol: this.formConductor.rol,
+      telefono: this.formConductor.telefono ? this.formConductor.telefono.trim() : '',
+      direccion: this.formConductor.direccion ? this.formConductor.direccion.trim() : '',
+      ficha: this.formConductor.ficha ? this.formConductor.ficha.trim() : '',
+      nombre_emergencia: this.formConductor.nombre_emergencia ? this.formConductor.nombre_emergencia.trim() : '',
+      contacto_emergencia: this.formConductor.contacto_emergencia ? this.formConductor.contacto_emergencia.trim() : '',
+      placa: placaLimpia,
+      tipo_vehiculo: this.formConductor.tipoVehiculo
+    };
+
+    this.authService.actualizarUsuarioAdmin(idObjetivo, usuarioPayload).subscribe({
+      next: () => {
+        alert('¡Conductor y vehículo actualizados correctamente!');
+        this.finalizarGuardado();
+      },
+      error: (err) => {
+        console.error('Error al actualizar:', err);
+        alert('Error al actualizar los datos en el servidor.');
+        this.cargandoSolicitudes = false;
+        this.cdr.detectChanges();
+      }
+    });
+
+  } else {
+    const partesNombre = this.formConductor.nombre.trim().split(' ');
+    const nombres = partesNombre[0] || '';
+    const apellidos = partesNombre.slice(1).join(' ') || 'SENA';
+
+    const nuevoPayload = {
+      nombres: nombres,
+      apellidos: apellidos,
+      correo: this.formConductor.correo.trim(),
+      password: 'UsuarioOmniDoor2026*',
+      rol: this.formConductor.rol || 'aprendiz',
+      telefono: this.formConductor.telefono ? this.formConductor.telefono.trim() : '',
+      direccion: this.formConductor.direccion ? this.formConductor.direccion.trim() : '',
+      ficha: this.formConductor.ficha ? this.formConductor.ficha.trim() : '',
+      nombre_emergencia: this.formConductor.nombre_emergencia ? this.formConductor.nombre_emergencia.trim() : '',
+      contacto_emergencia: this.formConductor.contacto_emergencia ? this.formConductor.contacto_emergencia.trim() : '',
+      placa: placaLimpia,
+      tipo_vehiculo: this.formConductor.tipoVehiculo
+    };
+
+    this.authService.register(nuevoPayload).subscribe({
+      next: (res: any) => {
+        const idCreado = res.usuario?.id_usuario;
+        if (idCreado) {
+          this.authService.aprobarUsuario(idCreado).subscribe({
+            next: () => {
+              alert('¡Nuevo conductor registrado y activado con éxito!');
+              this.finalizarGuardado();
+            },
+            error: () => {
+              alert('Conductor creado exitosamente.');
+              this.finalizarGuardado();
+            }
+          });
+        } else {
+          alert('¡Conductor registrado correctamente!');
+          this.finalizarGuardado();
+        }
+      },
+      error: (err) => {
+        console.error('Error al crear conductor:', err);
+        const msg = err.error?.correo?.[0] || err.error?.placa?.[0] || 'Error al registrar el nuevo conductor.';
+        alert(msg);
+        this.cargandoSolicitudes = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+}
 
   private finalizarGuardado(): void {
     this.cerrarModalConductor();
@@ -297,108 +422,80 @@ export class AdminDashboard implements OnInit {
   }
 
   private cargarHistorial(): void {
-  this.cargandoHistorial = true;
+    this.cargandoHistorial = true;
 
-  this.authService.getHistorialGeneral().subscribe({
-    next: (data: any[]) => {
-      console.log('Historial directo del Backend:', data);
+    this.authService.getHistorialGeneral().subscribe({
+      next: (res: any) => {
+        let historialArray: any[] = [];
 
-      this.historial = data.map(reg => {
-        
-        const usuarioReal =
-          reg.usuario?.nombre_completo ||
-          reg.usuario?.nombre ||
-          reg.nombre_completo ||
-          reg.nombre_conductor ||
-          reg.vehiculo?.propietario?.nombre_completo ||
-          reg.vehiculo?.propietario?.nombre ||
-          reg.nombre_conductor_manual ||
-          'Sin Especificar';
-
-        const tipoVehiculoReal =
-          reg.vehiculo?.tipoVehiculo ||
-          reg.vehiculo?.tipo_vehiculo ||
-          reg.tipo_vehiculo ||
-          reg.vehiculo ||
-          'Peatonal';
-
-        let placaCapturada =
-          reg.placa ||
-          reg.vehiculo?.placa ||
-          reg.placa_vehiculo ||
-          reg.placa_texto ||
-          reg.placa_detectada ||
-          reg.placa_manual ||
-          reg.detalles?.placa ||
-          reg.vehiculo_placa;
-
-        if (!placaCapturada && typeof reg.vehiculo === 'string' && reg.vehiculo !== 'BICICLETA' && reg.vehiculo !== 'PATIN') {
-          placaCapturada = reg.vehiculo;
+        if (Array.isArray(res)) {
+          historialArray = res;
+        } else if (res && Array.isArray(res.recientes)) {
+          historialArray = res.recientes;
+        } else if (res && Array.isArray(res.results)) {
+          historialArray = res.results;
+        } else if (res && Array.isArray(res.registros)) {
+          historialArray = res.registros;
         }
 
-        const tipoVehiculoNormalizado = String(tipoVehiculoReal).toUpperCase();
-        const placaLimpia = placaCapturada ? String(placaCapturada).trim().toUpperCase() : '';
+        this.historial = historialArray.map(reg => {
+          const usuarioReal =
+            reg.conductor ||
+            reg.nombre_conductor ||
+            reg.nombre_conductor_manual ||
+            reg.usuario?.nombre_completo ||
+            reg.usuario?.nombre ||
+            reg.nombre_completo ||
+            'Sin Especificar';
 
-        const esVehiculoSinPlaca =
-          ['BICICLETA', 'PATIN', 'PATINETA', 'ELECTRICO', 'PEATONAL'].some(tipo => tipoVehiculoNormalizado.includes(tipo)) ||
-          ['S_PLACA', 'SIN_PLACA', 'SIN PLACA', 'UNDEFINED', 'NULL', ''].includes(placaLimpia);
+          const tipoVehiculoReal =
+            reg.vehiculo?.tipo_vehiculo ||
+            reg.vehiculo?.tipoVehiculo ||
+            reg.tipo_vehiculo ||
+            reg.vehiculo ||
+            'Peatonal';
 
-        const placaReal = esVehiculoSinPlaca ? 'N/A' : placaLimpia;
+          let placaCapturada =
+            reg.placa ||
+            reg.vehiculo?.placa ||
+            reg.placa_vehiculo ||
+            reg.placa_manual ||
+            reg.placa_texto;
 
-        let fechaHoraFormateada = 'Fecha Desconocida';
-        if (reg.fecha_hora) {
-          const dateObj = new Date(reg.fecha_hora);
-          fechaHoraFormateada = `${dateObj.toLocaleDateString()} ${dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-        }
+          const fechaRawObj = reg.fecha_hora || reg.hora_fecha || reg.fecha;
+          const fechaObj = fechaRawObj ? new Date(fechaRawObj) : new Date();
 
-        let metodo = 'Biometría Facial';
-        if (reg.metodo_validacion) {
-          metodo = reg.metodo_validacion;
-        } else if (reg.tipo_movimiento?.toUpperCase().includes('MANUAL')) {
-          metodo = 'Manual (Guarda)';
-        } else if (reg.vehiculo) {
-          metodo = 'OCR Placa';
-        }
+          let eventoReal = (reg.tipo_movimiento || reg.movimiento || reg.evento || 'ENTRADA').toUpperCase();
+          if (eventoReal.includes('APERTURA') || eventoReal.includes('MANUAL')) {
+            eventoReal = 'APERTURA_MANUAL';
+          } else if (eventoReal.includes('SALIDA')) {
+            eventoReal = 'SALIDA';
+          } else if (eventoReal.includes('ENTRADA')) {
+            eventoReal = 'ENTRADA';
+          }
 
-        const tipoMovString = (
-          reg.evento || 
-          reg.tipo_movimiento || 
-          reg.tipo_registro || 
-          reg.tipo || 
-          reg.sentido || 
-          ''
-        ).toString().toUpperCase();
+          return {
+            fechaRaw: fechaObj,
+            fechaHora: `${fechaObj.toLocaleDateString()} ${fechaObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
+            usuario: usuarioReal,
+            tipoVehiculo: String(tipoVehiculoReal).toUpperCase(),
+            placa: placaCapturada ? String(placaCapturada).trim().toUpperCase() : 'N/A',
+            metodoValidacion: reg.metodo_validacion || reg.acreditacion || 'Biometría Facial',
+            evento: eventoReal,
+            sincronizado: reg.sincronizado !== undefined ? reg.sincronizado : true
+          };
+        });
 
-        let eventoReal = 'ENTRADA';
-
-        if (tipoMovString.includes('SALIDA') || tipoMovString.includes('EGRESO') || tipoMovString.includes('EXIT') || tipoMovString.includes('OUT')) {
-          eventoReal = 'SALIDA';
-        } else if (tipoMovString.includes('ENTRADA') || tipoMovString.includes('INGRESO') || tipoMovString.includes('ENTRY') || tipoMovString.includes('IN')) {
-          eventoReal = 'ENTRADA';
-        }
-
-        return {
-          fechaRaw: reg.fecha_hora ? new Date(reg.fecha_hora) : undefined,
-          fechaHora: fechaHoraFormateada,
-          usuario: usuarioReal,
-          tipoVehiculo: tipoVehiculoReal,
-          placa: placaReal,
-          metodoValidacion: metodo,
-          evento: eventoReal,
-          sincronizado: reg.sincronizado !== undefined ? reg.sincronizado : true
-        };
-      });
-
-      this.cargandoHistorial = false;
-      this.cdr.detectChanges();
-    },
-    error: (err) => {
-      console.error('Error cargando historial:', err);
-      this.cargandoHistorial = false;
-      this.cdr.detectChanges();
-    }
-  });
-}
+        this.cargandoHistorial = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error cargando historial:', err);
+        this.cargandoHistorial = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
 
   formatearPlaca(): void {
     if (!this.formConductor.placa) return;

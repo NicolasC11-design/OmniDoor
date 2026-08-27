@@ -24,14 +24,18 @@ export class ControlAccesosComponent {
   constructor(private accesoService: AccesoService) {}
 
   onRostroCapturado(vector: any): void {
-  if (Array.isArray(vector)) {
-    this.vectorBiometrico = vector;
-  } else if (vector && vector.vector) {
-    this.vectorBiometrico = vector.vector;
-  } else {
-    this.vectorBiometrico = vector;
+    if (Array.isArray(vector)) {
+      this.vectorBiometrico = vector;
+    } else if (vector && Array.isArray(vector.vector)) {
+      this.vectorBiometrico = vector.vector;
+    } else {
+      this.vectorBiometrico = null;
+    }
+    
+    if (this.vectorBiometrico) {
+      this.errorRespuesta = null;
+    }
   }
-}
 
   procesarAcceso(): void {
     this.mensajeRespuesta = null;
@@ -39,14 +43,14 @@ export class ControlAccesosComponent {
     this.datosUsuario = null;
 
     if (!this.vectorBiometrico || this.vectorBiometrico.length === 0) {
-      this.errorRespuesta = '⚠️ Debe capturar el rostro del conductor antes de procesar.';
+      this.errorRespuesta = '⚠️ Debe capturar el rostro antes de procesar la entrada o salida.';
       return;
     }
 
     this.cargando = true;
 
     const payload = {
-      placa: this.placaInput.trim().toUpperCase() || 'PEATONAL',
+      placa: this.placaInput.trim() ? this.placaInput.trim().toUpperCase() : 'PEATONAL',
       vector_biometrico: this.vectorBiometrico,
       tipo_movimiento: this.tipoMovimiento
     };
@@ -54,13 +58,27 @@ export class ControlAccesosComponent {
     this.accesoService.validarAccesoPorteria(payload).subscribe({
       next: (res: RespuestaAcceso) => {
         this.cargando = false;
-        this.mensajeRespuesta = res.mensaje;
-        this.datosUsuario = res.usuario;
+        this.mensajeRespuesta = res.mensaje || 'Acceso registrado correctamente.';
+        this.datosUsuario = res.usuario || null;
+        this.limpiarCaptura();
       },
       error: (err) => {
         this.cargando = false;
-        this.errorRespuesta = err.error?.mensaje || 'Error al validar el acceso en portería.';
+        this.errorRespuesta = err.error?.mensaje || err.error?.detail || 'Error al validar el acceso en portería.';
       }
     });
+  }
+
+  limpiarCaptura(): void {
+    this.vectorBiometrico = null;
+  }
+
+  reiniciarFormulario(): void {
+    this.placaInput = '';
+    this.tipoMovimiento = 'ENTRADA';
+    this.vectorBiometrico = null;
+    this.mensajeRespuesta = null;
+    this.errorRespuesta = null;
+    this.datosUsuario = null;
   }
 }

@@ -1,6 +1,15 @@
-import { Component, ElementRef, EventEmitter, Output, ViewChild, OnDestroy, OnInit, ChangeDetectorRef } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  EventEmitter,
+  Output,
+  ViewChild,
+  OnDestroy,
+  OnInit,
+  ChangeDetectorRef
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
-import * as faceapi from 'face-api.js';
+import * as faceapi from '@vladmandic/face-api';
 
 @Component({
   selector: 'app-biometria-camara',
@@ -18,9 +27,10 @@ export class BiometriaCamaraComponent implements OnInit, OnDestroy {
   camaraActiva = false;
   modelosCargados = false;
   cargandoModelos = true;
+  procesandoCaptura = false;
   private streamMedia: MediaStream | null = null;
 
-  constructor(private cdRef: ChangeDetectorRef) {}
+  constructor(private cdRef: ChangeDetectorRef) { }
 
   async ngOnInit(): Promise<void> {
     await this.cargarModelosIA();
@@ -29,9 +39,16 @@ export class BiometriaCamaraComponent implements OnInit, OnDestroy {
   async cargarModelosIA(): Promise<void> {
     try {
       this.cargandoModelos = true;
-      if (faceapi.tf) {
-        await faceapi.tf.setBackend('cpu');
-        await faceapi.tf.ready();
+      const tfEngine = faceapi.tf as any;
+
+      if (tfEngine?.setBackend) {
+        try {
+          await tfEngine.setBackend('webgl');
+          if (tfEngine.ready) await tfEngine.ready();
+        } catch {
+          await tfEngine.setBackend('cpu');
+          if (tfEngine.ready) await tfEngine.ready();
+        }
       }
 
       const MODEL_URL = '/models';
@@ -43,12 +60,11 @@ export class BiometriaCamaraComponent implements OnInit, OnDestroy {
 
       this.modelosCargados = true;
       this.cargandoModelos = false;
-      console.log('✅ Modelos de face-api.js cargados en CPU sin warnings.');
-      this.cdRef.detectChanges(); 
-      
-      this.iniciarCamara();
+      this.cdRef.detectChanges();
+
+      await this.iniciarCamara();
     } catch (error) {
-      console.error('Error al cargar los modelos de IA:', error);
+      console.error('❌ Error al cargar los modelos de IA:', error);
       this.cargandoModelos = false;
       this.cdRef.detectChanges();
     }
@@ -64,39 +80,61 @@ export class BiometriaCamaraComponent implements OnInit, OnDestroy {
       this.camaraActiva = true;
       this.cdRef.detectChanges();
 
-      setTimeout(() => {
+      setTimeout(async () => {
         if (this.videoElement && this.videoElement.nativeElement) {
           const video = this.videoElement.nativeElement;
           video.srcObject = this.streamMedia;
           video.muted = true;
-          video.play().catch(e => console.error('Error al reproducir el video:', e));
+          try {
+            await video.play();
+          } catch (e) {
+            console.error('Error al reproducir el video:', e);
+          }
         }
       }, 100);
     } catch (error) {
-      console.error('Error al acceder a la cámara:', error);
+      console.error('❌ Error al acceder a la cámara:', error);
     }
   }
 
   async capturarRostro(): Promise<void> {
-    if (!this.videoElement || !this.modelosCargados) return;
+    if (!this.videoElement || !this.videoElement.nativeElement) return;
+
+    this.procesandoCaptura = true;
+    this.cdRef.detectChanges();
 
     const video = this.videoElement.nativeElement;
+    const opcionesDeteccion = new faceapi.TinyFaceDetectorOptions({
+      inputSize: 320,
+      scoreThreshold: 0.35
+    });
 
-    const deteccion = await faceapi
-      .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
-      .withFaceLandmarks()
-      .withFaceDescriptor();
+    try {
+      const deteccion = await faceapi
+        .detectSingleFace(video, opcionesDeteccion)
+        .withFaceLandmarks()
+        .withFaceDescriptor();
 
-    if (!deteccion) {
-      alert('No se detectó ningún rostro. Por favor, enfócate de frente a la cámara.');
-      return;
+      if (!deteccion) {
+        alert('No se detectó ningún rostro. Por favor, enfócate de frente a la cámara.');
+        this.procesandoCaptura = false;
+        this.cdRef.detectChanges();
+        return;
+      }
+
+      const vectorBiometrico = Array.from(deteccion.descriptor);
+      console.log('Vector biométrico capturado (128 posiciones):', vectorBiometrico);
+      this.detenerCamara();
+      this.alCapturarBiometria.emit(vectorBiometrico);
+      alert('¡Biometría facial capturada correctamente!');
+
+    } catch (err) {
+      console.error('Error durante la detección facial:', err);
+      alert('Ocurrió un error al procesar la captura biométrica.');
+    } finally {
+      this.procesandoCaptura = false;
+      this.cdRef.detectChanges();
     }
-    const vector128Real: number[] = Array.from(deteccion.descriptor);
-
-    console.log('📷 Vector biométrico generado:', vector128Real.slice(0, 5));
-
-    this.alCapturarBiometria.emit(vector128Real);
-    this.detenerCamara();
   }
 
   detenerCamara(): void {

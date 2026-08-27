@@ -409,3 +409,70 @@
 .sys-msg a:hover { 
   color: #66f3d5; 
 }
+
+.coincidencias-selector {
+  margin: 1.25rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.selector-title {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--warn);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.cuenta-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: var(--surface2);
+  border: 1px solid rgba(0, 212, 170, 0.25);
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cuenta-card:hover {
+  background: rgba(0, 212, 170, 0.08);
+  border-color: var(--accent2);
+  box-shadow: 0 0 10px rgba(0, 212, 170, 0.2);
+}
+
+.cuenta-card.selected {
+  background: rgba(0, 212, 170, 0.15);
+  border-color: var(--accent2);
+  box-shadow: 0 0 12px rgba(0, 212, 170, 0.35);
+}
+
+.cuenta-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.cuenta-email {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: #ffffff;
+  letter-spacing: 1px;
+}
+
+.cuenta-nombre {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.check-icon {
+  font-family: var(--mono);
+  color: var(--accent2);
+  font-weight: bold;
+  font-size: 14px;
+}

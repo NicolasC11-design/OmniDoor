@@ -1,4 +1,4 @@
-import { Component, Input, ChangeDetectorRef, ViewEncapsulation } from '@angular/core';
+import { Component, Input, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ExportService } from '../../servicios/export/export.service';
@@ -36,26 +36,50 @@ export class HistorialReportesComponent {
   constructor(private exportService: ExportService) {}
 
   get historialFiltrado(): RegistroHistorial[] {
-    return this.historial.filter(reg => {
-      if (this.filtros.desde) {
-        const fechaDesde = new Date(`${this.filtros.desde}T00:00:00`);
-        if (reg.fechaRaw && reg.fechaRaw < fechaDesde) return false;
-      }
+  if (!this.historial || this.historial.length === 0) return [];
 
-      if (this.filtros.hasta) {
-        const fechaHasta = new Date(`${this.filtros.hasta}T23:59:59`);
-        if (reg.fechaRaw && reg.fechaRaw > fechaHasta) return false;
-      }
+  return this.historial.filter(reg => {
+    if (this.filtros.desde && reg.fechaRaw) {
+      const fechaDesde = new Date(`${this.filtros.desde}T00:00:00`);
+      if (reg.fechaRaw < fechaDesde) return false;
+    }
 
-      if (this.filtros.tipoMovimiento && this.filtros.tipoMovimiento !== 'todos') {
-        if (reg.evento.toLowerCase() !== this.filtros.tipoMovimiento.toLowerCase()) return false;
-      }
+    if (this.filtros.hasta && reg.fechaRaw) {
+      const fechaHasta = new Date(`${this.filtros.hasta}T23:59:59`);
+      if (reg.fechaRaw > fechaHasta) return false;
+    }
 
-      return true;
-    });
+    if (this.filtros.tipoVehiculo && this.filtros.tipoVehiculo !== 'todos') {
+      const tipoReg = (reg.tipoVehiculo || '').toLowerCase();
+      const tipoFiltro = this.filtros.tipoVehiculo.toLowerCase();
+      if (!tipoReg.includes(tipoFiltro)) return false;
+    }
+
+    if (this.filtros.tipoMovimiento && this.filtros.tipoMovimiento !== 'todos') {
+      const evReg = (reg.evento || '').toLowerCase().replace(/[\s_]/g, '');
+      const evFiltro = this.filtros.tipoMovimiento.toLowerCase().replace(/[\s_]/g, '');
+      if (!evReg.includes(evFiltro)) return false;
+    }
+
+    return true;
+  });
+}
+
+  limpiarFiltros(): void {
+    this.filtros = {
+      desde: '',
+      hasta: '',
+      tipoVehiculo: 'todos',
+      tipoMovimiento: 'todos',
+    };
   }
 
   exportar(formato: 'pdf' | 'excel'): void {
+    if (this.historialFiltrado.length === 0) {
+      alert('No hay registros filtrados para exportar.');
+      return;
+    }
+
     if (formato === 'excel') {
       this.exportService.exportarExcel(this.historialFiltrado);
     } else {

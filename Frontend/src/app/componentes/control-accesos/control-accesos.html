@@ -5,10 +5,10 @@
         <div class="col-md-6">
             <div class="card shadow-sm border-0">
                 <div class="card-header bg-dark text-white">
-                    <h5 class="card-title mb-0"><i class="ti ti-camera me-2"></i>Escaner Biométrico Facial</h5>
+                    <h5 class="card-title mb-0"><i class="ti ti-camera me-2"></i>Escáner Biométrico Facial</h5>
                 </div>
                 <div class="card-body text-center">
-                    <app-biometria-camara (rostroCapturado)="onRostroCapturado($event)"></app-biometria-camara>
+                    <app-biometria-camara (alCapturarBiometria)="onRostroCapturado($event)"></app-biometria-camara>
 
                     <div *ngIf="vectorBiometrico" class="alert alert-success mt-3 mb-0">
                         <i class="ti ti-check-circle me-1"></i> Rostro capturado y listo para validación.
@@ -25,8 +25,7 @@
                 <div class="card-body">
                     <form (ngSubmit)="procesarAcceso()">
                         <div class="mb-3">
-                            <label class="form-label font-weight-bold">Placa del Vehículo (Opcional si es
-                                Peatonal):</label>
+                            <label class="form-label font-weight-bold">Placa del Vehículo (Opcional si es Peatonal):</label>
                             <input type="text" class="form-control form-control-lg text-uppercase"
                                 [(ngModel)]="placaInput" name="placaInput" placeholder="Ej. ABC123 o ABC12D"
                                 maxlength="10">
@@ -47,15 +46,17 @@
                         </button>
                     </form>
 
-
                     <div *ngIf="mensajeRespuesta" class="alert alert-success mt-4">
                         <h5 class="alert-heading"><i class="ti ti-circle-check me-1"></i> ¡Acceso Autorizado!</h5>
                         <p class="mb-0">{{ mensajeRespuesta }}</p>
                         <hr *ngIf="datosUsuario">
                         <div *ngIf="datosUsuario">
-                            <small><strong>Conductor:</strong> {{ datosUsuario.nombre }}</small><br>
+                            <small><strong>Conductor / Usuario:</strong> {{ datosUsuario.nombre_completo || datosUsuario.nombre }}</small><br>
                             <small><strong>Rol:</strong> {{ datosUsuario.rol }}</small>
                         </div>
+                        <button type="button" class="btn btn-sm btn-outline-success mt-3" (click)="reiniciarFormulario()">
+                            Siguiente Registro
+                        </button>
                     </div>
 
                     <div *ngIf="errorRespuesta" class="alert alert-danger mt-4">
