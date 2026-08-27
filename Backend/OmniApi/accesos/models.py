@@ -3,12 +3,12 @@ import json
 from django.db import models
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser, PermissionsMixin
 from django.utils import timezone
-from django.conf import settings
+
 
 class UsuarioManager(BaseUserManager):
     def create_user(self, correo, password=None, **extra_fields):
         if not correo:
-            raise ValueError('El usuario debe tener un correo electrónico')
+            raise ValueError('El usuario debe tener un correo electrónico.')
         correo = self.normalize_email(correo)
         user = self.model(correo=correo, **extra_fields)
         user.set_password(password)
@@ -20,7 +20,7 @@ class UsuarioManager(BaseUserManager):
         extra_fields.setdefault('is_superuser', True)
         extra_fields.setdefault('is_active', True)
         extra_fields.setdefault('is_admin', True)
-        extra_fields.setdefault('rol', 'admin') 
+        extra_fields.setdefault('rol', 'admin')
 
         if extra_fields.get('is_staff') is not True:
             raise ValueError('El superusuario debe tener is_staff=True.')
@@ -28,6 +28,7 @@ class UsuarioManager(BaseUserManager):
             raise ValueError('El superusuario debe tener is_superuser=True.')
 
         return self.create_user(correo, password, **extra_fields)
+
 
 class Usuario(AbstractBaseUser, PermissionsMixin):
     id_usuario = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -56,10 +57,12 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return self.correo
 
+
 class Vehiculo(models.Model):
     id_vehiculo = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     propietario = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='vehiculos')
-    tipoVehiculo = models.CharField(max_length=20) 
+    # Renombrado a tipo_vehiculo para alineación con las convenciones del proyecto
+    tipo_vehiculo = models.CharField(max_length=20, db_column='tipoVehiculo') 
     placa = models.CharField(max_length=15, blank=True, null=True, default='N/A')
     marca = models.CharField(max_length=50, blank=True, null=True, default='GENERICA')
     modelo = models.CharField(max_length=50, blank=True, null=True, default='GENERICO')
@@ -70,7 +73,7 @@ class Vehiculo(models.Model):
         db_table = 'vehiculos'
 
     def __str__(self):
-        return f"{self.tipoVehiculo} - {self.placa}"
+        return f"{self.tipo_vehiculo} - {self.placa}"
 
 
 class RegistroAcceso(models.Model):
@@ -78,8 +81,10 @@ class RegistroAcceso(models.Model):
         ('ENTRADA', 'Entrada'),
         ('SALIDA', 'Salida'),
         ('APERTURA_MANUAL', 'Apertura Manual'),
+        ('DENEGADO', 'Acceso Denegado'),
     ]
     id_registro = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='mis_accesos', null=True, blank=True)
     vehiculo = models.ForeignKey(Vehiculo, on_delete=models.CASCADE, related_name='accesos', null=True, blank=True)
     placa_manual = models.CharField(max_length=15, null=True, blank=True)
     tipo_vehiculo_manual = models.CharField(max_length=20, null=True, blank=True)
@@ -87,7 +92,7 @@ class RegistroAcceso(models.Model):
     motivo_apertura = models.TextField(null=True, blank=True)
 
     fecha_hora = models.DateTimeField(default=timezone.now)
-    tipo_movimiento = models.CharField(max_length=20, choices=TIPO_MOVIMIENTO) # Subido max_length a 20
+    tipo_movimiento = models.CharField(max_length=20, choices=TIPO_MOVIMIENTO)
     vigilante = models.ForeignKey(Usuario, on_delete=models.SET_NULL, null=True, related_name='accesos_registrados')
 
     class Meta:
@@ -95,8 +100,9 @@ class RegistroAcceso(models.Model):
         ordering = ['-fecha_hora']
 
     def __str__(self):
-        placa = self.vehiculo.placa if self.vehiculo else self.placa_manual
+        placa = self.vehiculo.placa if self.vehiculo else (self.placa_manual or 'PEATONAL')
         return f"{self.tipo_movimiento} - {placa} ({self.fecha_hora})"
+
 
 class InformeTurno(models.Model):
     id_informe = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -118,9 +124,10 @@ class InformeTurno(models.Model):
     def __str__(self):
         return f"Informe Turno - {self.vigilante.nombre_completo} - {self.fecha_hora_fin.strftime('%Y-%m-%d')}"
 
+
 class BiometriaUsuario(models.Model):
     id_biometria = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    usuario = models.OneToOneField('Usuario', on_delete=models.CASCADE, related_name='biometria')
+    usuario = models.OneToOneField(Usuario, on_delete=models.CASCADE, related_name='biometria')
     vector_facial = models.TextField(help_text="Vector numérico biométrico codificado")   
     fecha_enrolamiento = models.DateTimeField(default=timezone.now)
     activo = models.BooleanField(default=True)
@@ -129,13 +136,15 @@ class BiometriaUsuario(models.Model):
         db_table = 'biometria_usuarios'
 
     def set_descriptor(self, lista_floats):
-        """Convierte el arreglo [0.12, -0.45, ...] a un string JSON."""
-        self.vector_facial = json.dumps(lista_floats)
+        if isinstance(lista_floats, list):
+            self.vector_facial = json.dumps(lista_floats)
 
     def get_descriptor(self):
-        """Devuelve el arreglo numérico listo para comparar en Python o enviar al Frontend."""
         if self.vector_facial:
-            return json.loads(self.vector_facial)
+            try:
+                return json.loads(self.vector_facial)
+            except json.JSONDecodeError:
+                return []
         return []
 
     def __str__(self):

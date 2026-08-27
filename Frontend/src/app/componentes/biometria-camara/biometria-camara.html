@@ -1,7 +1,7 @@
 <div class="biometria-container">
     
     <div class="status-badge" [ngClass]="{'success': modelosCargados, 'error': !modelosCargados && !cargandoModelos}">
-        {{ cargandoModelos ? 'CARGANDO RED NEURONAL CPU...' : (modelosCargados ? 'SISTEMA LISTO PARA ESCANEO' : 'ERROR DE MODELO') }}
+        {{ cargandoModelos ? 'CARGANDO RED NEURONAL BIOMÉTRICA...' : (modelosCargados ? 'SISTEMA BIOMÉTRICO LISTO' : 'ERROR DE CARGA DE MODELOS') }}
     </div>
 
     <div class="video-wrapper">
@@ -14,7 +14,12 @@
             <span class="status-badge">CARGANDO MODELOS FACE-API...</span>
         </div>
 
-        <div *ngIf="camaraActiva && modelosCargados" class="scan-line"></div>
+        <div *ngIf="procesandoCaptura" class="loading-overlay">
+            <div class="spinner"></div>
+            <span class="status-badge">PROCESANDO VECTOR BIOMÉTRICO...</span>
+        </div>
+
+        <div *ngIf="camaraActiva && modelosCargados && !procesandoCaptura" class="scan-line"></div>
     </div>
 
     <div class="controls">
@@ -22,7 +27,7 @@
             📷 ENCENDER CÁMARA
         </button>
 
-        <button *ngIf="camaraActiva" type="button" class="btn-cyber" [disabled]="!modelosCargados" (click)="capturarRostro()">
+        <button *ngIf="camaraActiva" type="button" class="btn-cyber" [disabled]="!modelosCargados || procesandoCaptura" (click)="capturarRostro()">
             ⚡ CAPTURAR BIOMETRÍA
         </button>
     </div>
