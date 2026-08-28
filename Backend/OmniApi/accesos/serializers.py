@@ -2,18 +2,21 @@ import re
 from django.db import IntegrityError, transaction
 from django.db.models import Q, Value
 from django.db.models.functions import Replace
+from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 from .models import BiometriaUsuario, InformeTurno, RegistroAcceso, Usuario, Vehiculo
 
 
 def validar_formato_placa(placa, tipo_vehiculo):
-    if not placa or str(placa).strip().upper() in ['N/A', 'S_PLACA', 'SIN_PLACA', 'NONE']:
+    if not placa or str(placa).strip().upper() in ['N/A', 'S_PLACA', 'SIN_PLACA', 'NONE', '']:
         return None
 
     placa_limpia = str(placa).strip().replace('-', '').replace(' ', '').upper()
     tipo = str(tipo_vehiculo).strip().upper() if tipo_vehiculo else "AUTOMOVIL"
-    if tipo in ['BICICLETA', 'PATIN', 'PATINETA', 'ELECTRICO', 'PEATONAL']:
+    
+    # Soporte para variantes comunes enviadas desde el Frontend
+    if tipo in ['BICICLETA', 'PATIN', 'PATINETA', 'ELECTRICO', 'ELECTR', 'PEATONAL']:
         return placa_limpia
 
     patron_carro = r'^[A-Z]{3}\d{3}$'
@@ -98,9 +101,11 @@ class userSerializer(serializers.ModelSerializer):
             if hasattr(Vehiculo, 'propietario') 
             else Vehiculo.objects.filter(usuario=obj, activo=True)
         )
+        if hasattr(Vehiculo, 'fecha_registro'):
+            v_qs = v_qs.order_by('-fecha_registro')
         return [
             {
-                'id_vehiculo': v.id_vehiculo if hasattr(v, 'id_vehiculo') else getattr(v, 'id', None),
+                'id_vehiculo': getattr(v, 'id_vehiculo', getattr(v, 'id', None)),
                 'placa': v.placa,
                 'tipo_vehiculo': getattr(v, 'tipo_vehiculo', getattr(v, 'tipoVehiculo', 'AUTOMOVIL'))
             } 
@@ -109,11 +114,11 @@ class userSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def update(self, instance, validated_data):
-
         request_data = {**validated_data}
         if self.context and self.context.get('request') and hasattr(self.context['request'], 'data'):
             request_data.update(self.context['request'].data)
 
+        # 1. Actualización de datos básicos de Usuario
         if 'nombre_completo' in request_data and request_data['nombre_completo']:
             val_nombre = str(request_data['nombre_completo']).strip()
             if hasattr(instance, 'nombre_completo'):
@@ -126,6 +131,8 @@ class userSerializer(serializers.ModelSerializer):
 
         if 'correo' in request_data and request_data['correo']:
             val_correo = str(request_data['correo']).strip()
+            if Usuario.objects.filter(correo=val_correo).exclude(pk=instance.pk).exists():
+                raise serializers.ValidationError({"correo": "Este correo electrónico ya está registrado por otro usuario."})
             if hasattr(instance, 'correo'):
                 instance.correo = val_correo
             elif hasattr(instance, 'email'):
@@ -137,47 +144,71 @@ class userSerializer(serializers.ModelSerializer):
                 if hasattr(instance, campo):
                     setattr(instance, campo, str(request_data[campo]).strip())
 
+        # Manejo seguro de rol de administrador
         if hasattr(instance, 'rol') and instance.rol:
             rol_normalizado = str(instance.rol).lower()
             if rol_normalizado in ['admin', 'administrador']:
                 if hasattr(instance, 'is_admin'): instance.is_admin = True
                 if hasattr(instance, 'is_staff'): instance.is_staff = True
                 if hasattr(instance, 'is_superuser'): instance.is_superuser = True
-        for bool_field in ['estado', 'is_active', 'is_admin', 'is_staff']:
-            if hasattr(instance, bool_field):
-                val = getattr(instance, bool_field)
-                if isinstance(val, str):
-                    setattr(instance, bool_field, val.lower() in ['true', '1', 'activo'])
+
+        # Normalización estricta de campos booleanos a tipos nativos True/False de Python
+        for bool_field in ['estado', 'is_active', 'is_admin', 'is_staff', 'is_superuser']:
+            if bool_field in request_data:
+                val = request_data[bool_field]
+                val_bool = val.lower() in ['true', '1', 'activo', 'yes'] if isinstance(val, str) else bool(val)
+                setattr(instance, bool_field, val_bool)
+            elif hasattr(instance, bool_field):
+                val_attr = getattr(instance, bool_field)
+                if isinstance(val_attr, str):
+                    setattr(instance, bool_field, val_attr.lower() in ['true', '1', 'activo', 'yes'])
+                elif val_attr is not None:
+                    setattr(instance, bool_field, bool(val_attr))
 
         instance.save()
+
+        # 2. Procesamiento y actualización del Vehículo relacionado
         placa_raw = request_data.get('placa')
         tipo_raw = request_data.get('tipo_vehiculo') or request_data.get('tipoVehiculo')
 
-        if placa_raw is not None and str(placa_raw).strip() != '':
+        if placa_raw is not None:
             tipo_final = str(tipo_raw).strip().upper() if tipo_raw else "AUTOMOVIL"
+            if tipo_final in ['AUTO', 'CARRO']:
+                tipo_final = 'AUTOMOVIL'
+            elif tipo_final in ['MOTO']:
+                tipo_final = 'MOTOCICLETA'
+
             placa_limpia = validar_formato_placa(placa_raw, tipo_final)
 
-            if placa_limpia:
-                relacion_kw = {'propietario': instance} if hasattr(Vehiculo, 'propietario') else {'usuario': instance}
-                vehiculo = Vehiculo.objects.filter(**relacion_kw).first()
+            relacion_kw = {'propietario': instance} if hasattr(Vehiculo, 'propietario') else {'usuario': instance}
 
+            if placa_limpia:
+                # Validar duplicados en otros usuarios (excluyendo vehículos pertenecientes a este mismo usuario)
                 vehiculos_duplicados = Vehiculo.objects.annotate(
                     placa_sin_guion=Replace('placa', Value('-'), Value(''))
-                ).filter(placa_sin_guion=placa_limpia, activo=True)
-
-                if vehiculo:
-                    vehiculos_duplicados = vehiculos_duplicados.exclude(pk=vehiculo.pk)
+                ).filter(placa_sin_guion=placa_limpia, activo=True).exclude(**relacion_kw)
 
                 if vehiculos_duplicados.exists():
                     raise serializers.ValidationError(
                         {"placa": f"La placa '{placa_limpia}' ya está registrada por otro usuario."}
                     )
 
+                # Buscar vehículo existente del usuario que coincida con la placa, o el activo
+                vehiculo = Vehiculo.objects.annotate(
+                    placa_sin_guion=Replace('placa', Value('-'), Value(''))
+                ).filter(placa_sin_guion=placa_limpia, **relacion_kw).first()
+
+                if not vehiculo:
+                    vehiculo = Vehiculo.objects.filter(activo=True, **relacion_kw).first()
+                if not vehiculo:
+                    vehiculo = Vehiculo.objects.filter(**relacion_kw).first()
+
                 if vehiculo:
                     vehiculo.placa = placa_limpia
                     if hasattr(vehiculo, 'tipo_vehiculo'): vehiculo.tipo_vehiculo = tipo_final
                     if hasattr(vehiculo, 'tipoVehiculo'): vehiculo.tipoVehiculo = tipo_final
                     if hasattr(vehiculo, 'activo'): vehiculo.activo = True
+                    if hasattr(vehiculo, 'fecha_registro'): vehiculo.fecha_registro = timezone.now()
                     vehiculo.save()
                 else:
                     kwargs_crear = {'placa': placa_limpia}
@@ -189,10 +220,14 @@ class userSerializer(serializers.ModelSerializer):
                     if hasattr(Vehiculo, 'activo'): kwargs_crear['activo'] = True
 
                     Vehiculo.objects.create(**kwargs_crear)
-
+            else:
+                vehiculos_usuario = Vehiculo.objects.filter(**relacion_kw)
+                for v in vehiculos_usuario:
+                    if hasattr(v, 'activo'):
+                        v.activo = False
+                        v.save()
+        instance.refresh_from_db()
         return instance
-
-
 
 class RegisterSerializer(serializers.ModelSerializer):
     nombres = serializers.CharField(write_only=True)
