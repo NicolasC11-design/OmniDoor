@@ -176,7 +176,7 @@
 
 .input-row .field-group {
   flex: 1 !important;
-  min-width: 0 !important; /* Vital para que el flexbox funcione en inputs */
+  min-width: 0 !important;
 }
 
 .field-group {

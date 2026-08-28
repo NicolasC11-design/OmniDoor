@@ -1,0 +1,211 @@
+<div class="od-shell">
+    <div class="grid-bg"></div>
+    <div class="scan-line"></div>
+
+    <!-- Navbar -->
+    <header class="od-nav">
+        <div class="nav-brand">
+            <div class="brand-logo-container" routerLink="/inicio">
+                <img src="images/logoTopBar.png" alt="OmniDoor Logo" class="brand-logo-img" />
+            </div>
+        </div>
+        <div class="nav-links">
+            <a href="#caracteristicas" class="nav-link">Características</a>
+        </div>
+        <div class="nav-actions">
+            <a routerLink="/login" class="od-btn ghost">Iniciar Sesión</a>
+            <a routerLink="/register" class="od-btn primary">Solicitar Registro</a>
+        </div>
+    </header>
+
+    <!--Malla Biométrica -->
+    <section class="hero-section">
+        <div class="hero-container">
+
+            <!-- Mensaje Principal y CTA -->
+            <div class="hero-content">
+                <div class="hero-badge">
+                    <span class="pulse-dot"></span> SISTEMA DE CONTROL DE ACCESO INTELIGENTE
+                </div>
+                <h1 class="hero-title">
+                    Seguridad Automatizada y <br />
+                    <span class="highlight">Reconocimiento Biométrico</span>
+                </h1>
+                <p class="hero-subtitle">
+                    OmniDoor optimiza y audita el flujo vehicular y peatonal en tiempo real mediante visión
+                    computacional, validación multicapa de 128 dimensiones e integración IoT.
+                </p>
+
+                <div class="hero-buttons">
+                    <a routerLink="/login" class="od-btn primary lg">
+                        <i class="ti ti-scan"></i> Acceder a Terminal
+                    </a>
+                    <a href="#caracteristicas" class="od-btn ghost lg">
+                        Saber más <i class="ti ti-arrow-down"></i>
+                    </a>
+                </div>
+
+                <!-- Métricas rápidas -->
+                <div class="hero-stats">
+                    <div class="stat-item">
+                        <span class="stat-num">99.8%</span>
+                        <span class="stat-lbl">Precisión Biométrica</span>
+                    </div>
+                    <div class="stat-divider"></div>
+                    <div class="stat-item">
+                        <span class="stat-num">&lt; 1.2s</span>
+                        <span class="stat-lbl">Tiempo de Validación</span>
+                    </div>
+                    <div class="stat-divider"></div>
+                    <div class="stat-item">
+                        <span class="stat-num">24/7</span>
+                        <span class="stat-lbl">Monitoreo Perimetral</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tarjeta HUD Malla Biométrica -->
+            <div class="hero-visual">
+                <div class="cyber-card">
+                    <!-- Esquinas del contenedor -->
+                    <div class="corner c-tl"></div>
+                    <div class="corner c-tr"></div>
+                    <div class="corner c-bl"></div>
+                    <div class="corner c-br"></div>
+
+                    <div class="mesh-container">
+                        <div class="scan-overlay"></div>
+
+                        <svg class="face-mesh-svg" viewBox="0 0 300 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Retícula HUD  -->
+                            <circle cx="150" cy="150" r="135" stroke="#00f0ff" stroke-width="1" stroke-dasharray="4 4"
+                                opacity="0.4" />
+                            <circle cx="150" cy="150" r="100" stroke="#00d4aa" stroke-width="1" opacity="0.2" />
+
+                            <!-- Silueta y Malla Facial Poligonal -->
+                            <path d="M150 50 L190 80 L210 130 L200 190 L150 240 L100 190 L90 130 L110 80 Z"
+                                stroke="#00f0ff" stroke-width="1.5" fill="rgba(0, 240, 255, 0.03)" />
+                            <path d="M150 50 L150 240 M90 130 L210 130 M110 80 L190 80 M100 190 L200 190"
+                                stroke="#00f0ff" stroke-width="0.8" opacity="0.5" />
+
+                            <!-- Referencias Faciales -->
+                            <polygon points="120,110 135,115 120,120 105,115" stroke="#00d4aa" stroke-width="1.2"
+                                fill="rgba(0, 212, 170, 0.2)" />
+                            <polygon points="180,110 195,115 180,120 165,115" stroke="#00d4aa" stroke-width="1.2"
+                                fill="rgba(0, 212, 170, 0.2)" />
+
+                            <path d="M150 115 L145 150 L155 150 Z" stroke="#00f0ff" stroke-width="1"
+                                fill="rgba(0, 240, 255, 0.1)" />
+                            <path d="M130 180 Q150 195 170 180 Q150 170 130 180 Z" stroke="#00d4aa" stroke-width="1"
+                                fill="rgba(0, 212, 170, 0.15)" />
+
+                            <!-- Puntos de Coincidencia -->
+                            <circle cx="150" cy="50" r="3" fill="#00f0ff" />
+                            <circle cx="190" cy="80" r="3" fill="#00f0ff" />
+                            <circle cx="210" cy="130" r="3" fill="#00f0ff" />
+                            <circle cx="200" cy="190" r="3" fill="#00f0ff" />
+                            <circle cx="150" cy="240" r="3" fill="#00f0ff" />
+                            <circle cx="100" cy="190" r="3" fill="#00f0ff" />
+                            <circle cx="90" cy="130" r="3" fill="#00f0ff" />
+                            <circle cx="110" cy="80" r="3" fill="#00f0ff" />
+                            <circle cx="120" cy="115" r="2.5" fill="#00d4aa" />
+                            <circle cx="180" cy="115" r="2.5" fill="#00d4aa" />
+                            <circle cx="150" cy="150" r="2.5" fill="#00d4aa" />
+                            <circle cx="150" cy="180" r="2.5" fill="#00d4aa" />
+                        </svg>
+                    </div>
+
+                    <div class="cyber-hud-tag">
+                        <div class="hud-item">
+                            <span class="hud-label">ESTADO:</span>
+                            <span class="hud-value success">● IDENTIFICANDO</span>
+                        </div>
+                        <div class="hud-item">
+                            <span class="hud-label">DESCRIPTORES:</span>
+                            <span class="hud-value">128 VECTORS</span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Section: Características -->
+    <section id="caracteristicas" class="features-section">
+        <div class="section-header text-center">
+            <h2 class="section-title">CAPACIDADES DEL SISTEMA</h2>
+            <p class="section-desc">Diseñado para altos estándares de auditoría y respuesta inmediata en portería.</p>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="card-icon"><i class="ti ti-face-id"></i></div>
+                <h3>Visión Computacional Facial</h3>
+                <p>Identificación biométrica en vivo con análisis vectorial de 128 dimensiones para prevenir
+                    suplantaciones e ingresos no autorizados.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="card-icon"><i class="ti ti-car"></i></div>
+                <h3>Trazabilidad Vehicular</h3>
+                <p>Control de automotores, motocicletas, bicicletas y vehículos eléctricos con lógica estricta de
+                    validación entrada/salida.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="card-icon"><i class="ti ti-shield-check"></i></div>
+                <h3>Auditoría y Reportes en Vivo</h3>
+                <p>Registro automático de aperturas manuales, accesos denegados, novedades de turno y exportación de
+                    informes detallados.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="od-footer">
+        <div class="footer-container">
+            <div class="footer-col brand-col">
+                <div class="footer-logo">OMNIDOOR</div>
+                <p class="footer-desc">
+                    Plataforma avanzada de control de accesos e inspección logística institucional.
+                </p>
+                <div class="system-status">
+                    <span class="status-indicator"></span> SERVIDORES OPERATIVOS
+                </div>
+            </div>
+
+            <div class="footer-col">
+                <h4 class="footer-heading">MÓDULOS</h4>
+                <ul class="footer-links">
+                    <li><a routerLink="/login">Terminal de Portería</a></li>
+                    <li><a routerLink="/dashboardUsuario">Panel de Usuario</a></li>
+                    <li><a routerLink="/dashboardAdministrador">Panel Administrador</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h4 class="footer-heading">SOPORTE Y SEGURIDAD</h4>
+                <ul class="footer-links">
+                    <li><a href="javascript:void(0)">Política de Tratamiento de Datos</a></li>
+                    <li><a href="javascript:void(0)">Términos de Servicio</a></li>
+                    <li><a href="javascript:void(0)">Reportar Incidencia</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h4 class="footer-heading">DESARROLLADO EN</h4>
+                <p class="footer-info">
+                    Análisis y Desarrollo de Software (ADSO)<br />
+                    Servicio Nacional de Aprendizaje — SENA
+                </p>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <span>&copy; 2026 OmniDoor. Todos los derechos reservados.</span>
+            <span class="build-ver">BUILD 2026.08-PROD</span>
+        </div>
+    </footer>
+</div>

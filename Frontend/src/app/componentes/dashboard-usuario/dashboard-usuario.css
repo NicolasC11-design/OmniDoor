@@ -58,22 +58,30 @@
 }
 
 .od-logo {
-    font-family: var(--mono);
-    font-size: 45px;
-    color: var(--text);
-    text-shadow: 0 0 20px rgba(26, 143, 255, 0.6); 
-    letter-spacing: 8px;
-    text-transform: uppercase;
-    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.topbar-logo-img {
+    height: 40px;
+    width: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.6));
 }
 
 .od-subtitle {
-    font-family: var(--mono);
-    font-size: 18px;
-    color: var(--accent);
-    letter-spacing: 3px;
-    margin-top: 6px;
-    text-transform: lowercase;
+    color: #8a99ad;
+    font-size: 1.5rem;
+    margin-top: 4px;
+}
+.logo-subtitle-text {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 2.4rem;
+    color: #00f0ff;
+    letter-spacing: 1.5px;
+    text-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
+    white-space: nowrap;
 }
 
 .logout-btn {

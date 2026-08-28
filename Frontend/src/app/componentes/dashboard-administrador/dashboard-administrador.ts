@@ -43,7 +43,7 @@ export interface RegistroHistorial {
   templateUrl: './dashboard-administrador.html',
   styleUrls: ['./dashboard-administrador.css']
 })
-export class AdminDashboard implements OnInit {
+export class AdminDashboardComponent implements OnInit {
   vistaActual: Vista = 'panel';
 
   kpis = {

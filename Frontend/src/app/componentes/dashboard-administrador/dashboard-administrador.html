@@ -4,14 +4,17 @@
   <div class="od-content">
 
     <div class="topbar">
-      <div>
-        <div class="od-logo">
-          <h1>OmniDoor — Panel Administrador</h1>
+      <div class="topbar-brand">
+        <div class="od-logo-container" routerLink="/dashboardAdministrador">
+          <img src="images/logoTopBar.png" alt="OmniDoor Logo" class="topbar-logo-img" />
         </div>
+        <div class="brand-divider"></div>
         <div class="od-subtitle">
-          <h2>{{ vistaActual === 'panel' ? 'gestión de accesos' : breadcrumb() }}</h2>
+          <span class="status-dot"></span>
+          <h2>{{ vistaActual === 'panel' ? 'GESTIÓN DE ACCESOS' : breadcrumb() }}</h2>
         </div>
       </div>
+
       <div class="topbar-actions">
         <button class="back-btn" *ngIf="vistaActual !== 'panel'" (click)="irAPanel()">
           <i class="ti ti-arrow-left" aria-hidden="true"></i>
