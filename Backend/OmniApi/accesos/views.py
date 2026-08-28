@@ -252,7 +252,6 @@ class UsuarioDetailUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
         
-        # Pasar el request en el context para que userSerializer.update acceda a request.data limpiamente
         serializer = self.get_serializer(instance, data=request.data, partial=partial, context={'request': request})
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)

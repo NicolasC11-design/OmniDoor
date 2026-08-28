@@ -61,7 +61,6 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
 class Vehiculo(models.Model):
     id_vehiculo = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     propietario = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='vehiculos')
-    # Renombrado a tipo_vehiculo para alineación con las convenciones del proyecto
     tipo_vehiculo = models.CharField(max_length=20, db_column='tipoVehiculo') 
     placa = models.CharField(max_length=15, blank=True, null=True, default='N/A')
     marca = models.CharField(max_length=50, blank=True, null=True, default='GENERICA')
