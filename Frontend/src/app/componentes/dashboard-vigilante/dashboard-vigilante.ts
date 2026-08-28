@@ -40,15 +40,13 @@ export interface RegistroIngreso {
   templateUrl: './dashboard-vigilante.html',
   styleUrl: './dashboard-vigilante.css',
 })
-export class DashboardVigilante implements OnInit, OnDestroy {
+export class DashboardVigilanteComponent implements OnInit, OnDestroy {
 
-  // Variables de Portería
   coincidenciasPorteria: any[] = [];
   vectorBiometricoCapturado: number[] | null = null;
   placaInput: string = '';
   tipoMovimientoSeleccionado: string = 'ENTRADA';
 
-  // Estado General y Métricas
   online = true;
   ingresosHoy = 0;
   salidasHoy = 0;
@@ -56,18 +54,15 @@ export class DashboardVigilante implements OnInit, OnDestroy {
   pendientesManual = 0;
   denegadosHoy = 0;
 
-  // Visualización Alertas y Scanner
   estadoAcceso: 'idle' | 'ok' | 'deny' = 'idle';
   ultimoResultado: { placa: string; conductor: string; motivo?: string } | null = null;
   ultimosIngresos: RegistroIngreso[] = [];
 
-  // Modales Control
   mostrarModalManual = false;
   mostrarModalVisitante = false;
   mostrarModalInforme = false;
   mostrarModalSeleccionCuentas = false;
 
-  // Escaneo Biométrico
   modoEscaneoBiometrico = false;
   evaluandoBiometria = false;
   placaEscaneoInput = '';
@@ -75,13 +70,11 @@ export class DashboardVigilante implements OnInit, OnDestroy {
   cuentasCoincidentes: any[] = [];
   vectorBiometricoPendiente: number[] = [];
 
-  // Formularios Modales
   guardandoVisitante = false;
   guardandoManual = false;
   aperturaManual = { conductor: '', motivo: '', tipoVehiculo: 'AUTO' as TipoVehiculo, placa: '' };
   visitante = { nombre: '', tipoVehiculo: 'AUTO' as TipoVehiculo, placa: '' };
 
-  // Fin de Turno
   novedadesTexto = '';
   sinNovedadCheck = true;
   horaInicioTurno!: string;
@@ -433,7 +426,6 @@ export class DashboardVigilante implements OnInit, OnDestroy {
     this.evaluandoBiometria = false;
   }
 
-  // --- ESCANEO BIOMÉTRICO Y PORTERÍA ---
 
   onRostroCapturadoPorteria(vector: any): void {
     this.onRostroEscaneado(vector);

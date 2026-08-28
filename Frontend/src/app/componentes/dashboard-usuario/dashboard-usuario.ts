@@ -32,7 +32,7 @@ export interface RegistroMioHistorial {
   templateUrl: './dashboard-usuario.html',
   styleUrl: './dashboard-usuario.css',
 })
-export class DashboardUsuario implements OnInit, OnDestroy {
+export class DashboardUsuarioComponent implements OnInit, OnDestroy {
   usuario: any = {};
   vehiculos: MiVehiculo[] = [];
   miHistorial: RegistroMioHistorial[] = [];

@@ -54,7 +54,7 @@ export interface VehicleType {
   templateUrl: './registrer.html',
   styleUrls: ['./registrer.css'],
 })
-export class Register implements OnInit, OnDestroy {
+export class RegisterComponent implements OnInit, OnDestroy {
   registerForm!: FormGroup;
   loading = false;
   biometricCapturing = false;

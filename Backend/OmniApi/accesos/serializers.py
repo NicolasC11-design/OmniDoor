@@ -131,7 +131,6 @@ class userSerializer(serializers.ModelSerializer):
             elif hasattr(instance, 'email'):
                 instance.email = val_correo
 
-        # 3. Actualización de Campos Directos (Teléfono, Dirección, Ficha SENA, Emergencias, Rol)
         campos_directos = ['telefono', 'direccion', 'ficha', 'nombre_emergencia', 'contacto_emergencia', 'rol']
         for campo in campos_directos:
             if campo in request_data and request_data[campo] is not None:
