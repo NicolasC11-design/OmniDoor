@@ -66,6 +66,12 @@
           <div class="module-title">Reportes e historial</div>
           <div class="module-desc">Consulta el historial de accesos, filtra por fecha y exporta a PDF o Excel.</div>
         </button>
+
+        <button class="module-card" (click)="irA('informes-turno')">
+          <i class="ti ti-clipboard-list module-icon" aria-hidden="true"></i>
+          <div class="module-title">Informes de turno</div>
+          <div class="module-desc">Ver los reportes generados por los vigilantes al finalizar su turno.</div>
+        </button>
       </div>
     </ng-container>
 
@@ -190,6 +196,51 @@
       <app-historial-reportes [historial]="historial" [cargando]="cargandoHistorial">
       </app-historial-reportes>
     </ng-container>
+
+    <ng-container *ngIf="vistaActual === 'informes-turno'">
+      <div class="od-panel">
+        <div class="panel-header">
+          <div>
+            <div class="panel-title">Informes de Turno</div>
+            <div class="panel-subtitle">Reportes generados por los vigilantes</div>
+          </div>
+        </div>
+
+        <div class="loading-state" *ngIf="cargandoInformes">Cargando informes...</div>
+
+        <div class="empty-state" *ngIf="!cargandoInformes && informesTurno.length === 0">
+          <p>No hay informes de turno registrados.</p>
+        </div>
+
+        <div class="table-wrap" *ngIf="!cargandoInformes && informesTurno.length > 0">
+          <table class="od-table">
+            <thead>
+              <tr>
+                <th>Vigilante</th>
+                <th>Fecha Inicio</th>
+                <th>Fecha Fin</th>
+                <th>Entradas</th>
+                <th>Salidas</th>
+                <th>Quedados</th>
+                <th>Observaciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let informe of informesTurno">
+                <td>{{ informe.vigilante?.nombre_completo || 'Desconocido' }}</td>
+                <td>{{ informe.fecha_hora_inicio | date:'short' }}</td>
+                <td>{{ informe.fecha_hora_fin | date:'short' }}</td>
+                <td>{{ informe.total_entradas }}</td>
+                <td>{{ informe.total_salidas }}</td>
+                <td>{{ informe.vehiculos_quedados }}</td>
+                <td>{{ informe.entrega_sin_novedad ? 'Sin Novedad' : informe.novedades_observaciones }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </ng-container>
+
 
   </div>
 

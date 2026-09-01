@@ -71,4 +71,10 @@ export class AdminService {
 
     return throwError(() => new Error(errorMessage));
   }
+
+  obtenerInformesTurno(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/admin/informes-turno/`).pipe(
+      catchError(this.handleError)
+    );
+  }
 }
