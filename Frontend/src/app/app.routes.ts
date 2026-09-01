@@ -36,6 +36,11 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
 
-  { path: '', redirectTo: 'login', pathMatch: 'full' },
-  { path: '**', redirectTo: 'login' }
+  {
+    path: 'inicio',
+    loadComponent: () => import('./componentes/Inicio/inicio/inicio').then(m => m.Inicio)
+  },
+
+  { path: '', redirectTo: 'inicio', pathMatch: 'full' },
+  { path: '**', redirectTo: 'inicio' }
 ];
