@@ -27,47 +27,75 @@
     </div>
 
     <ng-container *ngIf="vistaActual === 'panel'">
-      <div class="kpi-row">
+      <div class="kpi-grid">
         <div class="kpi-card">
-          <i class="ti ti-car kpi-icon" aria-hidden="true"></i>
-          <div class="kpi-value">{{ kpis.vehiculosRegistrados }}</div>
-          <div class="kpi-label">vehículos registrados</div>
+          <div class="kpi-icon-wrap"><i class="ti ti-car"></i></div>
+          <div class="kpi-info">
+            <div class="kpi-value">{{ kpis.vehiculosRegistrados || 0 }}</div>
+            <div class="kpi-label">Vehículos Totales</div>
+          </div>
         </div>
-        <div class="kpi-card accent2">
-          <i class="ti ti-door-enter kpi-icon" aria-hidden="true"></i>
-          <div class="kpi-value">{{ kpis.ingresosHoy }}</div>
-          <div class="kpi-label">ingresos hoy</div>
+        <div class="kpi-card">
+          <div class="kpi-icon-wrap"><i class="ti ti-login"></i></div>
+          <div class="kpi-info">
+            <div class="kpi-value">{{ kpis.ingresosHoy || 0 }}</div>
+            <div class="kpi-label">Ingresos Hoy</div>
+          </div>
         </div>
-        <div class="kpi-card warn">
-          <i class="ti ti-user-question kpi-icon" aria-hidden="true"></i>
-          <div class="kpi-value">{{ usuariosPendientes.length }}</div>
-          <div class="kpi-label">solicitudes pendientes</div>
+        <div class="kpi-card">
+          <div class="kpi-icon-wrap"><i class="ti ti-alert-triangle"></i></div>
+          <div class="kpi-info">
+            <div class="kpi-value text-danger">{{ kpis.accesosDenegados || 0 }}</div>
+            <div class="kpi-label">Rechazados Hoy</div>
+          </div>
         </div>
-        <div class="kpi-card error">
-          <i class="ti ti-shield-x kpi-icon" aria-hidden="true"></i>
-          <div class="kpi-value">{{ kpis.accesosDenegados }}</div>
-          <div class="kpi-label">accesos denegados (mes)</div>
+        <div class="kpi-card">
+          <div class="kpi-icon-wrap"><i class="ti ti-bell"></i></div>
+          <div class="kpi-info">
+            <div class="kpi-value text-warning">{{ usuariosPendientes.length || 0 }}</div>
+            <div class="kpi-label">Pendientes</div>
+          </div>
         </div>
       </div>
 
-      <div class="modules-grid">
-        <button class="module-card" (click)="irA('solicitudes')">
-          <span class="module-badge" *ngIf="usuariosPendientes.length > 0">{{ usuariosPendientes.length }}</span>
-          <i class="ti ti-user-check module-icon" aria-hidden="true"></i>
-          <div class="module-title">Autorizaciones pendientes</div>
-          <div class="module-desc">Revisa y aprueba o rechaza solicitudes de registro de nuevos usuarios.</div>
+      <div class="section-divider"></div>
+      <h3 class="section-title">Módulos de Gestión</h3>
+
+      <div class="modules-list">
+        <button class="module-row-card" (click)="irA('solicitudes')">
+          <div class="module-row-icon"><i class="ti ti-user-check" aria-hidden="true"></i></div>
+          <div class="module-row-content">
+            <div class="module-title">Autorizaciones pendientes <span class="badge" *ngIf="usuariosPendientes.length > 0">{{ usuariosPendientes.length }} nuevas</span></div>
+            <div class="module-desc">Revisa y aprueba o rechaza solicitudes de registro de nuevos usuarios.</div>
+          </div>
+          <div class="module-row-arrow"><i class="ti ti-chevron-right"></i></div>
         </button>
 
-        <button class="module-card" (click)="irA('usuarios')">
-          <i class="ti ti-users module-icon" aria-hidden="true"></i>
-          <div class="module-title">Gestión de usuarios y conductores</div>
-          <div class="module-desc">Asigna roles, registra placas y administra los conductores de la institución.</div>
+        <button class="module-row-card" (click)="irA('usuarios')">
+          <div class="module-row-icon"><i class="ti ti-users" aria-hidden="true"></i></div>
+          <div class="module-row-content">
+            <div class="module-title">Gestión de usuarios y conductores</div>
+            <div class="module-desc">Asigna roles, registra placas y administra los conductores de la institución.</div>
+          </div>
+          <div class="module-row-arrow"><i class="ti ti-chevron-right"></i></div>
         </button>
 
-        <button class="module-card" (click)="irA('reportes')">
-          <i class="ti ti-report module-icon" aria-hidden="true"></i>
-          <div class="module-title">Reportes e historial</div>
-          <div class="module-desc">Consulta el historial de accesos, filtra por fecha y exporta a PDF o Excel.</div>
+        <button class="module-row-card" (click)="irA('reportes')">
+          <div class="module-row-icon"><i class="ti ti-report" aria-hidden="true"></i></div>
+          <div class="module-row-content">
+            <div class="module-title">Reportes e historial</div>
+            <div class="module-desc">Consulta el historial de accesos, filtra por fecha y exporta a PDF o Excel.</div>
+          </div>
+          <div class="module-row-arrow"><i class="ti ti-chevron-right"></i></div>
+        </button>
+
+        <button class="module-row-card" (click)="irA('informes-turno')">
+          <div class="module-row-icon"><i class="ti ti-clipboard-list" aria-hidden="true"></i></div>
+          <div class="module-row-content">
+            <div class="module-title">Informes de turno</div>
+            <div class="module-desc">Ver los reportes generados por los vigilantes al finalizar su turno.</div>
+          </div>
+          <div class="module-row-arrow"><i class="ti ti-chevron-right"></i></div>
         </button>
       </div>
     </ng-container>
@@ -193,6 +221,51 @@
       <app-historial-reportes [historial]="historial" [cargando]="cargandoHistorial">
       </app-historial-reportes>
     </ng-container>
+
+    <ng-container *ngIf="vistaActual === 'informes-turno'">
+      <div class="od-panel">
+        <div class="panel-header">
+          <div>
+            <div class="panel-title">Informes de Turno</div>
+            <div class="panel-subtitle">Reportes generados por los vigilantes</div>
+          </div>
+        </div>
+
+        <div class="loading-state" *ngIf="cargandoInformes">Cargando informes...</div>
+
+        <div class="empty-state" *ngIf="!cargandoInformes && informesTurno.length === 0">
+          <p>No hay informes de turno registrados.</p>
+        </div>
+
+        <div class="table-wrap" *ngIf="!cargandoInformes && informesTurno.length > 0">
+          <table class="od-table">
+            <thead>
+              <tr>
+                <th>Vigilante</th>
+                <th>Fecha Inicio</th>
+                <th>Fecha Fin</th>
+                <th>Entradas</th>
+                <th>Salidas</th>
+                <th>Quedados</th>
+                <th>Observaciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let informe of informesTurno">
+                <td>{{ informe.nombre_vigilante || 'Desconocido' }}</td>
+                <td>{{ informe.fecha_hora_inicio | date:'short' }}</td>
+                <td>{{ informe.fecha_hora_fin | date:'short' }}</td>
+                <td>{{ informe.total_entradas }}</td>
+                <td>{{ informe.total_salidas }}</td>
+                <td>{{ informe.vehiculos_quedados }}</td>
+                <td>{{ informe.entrega_sin_novedad ? 'Sin Novedad' : (informe.novedades_observaciones || 'N/A') }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </ng-container>
+
 
   </div>
 
