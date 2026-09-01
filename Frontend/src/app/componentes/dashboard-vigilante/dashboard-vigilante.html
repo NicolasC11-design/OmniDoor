@@ -82,7 +82,8 @@
 
             <div class="input-scanner-controls my-3 d-flex gap-2 align-items-center">
                 <input type="text" class="od-input text-uppercase flex-grow-1" [(ngModel)]="placaEscaneoInput"
-                    (input)="placaInput = placaEscaneoInput" placeholder="Placa opcional (ej. ABC-123)" />
+                    (input)="placaInput = placaEscaneoInput" placeholder="Placa opcional (ej. ABC-123)"
+                    [disabled]="tipoMovimientoSeleccionado === 'SALIDA' || tipoMovimientoCamara === 'SALIDA'" />
 
                 <select class="od-input w-auto" [(ngModel)]="tipoMovimientoCamara"
                     (change)="tipoMovimientoSeleccionado = tipoMovimientoCamara"
