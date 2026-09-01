@@ -112,8 +112,6 @@
               {{ user.nombre_completo || user.nombre || 'Usuario' }}
             </span>
           </div>
-          
-          <!-- Checkmark que solo aparece si coincide el ID del usuario seleccionado -->
           <span class="check-icon" *ngIf="(usuarioSeleccionado?.id_usuario || usuarioSeleccionado?.id) === (user.id_usuario || user.id)">
             ✓
           </span>
@@ -135,6 +133,10 @@
     <div class="sys-msg">
       ¿Sin acceso?
       <a routerLink="/register">solicitar registro</a>
+    </div>
+    <div class="sys-msg">
+      Ir al inicio
+      <a href="/inicio">Inicio</a>
     </div>
   </div>
 </div>
