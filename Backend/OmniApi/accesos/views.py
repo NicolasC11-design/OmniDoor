@@ -252,12 +252,13 @@ class UsuarioDetailUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
         
-        # Pasar el request en el context para que userSerializer.update acceda a request.data limpiamente
         serializer = self.get_serializer(instance, data=request.data, partial=partial, context={'request': request})
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
+        instance.refresh_from_db()
+        updated_serializer = self.get_serializer(instance)
 
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(updated_serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request, *args, **kwargs):
         kwargs['partial'] = False
@@ -580,7 +581,7 @@ class ValidarAccesoPorteriaView(APIView):
 
         usuario_identificado = None
         vehiculo_obj = None
-        UMBRAL = 0.60
+        UMBRAL = 0.68
         vec_input = np.array(vector_capturado, dtype=np.float32).flatten()
         if placa and str(placa).strip().upper() not in ["N/A", "S_PLACA", "SIN_PLACA", ""]:
             placa_clean = str(placa).strip().replace('-', '').replace(' ', '').upper()
@@ -696,22 +697,18 @@ class ValidarAccesoPorteriaView(APIView):
             try:
                 biometria = BiometriaUsuario.objects.get(usuario=usuario_identificado, activo=True)
                 descriptor = biometria.get_descriptor() if hasattr(biometria, 'get_descriptor') else json.loads(biometria.vector_facial)
-                if not descriptor:
-                    raise BiometriaUsuario.DoesNotExist
+                if descriptor:
+                    vec_guardado = np.array(descriptor, dtype=np.float32).flatten()
+                    distancia = np.linalg.norm(vec_guardado - vec_input)
+                    umbral_verif = 0.78 if id_usuario_forzado else 0.70
 
-                vec_guardado = np.array(descriptor, dtype=np.float32).flatten()
-                distancia = np.linalg.norm(vec_guardado - vec_input)
-
-                if distancia > UMBRAL:
-                    return Response(
-                        {"mensaje": f"Sustitución detectada: El conductor enfocado no coincide con el propietario del vehículo ({placa})."},
-                        status=status.HTTP_401_UNAUTHORIZED,
-                    )
+                    if distancia > umbral_verif:
+                        return Response(
+                            {"mensaje": f"Sustitución detectada: El conductor enfocado no coincide con el propietario del vehículo ({placa})."},
+                            status=status.HTTP_401_UNAUTHORIZED,
+                        )
             except BiometriaUsuario.DoesNotExist:
-                return Response(
-                    {"mensaje": "El propietario del vehículo no posee biometría registrada."},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
+                pass
 
         if not usuario_identificado.is_active or not getattr(usuario_identificado, 'estado', True):
             return Response(
@@ -720,7 +717,6 @@ class ValidarAccesoPorteriaView(APIView):
             )
 
         placa_evaluar = vehiculo_obj.placa if vehiculo_obj else (placa if placa else "S_PLACA")
-        
         ultimo_registro_usuario = RegistroAcceso.objects.filter(usuario=usuario_identificado).exclude(
             tipo_movimiento="DENEGADO"
         ).order_by("-fecha_hora").first()
@@ -833,7 +829,7 @@ class LoginBiometricoView(APIView):
             if estado_str in ['activo', 'true', '1']:
                 biometrias_validas.append(bio)
 
-        UMBRAL_TOLERANCIA = 0.60
+        UMBRAL_TOLERANCIA = 0.68
         coincidencias = []
 
         for bio in biometrias_validas:

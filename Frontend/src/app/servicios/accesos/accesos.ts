@@ -32,7 +32,7 @@ export interface NovedadAccesoPayload {
 }
 
 export interface RegistroHistorial {
-  id_registro?: string; // UUID devuelto por Django
+  id_registro?: string;
   usuario?: string | null;
   nombre_usuario?: string;
   vehiculo?: string | null;
