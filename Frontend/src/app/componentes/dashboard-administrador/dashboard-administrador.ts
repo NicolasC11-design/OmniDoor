@@ -336,6 +336,11 @@ export class AdminDashboardComponent implements OnInit {
     return;
   }
 
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.formConductor.correo.trim())) {
+    alert('Por favor, ingresa un correo electrónico válido.');
+    return;
+  }
+
   if (this.formConductor.rol === 'aprendiz' && (!this.formConductor.ficha || !this.formConductor.ficha.trim())) {
     alert('Por favor, ingresa el número de ficha SENA para el aprendiz.');
     return;
@@ -343,6 +348,21 @@ export class AdminDashboardComponent implements OnInit {
 
   if (this.formConductor.ficha && !/^\d+$/.test(this.formConductor.ficha.trim())) {
     alert('El número de ficha debe contener solo números.');
+    return;
+  }
+
+  if (this.formConductor.nombre && !/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(this.formConductor.nombre.trim())) {
+    alert('El nombre debe contener solo letras.');
+    return;
+  }
+
+  if (this.formConductor.nombre_emergencia && !/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(this.formConductor.nombre_emergencia.trim())) {
+    alert('El nombre del contacto de emergencia debe contener solo letras.');
+    return;
+  }
+
+  if (this.formConductor.contacto_emergencia && !/^\d+$/.test(this.formConductor.contacto_emergencia.trim())) {
+    alert('El número del contacto de emergencia debe contener solo números.');
     return;
   }
 
