@@ -628,15 +628,29 @@ class ValidarAccesoPorteriaView(APIView):
             if len(coincidencias) > 1:
                 cuentas = []
                 for c in coincidencias:
-                    veh_usr = c["usuario"].vehiculos.filter(activo=True).first() if hasattr(c["usuario"], 'vehiculos') else None
-                    cuentas.append({
-                        "id_usuario": c["usuario"].id_usuario,
-                        "nombre": c["usuario"].nombre_completo,
-                        "correo": c["usuario"].correo,
-                        "rol": getattr(c["usuario"], "rol", "Aprendiz"),
-                        "ficha": getattr(c["usuario"], "ficha", None),
-                        "placa": veh_usr.placa if veh_usr else "S_PLACA"
-                    })
+                    usr = c["usuario"]
+                    vehiculos = usr.vehiculos.filter(activo=True) if hasattr(usr, 'vehiculos') else []
+                    if vehiculos:
+                        for v in vehiculos:
+                            cuentas.append({
+                                "id_usuario": usr.id_usuario,
+                                "id_vehiculo": v.id_vehiculo,
+                                "nombre": usr.nombre_completo,
+                                "correo": usr.correo,
+                                "rol": getattr(usr, "rol", "Aprendiz"),
+                                "ficha": getattr(usr, "ficha", None),
+                                "placa": v.placa
+                            })
+                    else:
+                        cuentas.append({
+                            "id_usuario": usr.id_usuario,
+                            "id_vehiculo": None,
+                            "nombre": usr.nombre_completo,
+                            "correo": usr.correo,
+                            "rol": getattr(usr, "rol", "Aprendiz"),
+                            "ficha": getattr(usr, "ficha", None),
+                            "placa": "S_PLACA"
+                        })
 
                 return Response(
                     {
@@ -647,9 +661,32 @@ class ValidarAccesoPorteriaView(APIView):
                     status=status.HTTP_300_MULTIPLE_CHOICES,
                 )
             elif len(coincidencias) == 1:
-                usuario_identificado = coincidencias[0]["usuario"]
-                if not vehiculo_obj and hasattr(usuario_identificado, 'vehiculos'):
-                    vehiculo_obj = usuario_identificado.vehiculos.filter(activo=True).first()
+                usr = coincidencias[0]["usuario"]
+                vehiculos = usr.vehiculos.filter(activo=True) if hasattr(usr, 'vehiculos') else []
+                if not vehiculo_obj and len(vehiculos) > 1:
+                    cuentas = []
+                    for v in vehiculos:
+                        cuentas.append({
+                            "id_usuario": usr.id_usuario,
+                            "id_vehiculo": v.id_vehiculo,
+                            "nombre": usr.nombre_completo,
+                            "correo": usr.correo,
+                            "rol": getattr(usr, "rol", "Aprendiz"),
+                            "ficha": getattr(usr, "ficha", None),
+                            "placa": v.placa
+                        })
+                    return Response(
+                        {
+                            "multiple_matches": True,
+                            "mensaje": "El usuario tiene múltiples vehículos. Selecciona con cuál va a ingresar.",
+                            "cuentas": cuentas,
+                        },
+                        status=status.HTTP_300_MULTIPLE_CHOICES,
+                    )
+                else:
+                    usuario_identificado = usr
+                    if not vehiculo_obj and vehiculos:
+                        vehiculo_obj = vehiculos.first()
             else:
                 return Response(
                     {"mensaje": "Rostro no reconocido en la base de datos."},
@@ -684,28 +721,42 @@ class ValidarAccesoPorteriaView(APIView):
 
         placa_evaluar = vehiculo_obj.placa if vehiculo_obj else (placa if placa else "S_PLACA")
         
-        filtro_ultimo = Q(usuario=usuario_identificado)
-        if vehiculo_obj:
-            filtro_ultimo |= Q(vehiculo=vehiculo_obj)
-        elif placa_evaluar not in ["S_PLACA", "N/A", ""]:
-            placa_c = placa_evaluar.replace('-', '').upper()
-            filtro_ultimo |= Q(placa_manual=placa_c)
-
-        ultimo_registro = RegistroAcceso.objects.filter(filtro_ultimo).exclude(
+        ultimo_registro_usuario = RegistroAcceso.objects.filter(usuario=usuario_identificado).exclude(
             tipo_movimiento="DENEGADO"
         ).order_by("-fecha_hora").first()
 
+        ultimo_registro_vehiculo = None
+        if vehiculo_obj:
+            ultimo_registro_vehiculo = RegistroAcceso.objects.filter(vehiculo=vehiculo_obj).exclude(
+                tipo_movimiento="DENEGADO"
+            ).order_by("-fecha_hora").first()
+        elif placa_evaluar not in ["S_PLACA", "N/A", ""]:
+            placa_c = placa_evaluar.replace('-', '').upper()
+            ultimo_registro_vehiculo = RegistroAcceso.objects.filter(placa_manual=placa_c).exclude(
+                tipo_movimiento="DENEGADO"
+            ).order_by("-fecha_hora").first()
+
         if tipo_movimiento == "SALIDA":
-            if not ultimo_registro or ultimo_registro.tipo_movimiento not in ["ENTRADA", "APERTURA_MANUAL"]:
+            if ultimo_registro_vehiculo and ultimo_registro_vehiculo.tipo_movimiento not in ["ENTRADA", "APERTURA_MANUAL"]:
                 return Response(
-                    {"mensaje": f"Validación rechazada: '{usuario_identificado.nombre_completo}' ({placa_evaluar}) no registra un ingreso previo activo en las instalaciones."},
+                    {"mensaje": f"Validación rechazada: El vehículo {placa_evaluar} no registra un ingreso previo activo en las instalaciones."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if not ultimo_registro_vehiculo and (not ultimo_registro_usuario or ultimo_registro_usuario.tipo_movimiento not in ["ENTRADA", "APERTURA_MANUAL"]):
+                return Response(
+                    {"mensaje": f"Validación rechazada: '{usuario_identificado.nombre_completo}' no registra un ingreso previo activo en las instalaciones."},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
         elif tipo_movimiento == "ENTRADA":
-            if ultimo_registro and ultimo_registro.tipo_movimiento in ["ENTRADA", "APERTURA_MANUAL"]:
+            if ultimo_registro_usuario and ultimo_registro_usuario.tipo_movimiento in ["ENTRADA", "APERTURA_MANUAL"]:
                 return Response(
-                    {"mensaje": f"Validación rechazada: '{usuario_identificado.nombre_completo}' ({placa_evaluar}) ya figura con un ingreso registrado dentro del recinto."},
+                    {"mensaje": f"Validación rechazada: '{usuario_identificado.nombre_completo}' ya figura con un ingreso registrado dentro del recinto."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if ultimo_registro_vehiculo and ultimo_registro_vehiculo.tipo_movimiento in ["ENTRADA", "APERTURA_MANUAL"]:
+                return Response(
+                    {"mensaje": f"Validación rechazada: El vehículo {placa_evaluar} ya figura con un ingreso registrado dentro del recinto."},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
@@ -903,3 +954,7 @@ class DashboardAccesosView(APIView):
 
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+class InformeTurnoListView(generics.ListAPIView):
+    queryset = InformeTurno.objects.all().order_by('-fecha_hora_fin')
+    serializer_class = InformeTurnoSerializer
+    permission_classes = [IsAdmin]

@@ -6,7 +6,7 @@ import { AdminService } from '../../servicios/admin/admin';
 import { AuthService } from '../../servicios/auth/auth';
 import { HistorialReportesComponent } from '../historial-reportes/historial-reportes';
 
-type Vista = 'panel' | 'solicitudes' | 'usuarios' | 'reportes';
+type Vista = 'panel' | 'solicitudes' | 'usuarios' | 'reportes' | 'informes-turno';
 
 export interface Conductor {
   id_usuario?: string;
@@ -55,7 +55,10 @@ export class AdminDashboard implements OnInit {
   usuariosPendientes: any[] = [];
   cargandoSolicitudes = false;
   cargandoHistorial = false;
+  cargandoInformes = false;
   mensajeExito: string | null = null;
+  
+  informesTurno: any[] = [];
 
   conductores: Conductor[] = [];
   mostrarModalConductor = false;
@@ -142,6 +145,7 @@ export class AdminDashboard implements OnInit {
     this.vistaActual = vista;
     if (vista === 'usuarios') this.cargarConductores();
     if (vista === 'reportes') this.cargarHistorial();
+    if (vista === 'informes-turno') this.cargarInformesTurno();
   }
 
   irAPanel(): void {
@@ -155,6 +159,7 @@ export class AdminDashboard implements OnInit {
       solicitudes: 'autorizaciones pendientes',
       usuarios: 'gestión de usuarios y conductores',
       reportes: 'reportes e historial',
+      'informes-turno': 'informes de turno de vigilantes'
     };
     return nombres[this.vistaActual];
   }
@@ -303,6 +308,21 @@ export class AdminDashboard implements OnInit {
 
   if (!this.formConductor.correo || !this.formConductor.correo.trim()) {
     alert('Por favor, ingresa el correo electrónico.');
+    return;
+  }
+
+  if (this.formConductor.rol === 'aprendiz' && (!this.formConductor.ficha || !this.formConductor.ficha.trim())) {
+    alert('Por favor, ingresa el número de ficha SENA para el aprendiz.');
+    return;
+  }
+
+  if (this.formConductor.ficha && !/^\d+$/.test(this.formConductor.ficha.trim())) {
+    alert('El número de ficha debe contener solo números.');
+    return;
+  }
+
+  if (this.formConductor.telefono && !/^\d+$/.test(this.formConductor.telefono.trim())) {
+    alert('El número de teléfono debe contener solo números.');
     return;
   }
 
@@ -511,6 +531,22 @@ export class AdminDashboard implements OnInit {
 
   exportar(formato: 'pdf' | 'excel'): void {
     console.log('Exportando historial en formato', formato, this.filtros);
+  }
+
+  cargarInformesTurno(): void {
+    this.cargandoInformes = true;
+    this.adminService.obtenerInformesTurno().subscribe({
+      next: (data: any) => {
+        this.informesTurno = Array.isArray(data) ? data : (data.results || data.informes || []);
+        this.cargandoInformes = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error al cargar informes de turno', err);
+        this.cargandoInformes = false;
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   cerrarSesion(): void {
