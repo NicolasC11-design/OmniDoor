@@ -4,7 +4,10 @@
     <div class="od-content">
         <div class="topbar">
             <div>
-                <div class="od-logo">OmniDoor — Mi cuenta</div>
+                <div class="od-logo">
+                    <img src="images/logoTopBar.png" alt="OmniDoor Logo" class="topbar-logo-img" />
+                    <span class="logo-subtitle-text">— Mi cuenta</span>
+                </div>
                 <div class="od-subtitle">Consulta tu acceso y tus datos vehiculares</div>
             </div>
             <button class="logout-btn" (click)="cerrarSesion()">
@@ -19,8 +22,8 @@
             <div class="id-info">
                 <div class="id-name">{{ usuario.nombre_completo || 'Usuario' }}</div>
                 <div class="id-role">
-                    {{ usuario.rol || 'aprendiz' }} 
-                    <span *ngIf="usuario.ficha">· Ficha: {{ usuario.ficha }}</span> 
+                    {{ usuario.rol || 'aprendiz' }}
+                    <span *ngIf="usuario.ficha">· Ficha: {{ usuario.ficha }}</span>
                     · {{ usuario.correo }}
                 </div>
             </div>
@@ -44,7 +47,8 @@
                 <div class="vehicle-details">
                     <div class="vehicle-plate">{{ v.placa }}</div>
                     <div class="vehicle-meta">
-                        {{ (v.tipo_vehiculo || v.tipoVehiculo || v.tipo || 'AUTO') | uppercase }} · {{ v.marca || 'S/M' }} · {{ v.modelo || 'S/M' }}
+                        {{ (v.tipo_vehiculo || v.tipoVehiculo || v.tipo || 'AUTO') | uppercase }} · {{ v.marca || 'S/M'
+                        }} · {{ v.modelo || 'S/M' }}
                     </div>
                 </div>
                 <div class="vehicle-actions-row">
@@ -69,7 +73,8 @@
 
             <div *ngFor="let h of miHistorial" class="vehicle-row">
                 <div class="vehicle-icon">
-                    <i class="ti" [ngClass]="(h.movimiento || '').toLowerCase() === 'entrada' ? 'ti-login' : 'ti-logout'"></i>
+                    <i class="ti"
+                        [ngClass]="(h.movimiento || '').toLowerCase() === 'entrada' ? 'ti-login' : 'ti-logout'"></i>
                 </div>
                 <div class="vehicle-details">
                     <div class="vehicle-plate" style="font-size: 0.9rem; letter-spacing: 1px;">
@@ -109,7 +114,8 @@
 
             <div class="field-group">
                 <label class="field-label" for="tipoVeh">tipo de vehículo</label>
-                <select id="tipoVeh" class="od-input" [(ngModel)]="formVehiculo.tipo_vehiculo" (change)="formVehiculo.tipoVehiculo = formVehiculo.tipo_vehiculo" name="tipo_vehiculo" required>
+                <select id="tipoVeh" class="od-input" [(ngModel)]="formVehiculo.tipo_vehiculo"
+                    (change)="formVehiculo.tipoVehiculo = formVehiculo.tipo_vehiculo" name="tipo_vehiculo" required>
                     <option value="AUTO">Automóvil</option>
                     <option value="MOTO">Motocicleta</option>
                     <option value="BICICLETA">Bicicleta</option>
@@ -118,11 +124,13 @@
                 </select>
             </div>
 
-            <!-- Muestra la placa ÚNICAMENTE para AUTO o MOTO -->
-            <div class="field-group" *ngIf="['AUTO', 'AUTOMOVIL', 'MOTO', 'MOTOCICLETA'].includes((formVehiculo.tipo_vehiculo || formVehiculo.tipoVehiculo || '').toUpperCase())">
+            <!-- Muestra la placa -->
+            <div class="field-group"
+                *ngIf="['AUTO', 'AUTOMOVIL', 'MOTO', 'MOTOCICLETA'].includes((formVehiculo.tipo_vehiculo || formVehiculo.tipoVehiculo || '').toUpperCase())">
                 <label class="field-label" for="placaVeh">placa</label>
                 <input id="placaVeh" class="od-input" type="text" [(ngModel)]="formVehiculo.placa" name="placa"
-                    #placa="ngModel" [required]="['AUTO', 'AUTOMOVIL', 'MOTO', 'MOTOCICLETA'].includes((formVehiculo.tipo_vehiculo || formVehiculo.tipoVehiculo || '').toUpperCase())" 
+                    #placa="ngModel"
+                    [required]="['AUTO', 'AUTOMOVIL', 'MOTO', 'MOTOCICLETA'].includes((formVehiculo.tipo_vehiculo || formVehiculo.tipoVehiculo || '').toUpperCase())"
                     placeholder="Ej: ABC123 o ABC12D" />
                 <span class="error-msg" *ngIf="placa.invalid && (placa.dirty || placa.touched)">
                     Este campo es requerido
@@ -148,11 +156,13 @@
             </div>
 
             <div class="modal-actions">
-                <button type="button" class="od-btn delete" *ngIf="formVehiculo.id_vehiculo" (click)="eliminarVehiculo(formVehiculo.id_vehiculo)">
+                <button type="button" class="od-btn delete" *ngIf="formVehiculo.id_vehiculo"
+                    (click)="eliminarVehiculo(formVehiculo.id_vehiculo)">
                     eliminar vehículo
                 </button>
                 <button type="button" class="od-btn" (click)="cerrarModales()">cancelar</button>
-                <button type="button" class="od-btn primary" [disabled]="vehiculoForm.invalid || cargando" (click)="guardarVehiculo()">
+                <button type="button" class="od-btn primary" [disabled]="vehiculoForm.invalid || cargando"
+                    (click)="guardarVehiculo()">
                     {{ cargando ? 'guardando...' : 'guardar' }}
                 </button>
             </div>
@@ -166,27 +176,32 @@
 
             <div class="field-group">
                 <label class="field-label" for="datNombre">nombre completo</label>
-                <input id="datNombre" class="od-input" type="text" [(ngModel)]="formDatos.nombre_completo" name="nombre_completo" required placeholder="Tu nombre completo" />
+                <input id="datNombre" class="od-input" type="text" [(ngModel)]="formDatos.nombre_completo"
+                    name="nombre_completo" required placeholder="Tu nombre completo" />
             </div>
 
             <div class="field-group">
                 <label class="field-label" for="datFicha">número de ficha sena</label>
-                <input id="datFicha" class="od-input" type="text" [(ngModel)]="formDatos.ficha" name="ficha" placeholder="Ej: 2670123" />
+                <input id="datFicha" class="od-input" type="text" [(ngModel)]="formDatos.ficha" name="ficha"
+                    placeholder="Ej: 2670123" />
             </div>
 
             <div class="field-group">
                 <label class="field-label" for="datTelefono">teléfono</label>
-                <input id="datTelefono" class="od-input" type="text" [(ngModel)]="formDatos.telefono" name="telefono" required placeholder="Número de celular" />
+                <input id="datTelefono" class="od-input" type="text" [(ngModel)]="formDatos.telefono" name="telefono"
+                    required placeholder="Número de celular" />
             </div>
 
             <div class="field-group">
                 <label class="field-label" for="datDireccion">dirección</label>
-                <input id="datDireccion" class="od-input" type="text" [(ngModel)]="formDatos.direccion" name="direccion" placeholder="Dirección de residencia" />
+                <input id="datDireccion" class="od-input" type="text" [(ngModel)]="formDatos.direccion" name="direccion"
+                    placeholder="Dirección de residencia" />
             </div>
 
             <div class="modal-actions">
                 <button type="button" class="od-btn" (click)="cerrarModales()">cancelar</button>
-                <button type="button" class="od-btn primary" [disabled]="datosForm.invalid || cargando" (click)="guardarDatos()">
+                <button type="button" class="od-btn primary" [disabled]="datosForm.invalid || cargando"
+                    (click)="guardarDatos()">
                     {{ cargando ? 'guardando...' : 'guardar cambios' }}
                 </button>
             </div>
@@ -200,22 +215,26 @@
 
             <div class="field-group">
                 <label class="field-label" for="passActual">contraseña actual</label>
-                <input id="passActual" class="od-input" type="password" [(ngModel)]="formPassword.actual" name="actual" required placeholder="••••••••" />
+                <input id="passActual" class="od-input" type="password" [(ngModel)]="formPassword.actual" name="actual"
+                    required placeholder="••••••••" />
             </div>
 
             <div class="field-group">
                 <label class="field-label" for="passNueva">nueva contraseña</label>
-                <input id="passNueva" class="od-input" type="password" [(ngModel)]="formPassword.nueva" name="nueva" required minlength="8" placeholder="Mínimo 8 caracteres" />
+                <input id="passNueva" class="od-input" type="password" [(ngModel)]="formPassword.nueva" name="nueva"
+                    required minlength="8" placeholder="Mínimo 8 caracteres" />
             </div>
 
             <div class="field-group">
                 <label class="field-label" for="passConf">confirmar nueva contraseña</label>
-                <input id="passConf" class="od-input" type="password" [(ngModel)]="formPassword.confirmar" name="confirmar" required minlength="8" placeholder="Repite la contraseña nueva" />
+                <input id="passConf" class="od-input" type="password" [(ngModel)]="formPassword.confirmar"
+                    name="confirmar" required minlength="8" placeholder="Repite la contraseña nueva" />
             </div>
 
             <div class="modal-actions">
                 <button type="button" class="od-btn" (click)="cerrarModales()">cancelar</button>
-                <button type="button" class="od-btn primary" [disabled]="passwordForm.invalid || cargando" (click)="guardarPassword()">
+                <button type="button" class="od-btn primary" [disabled]="passwordForm.invalid || cargando"
+                    (click)="guardarPassword()">
                     {{ cargando ? 'actualizando...' : 'actualizar' }}
                 </button>
             </div>

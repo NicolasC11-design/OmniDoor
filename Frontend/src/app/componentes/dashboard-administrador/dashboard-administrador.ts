@@ -41,9 +41,9 @@ export interface RegistroHistorial {
   standalone: true,
   imports: [CommonModule, FormsModule, HistorialReportesComponent],
   templateUrl: './dashboard-administrador.html',
-  styleUrls: ['./dashboard-administrador.css']
+  styleUrls: ['./dashboard-administrador.css'],
 })
-export class AdminDashboard implements OnInit {
+export class AdminDashboardComponent implements OnInit {
   vistaActual: Vista = 'panel';
 
   kpis = {
@@ -77,8 +77,8 @@ export class AdminDashboard implements OnInit {
     private authService: AuthService,
     private adminService: AdminService,
     private cdr: ChangeDetectorRef,
-    private router: Router
-  ) { }
+    private router: Router,
+  ) {}
 
   ngOnInit(): void {
     this.cargarKpis();
@@ -114,7 +114,7 @@ export class AdminDashboard implements OnInit {
       nombre_emergencia: this.formConductor.nombre_emergencia || '',
       contacto_emergencia: this.formConductor.contacto_emergencia || '',
       tipo_vehiculo: this.formConductor.tipoVehiculo,
-      placa: this.formConductor.placa
+      placa: this.formConductor.placa,
     };
   }
 
@@ -174,7 +174,7 @@ export class AdminDashboard implements OnInit {
         };
         this.cdr.detectChanges();
       },
-      error: (err) => console.error('Error cargando KPIs:', err)
+      error: (err) => console.error('Error cargando KPIs:', err),
     });
   }
 
@@ -196,7 +196,7 @@ export class AdminDashboard implements OnInit {
         console.error('Error al cargar usuarios pendientes:', err);
         this.cargandoSolicitudes = false;
         this.cdr.detectChanges();
-      }
+      },
     });
   }
 
@@ -204,18 +204,21 @@ export class AdminDashboard implements OnInit {
     this.authService.aprobarUsuario(idUsuario).subscribe({
       next: (res: any) => {
         this.mensajeExito = res.message || res.mensaje || 'Usuario aprobado con éxito';
-        this.usuariosPendientes = this.usuariosPendientes.filter(u => u.id_usuario !== idUsuario);
+        this.usuariosPendientes = this.usuariosPendientes.filter((u) => u.id_usuario !== idUsuario);
         this.cdr.detectChanges();
-        setTimeout(() => { this.mensajeExito = null; this.cdr.detectChanges(); }, 3000);
+        setTimeout(() => {
+          this.mensajeExito = null;
+          this.cdr.detectChanges();
+        }, 3000);
       },
-      error: (err) => console.error('Error al aprobar el usuario:', err)
+      error: (err) => console.error('Error al aprobar el usuario:', err),
     });
   }
 
   rechazarCuenta(idUsuario: string): void {
     this.authService.rechazarUsuario(idUsuario).subscribe({
       next: () => {
-        this.usuariosPendientes = this.usuariosPendientes.filter(u => u.id_usuario !== idUsuario);
+        this.usuariosPendientes = this.usuariosPendientes.filter((u) => u.id_usuario !== idUsuario);
         this.mensajeExito = 'Solicitud rechazada y eliminada del sistema';
         this.cdr.detectChanges();
         setTimeout(() => {
@@ -226,8 +229,19 @@ export class AdminDashboard implements OnInit {
       error: (err) => {
         console.error('Error al rechazar el usuario en el backend:', err);
         alert('Hubo un error al rechazar la solicitud.');
-      }
+      },
     });
+  }
+
+  normalizarTipoVehiculo(tipo?: string): string {
+    if (!tipo) return 'AUTOMOVIL';
+    const clean = tipo.trim().toUpperCase();
+    if (clean === 'AUTO' || clean === 'AUTOMOVIL' || clean === 'CARRO') return 'AUTOMOVIL';
+    if (clean === 'MOTO' || clean === 'MOTOCICLETA') return 'MOTOCICLETA';
+    if (clean === 'BICICLETA' || clean === 'BICI') return 'BICICLETA';
+    if (clean === 'PATIN' || clean === 'PATINETA' || clean === 'SCOOTER') return 'PATIN';
+    if (clean === 'ELECTRICO' || clean === 'ELECTR') return 'ELECTRICO';
+    return clean;
   }
 
   private cargarConductores(): void {
@@ -235,9 +249,12 @@ export class AdminDashboard implements OnInit {
     this.authService.getUsuarios().subscribe({
       next: (data: any[]) => {
         const usuariosArray = Array.isArray(data) ? data : [];
-        this.conductores = usuariosArray.map(u => ({
+        this.conductores = usuariosArray.map((u) => ({
           id_usuario: u.id_usuario || u.id,
-          id_vehiculo: u.vehiculos && u.vehiculos.length > 0 ? (u.vehiculos[0].id_vehiculo || u.vehiculos[0].id) : undefined,
+          id_vehiculo:
+            u.vehiculos && u.vehiculos.length > 0
+              ? u.vehiculos[0].id_vehiculo || u.vehiculos[0].id
+              : undefined,
           cedula: u.cedula || 'N/A',
           nombre: (u.nombre_completo || u.nombre || 'Sin Nombre').toUpperCase(),
           correo: u.correo || '',
@@ -247,10 +264,15 @@ export class AdminDashboard implements OnInit {
           ficha: u.ficha || '',
           nombre_emergencia: u.nombre_emergencia || '',
           contacto_emergencia: u.contacto_emergencia || '',
-          tipoVehiculo: u.vehiculos && u.vehiculos.length > 0 ? (u.vehiculos[0].tipo_vehiculo || u.vehiculos[0].tipoVehiculo || 'auto') : 'auto',
+          tipoVehiculo: this.normalizarTipoVehiculo(
+            u.vehiculos && u.vehiculos.length > 0
+              ? u.vehiculos[0].tipo_vehiculo || u.vehiculos[0].tipoVehiculo
+              : 'AUTOMOVIL'
+          ),
           placa: u.vehiculos && u.vehiculos.length > 0 ? u.vehiculos[0].placa : 'N/A',
-          biometriaCapturada: u.estado === 'activo' || u.is_active === true
+          biometriaCapturada: u.estado === 'activo' || u.is_active === true,
         }));
+        this.conductores = [...this.conductores];
         this.cargandoSolicitudes = false;
         this.cdr.detectChanges();
       },
@@ -258,7 +280,7 @@ export class AdminDashboard implements OnInit {
         console.error('Error al cargar conductores:', err);
         this.cargandoSolicitudes = false;
         this.cdr.detectChanges();
-      }
+      },
     });
   }
 
@@ -273,9 +295,9 @@ export class AdminDashboard implements OnInit {
       ficha: '',
       nombre_emergencia: '',
       contacto_emergencia: '',
-      tipoVehiculo: 'auto',
+      tipoVehiculo: 'AUTOMOVIL',
       placa: '',
-      biometriaCapturada: false
+      biometriaCapturada: false,
     };
   }
 
@@ -287,7 +309,10 @@ export class AdminDashboard implements OnInit {
 
   editarConductor(c: Conductor): void {
     this.conductorEnEdicion = c;
-    this.formConductor = { ...c };
+    this.formConductor = {
+      ...c,
+      tipoVehiculo: this.normalizarTipoVehiculo(c.tipoVehiculo)
+    };
     this.mostrarModalConductor = true;
     this.cdr.detectChanges();
   }
@@ -328,13 +353,14 @@ export class AdminDashboard implements OnInit {
 
   this.cargandoSolicitudes = true;
 
-  const placaLimpia = this.formConductor.placa 
-    ? this.formConductor.placa.trim().replace(/[- ]/g, '').toUpperCase() 
+  const placaLimpia = this.formConductor.placa
+    ? this.formConductor.placa.trim().replace(/[- ]/g, '').toUpperCase()
     : '';
 
   const idObjetivo = this.conductorEnEdicion?.id_usuario || this.formConductor.id_usuario;
-  
+
   if (this.editando && idObjetivo) {
+    const tipoVehiculoNorm = this.normalizarTipoVehiculo(this.formConductor.tipoVehiculo);
     const usuarioPayload = {
       id_usuario: idObjetivo,
       nombre_completo: this.formConductor.nombre.trim(),
@@ -346,22 +372,39 @@ export class AdminDashboard implements OnInit {
       nombre_emergencia: this.formConductor.nombre_emergencia ? this.formConductor.nombre_emergencia.trim() : '',
       contacto_emergencia: this.formConductor.contacto_emergencia ? this.formConductor.contacto_emergencia.trim() : '',
       placa: placaLimpia,
-      tipo_vehiculo: this.formConductor.tipoVehiculo
+      tipo_vehiculo: tipoVehiculoNorm
     };
 
     this.authService.actualizarUsuarioAdmin(idObjetivo, usuarioPayload).subscribe({
-      next: () => {
+      next: (res: any) => {
         alert('¡Conductor y vehículo actualizados correctamente!');
         this.finalizarGuardado();
       },
       error: (err) => {
         console.error('Error al actualizar:', err);
-        alert('Error al actualizar los datos en el servidor.');
+        let mensajeError = 'Error al actualizar los datos en el servidor.';
+        if (err.error) {
+          if (typeof err.error === 'string') {
+            mensajeError = err.error;
+          } else if (err.error.placa) {
+            mensajeError = Array.isArray(err.error.placa) ? err.error.placa[0] : err.error.placa;
+          } else if (err.error.correo) {
+            mensajeError = Array.isArray(err.error.correo) ? err.error.correo[0] : err.error.correo;
+          } else if (err.error.detail) {
+            mensajeError = err.error.detail;
+          } else if (err.error.error) {
+            mensajeError = err.error.error;
+          } else if (typeof err.error === 'object') {
+            const primero = Object.values(err.error)[0];
+            if (primero) mensajeError = Array.isArray(primero) ? primero[0] : String(primero);
+          }
+        }
+        alert(mensajeError);
         this.cargandoSolicitudes = false;
         this.cdr.detectChanges();
       }
     });
-
+    
   } else {
     const partesNombre = this.formConductor.nombre.trim().split(' ');
     const nombres = partesNombre[0] || '';
@@ -379,7 +422,7 @@ export class AdminDashboard implements OnInit {
       nombre_emergencia: this.formConductor.nombre_emergencia ? this.formConductor.nombre_emergencia.trim() : '',
       contacto_emergencia: this.formConductor.contacto_emergencia ? this.formConductor.contacto_emergencia.trim() : '',
       placa: placaLimpia,
-      tipo_vehiculo: this.formConductor.tipoVehiculo
+      tipo_vehiculo: this.formConductor.tipoVehiculo ? this.formConductor.tipoVehiculo.toUpperCase() : 'AUTO'
     };
 
     this.authService.register(nuevoPayload).subscribe({
@@ -436,7 +479,7 @@ export class AdminDashboard implements OnInit {
           alert('Hubo un error en el servidor al intentar eliminar el registro.');
           this.cargandoSolicitudes = false;
           this.cdr.detectChanges();
-        }
+        },
       });
     }
   }
@@ -458,7 +501,7 @@ export class AdminDashboard implements OnInit {
           historialArray = res.registros;
         }
 
-        this.historial = historialArray.map(reg => {
+        this.historial = historialArray.map((reg) => {
           const usuarioReal =
             reg.conductor ||
             reg.nombre_conductor ||
@@ -485,7 +528,12 @@ export class AdminDashboard implements OnInit {
           const fechaRawObj = reg.fecha_hora || reg.hora_fecha || reg.fecha;
           const fechaObj = fechaRawObj ? new Date(fechaRawObj) : new Date();
 
-          let eventoReal = (reg.tipo_movimiento || reg.movimiento || reg.evento || 'ENTRADA').toUpperCase();
+          let eventoReal = (
+            reg.tipo_movimiento ||
+            reg.movimiento ||
+            reg.evento ||
+            'ENTRADA'
+          ).toUpperCase();
           if (eventoReal.includes('APERTURA') || eventoReal.includes('MANUAL')) {
             eventoReal = 'APERTURA_MANUAL';
           } else if (eventoReal.includes('SALIDA')) {
@@ -502,7 +550,7 @@ export class AdminDashboard implements OnInit {
             placa: placaCapturada ? String(placaCapturada).trim().toUpperCase() : 'N/A',
             metodoValidacion: reg.metodo_validacion || reg.acreditacion || 'Biometría Facial',
             evento: eventoReal,
-            sincronizado: reg.sincronizado !== undefined ? reg.sincronizado : true
+            sincronizado: reg.sincronizado !== undefined ? reg.sincronizado : true,
           };
         });
 
@@ -513,7 +561,7 @@ export class AdminDashboard implements OnInit {
         console.error('Error cargando historial:', err);
         this.cargandoHistorial = false;
         this.cdr.detectChanges();
-      }
+      },
     });
   }
 

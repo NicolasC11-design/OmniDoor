@@ -3,13 +3,23 @@ import { authGuard } from './guards/auth-guard';
 
 export const routes: Routes = [
   {
+    path: '',
+    loadComponent: () => import('./componentes/inicio/inicio').then(m => m.InicioComponent)
+  },
+
+  {
+    path: 'inicio',
+    loadComponent: () => import('./componentes/inicio/inicio').then(m => m.InicioComponent)
+  },
+
+  {
     path: 'login',
-    loadComponent: () => import('./componentes/login/login').then(m => m.Login)
+    loadComponent: () => import('./componentes/login/login').then(m => m.LoginComponent)
   },
 
   {
     path: 'register',
-    loadComponent: () => import('./componentes/registrer/registrer').then(m => m.Register)
+    loadComponent: () => import('./componentes/registrer/registrer').then(m => m.RegisterComponent)
   },
 
   {
@@ -20,27 +30,21 @@ export const routes: Routes = [
 
   {
     path: 'dashboardAdministrador',
-    loadComponent: () => import('./componentes/dashboard-administrador/dashboard-administrador').then(m => m.AdminDashboard),
+    loadComponent: () => import('./componentes/dashboard-administrador/dashboard-administrador').then(m => m.AdminDashboardComponent),
     canActivate: [authGuard]
   },
   
   {
     path: 'dashboardVigilante',
-    loadComponent: () => import('./componentes/dashboard-vigilante/dashboard-vigilante').then(m => m.DashboardVigilante),
+    loadComponent: () => import('./componentes/dashboard-vigilante/dashboard-vigilante').then(m => m.DashboardVigilanteComponent),
     canActivate: [authGuard]
   },
 
   {
     path: 'dashboardUsuario',
-    loadComponent: () => import('./componentes/dashboard-usuario/dashboard-usuario').then(m => m.DashboardUsuario),
+    loadComponent: () => import('./componentes/dashboard-usuario/dashboard-usuario').then(m => m.DashboardUsuarioComponent),
     canActivate: [authGuard]
   },
 
-  {
-    path: 'inicio',
-    loadComponent: () => import('./componentes/Inicio/inicio/inicio').then(m => m.Inicio)
-  },
-
-  { path: '', redirectTo: 'inicio', pathMatch: 'full' },
-  { path: '**', redirectTo: 'inicio' }
+  { path: '**', redirectTo: '' }
 ];

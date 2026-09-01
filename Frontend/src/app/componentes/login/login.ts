@@ -21,7 +21,7 @@ export interface UsuarioCoincidencia {
   templateUrl: './login.html',
   styleUrls: ['./login.css']
 })
-export class Login implements OnInit {
+export class LoginComponent implements OnInit {
   loginForm!: FormGroup;
   loading = false;
   errorMessage: string | null = null;
