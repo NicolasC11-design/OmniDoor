@@ -6,7 +6,8 @@ const targetPath = './src/environments/environment.ts';
 const envConfigFile = `export const environment = {
     production: false,
     supabaseUrl: '${process.env.SUPABASE_URL}',
-    supabaseKey: '${process.env.SUPABASE_KEY}'
+    supabaseKey: '${process.env.SUPABASE_KEY}',
+    apiUrl: '${process.env.API_URL || 'http://127.0.0.1:8000/api'}'
 };
 `;
 
