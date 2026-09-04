@@ -65,6 +65,18 @@ export class HistorialReportesComponent {
   });
 }
 
+  onFechaDesdeChange(): void {
+    if (this.filtros.desde && this.filtros.hasta && this.filtros.hasta < this.filtros.desde) {
+      this.filtros.hasta = this.filtros.desde;
+    }
+  }
+
+  onFechaHastaChange(): void {
+    if (this.filtros.desde && this.filtros.hasta && this.filtros.hasta < this.filtros.desde) {
+      this.filtros.desde = this.filtros.hasta;
+    }
+  }
+
   limpiarFiltros(): void {
     this.filtros = {
       desde: '',
