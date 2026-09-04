@@ -14,12 +14,12 @@
     <div class="filters-row">
         <div class="filter-group">
             <label class="filter-label" for="desde">filtrar desde</label>
-            <input id="desde" type="date" class="od-input" [(ngModel)]="filtros.desde" />
+            <input id="desde" type="date" class="od-input" [(ngModel)]="filtros.desde" [max]="filtros.hasta" (change)="onFechaDesdeChange()" />
         </div>
 
         <div class="filter-group">
             <label class="filter-label" for="hasta">hasta</label>
-            <input id="hasta" type="date" class="od-input" [(ngModel)]="filtros.hasta" />
+            <input id="hasta" type="date" class="od-input" [(ngModel)]="filtros.hasta" [min]="filtros.desde" (change)="onFechaHastaChange()" />
         </div>
 
         <div class="filter-group">
