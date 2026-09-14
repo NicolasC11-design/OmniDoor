@@ -1,5 +1,6 @@
 import json
 import numpy as np
+import re
 
 from django.contrib.auth.hashers import check_password
 from django.db import transaction, models
@@ -32,13 +33,12 @@ from .serializers import (
 
 class RegisterView(APIView):
     permission_classes = [AllowAny]
-    authentication_classes = []
 
     def post(self, request):
         data = request.data.copy()
         vector_biometrico = data.pop("vector_biometrico", None)
 
-        serializer = RegisterSerializer(data=data)
+        serializer = RegisterSerializer(data=data, context={'request': request})
         if serializer.is_valid():
             with transaction.atomic():
                 user = serializer.save()
@@ -56,6 +56,32 @@ class RegisterView(APIView):
                 status=status.HTTP_201_CREATED,
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class RestablecerPasswordView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def post(self, request):
+        correo = request.data.get('correo')
+        if not correo:
+            return Response({"error": "Debe proporcionar un correo."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            usuario = Usuario.objects.get(correo=correo)
+            for campo in ['estado', 'is_active', 'is_admin', 'is_staff']:
+                valor = getattr(usuario, campo)
+                if isinstance(valor, str):
+                    setattr(usuario, campo, valor.strip().lower() in ['true', '1', 'activo'])
+
+            nueva_password = "OmniDoor123*"
+            usuario.set_password(nueva_password)
+            usuario.save()
+            return Response(
+                {"mensaje": f"Se ha restablecido la contraseña a: {nueva_password}. Inicie sesión y cámbiela en su perfil."},
+                status=status.HTTP_200_OK
+            )
+        except Usuario.DoesNotExist:
+            return Response({"error": "No existe un usuario con este correo."}, status=status.HTTP_404_NOT_FOUND)
 
 
 class LoginView(APIView):
@@ -195,11 +221,13 @@ class VehiculoDetailView(APIView):
 
         if nueva_placa:
             nueva_placa = nueva_placa.strip().upper()
-            if Vehiculo.objects.filter(placa=nueva_placa, activo=True).exclude(id_vehiculo=id_vehiculo).exists():
-                return Response(
-                    {"error": f"La placa '{nueva_placa}' ya está asignada a otro vehículo activo."},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
+        if nueva_placa not in ["N/A", "S_PLACA", ""] and Vehiculo.objects.filter(
+            placa=nueva_placa, activo=True
+        ).exclude(id_vehiculo=id_vehiculo).exists():
+            return Response(
+                {"error": f"La placa '{nueva_placa}' ya está asignada a otro vehículo activo."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         serializer = VehiculoSerializer(vehiculo, data=request.data, partial=True)
         if serializer.is_valid():
@@ -234,12 +262,12 @@ class PerfilUsuarioView(APIView):
 
 
 class UsuarioListCreateView(generics.ListCreateAPIView):
-    queryset = Usuario.objects.all()
+    queryset = Usuario.objects.filter(is_active=True)
     serializer_class = userSerializer
     permission_classes = [IsAdmin]
 
     def get_queryset(self):
-        return Usuario.objects.all().order_by('-fecha_registro' if hasattr(Usuario, 'fecha_registro') else 'id_usuario')
+        return Usuario.objects.filter(is_active=True).order_by('-fecha_registro' if hasattr(Usuario, 'fecha_registro') else 'id_usuario')
 
 
 class UsuarioDetailUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
@@ -247,6 +275,11 @@ class UsuarioDetailUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = userSerializer
     lookup_field = "id_usuario"
     permission_classes = [IsAdmin]
+
+    def perform_destroy(self, instance):
+        instance.is_active = False
+        instance.estado = False
+        instance.save()
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
@@ -283,7 +316,19 @@ class RegistroAccesoListCreateView(APIView):
                 tipo_movimiento="SALIDA", fecha_hora__date=hoy
             ).count()
 
-            vehiculos_dentro = max(0, ingresos_hoy - salidas_hoy)
+            vehiculos_dentro = 0
+            placas_vistas = set()
+            ultimos_registros = RegistroAcceso.objects.exclude(
+                tipo_movimiento__in=["APERTURA_MANUAL", "DENEGADO"]
+            ).order_by('-fecha_hora')
+            for reg in ultimos_registros:
+                placa = reg.vehiculo.placa if reg.vehiculo else reg.placa_manual
+                if not placa: continue
+                placa = placa.replace('-', '').upper()
+                if placa not in placas_vistas:
+                    placas_vistas.add(placa)
+                    if reg.tipo_movimiento == "ENTRADA":
+                        vehiculos_dentro += 1
 
             aperturas_manuales = RegistroAcceso.objects.filter(
                 Q(tipo_movimiento="APERTURA_MANUAL") | Q(motivo_apertura__icontains="APERTURA MANUAL"),
@@ -406,7 +451,7 @@ class InformeTurnoCreateView(APIView):
         novedades = request.data.get("novedades_observaciones", "")
         sin_novedad = request.data.get("entrega_sin_novedad", True)
 
-        tipos_ingreso = ["ENTRADA", "APERTURA_MANUAL", "REGISTRO_VISITANTE"]
+        tipos_ingreso = ["ENTRADA", "REGISTRO_VISITANTE"]
 
         total_entradas = RegistroAcceso.objects.filter(
             tipo_movimiento__in=tipos_ingreso,
@@ -418,7 +463,26 @@ class InformeTurnoCreateView(APIView):
             fecha_hora__gte=fecha_hora_inicio
         ).count()
 
-        vehiculos_quedados = max(0, total_entradas - total_salidas)
+        # Cálculo real de vehículos quedados (vehículos cuyo último movimiento de la historia fue ENTRADA)
+        # Esto soluciona el bug de asumir que el parqueadero estaba vacío al iniciar el turno
+        vehiculos_quedados = 0
+        placas_vistas = set()
+        
+        # Obtenemos los últimos movimientos de todos los vehículos
+        ultimos_registros = RegistroAcceso.objects.exclude(
+            tipo_movimiento__in=["APERTURA_MANUAL", "DENEGADO"]
+        ).order_by('-fecha_hora')
+        
+        for reg in ultimos_registros:
+            placa = reg.vehiculo.placa if reg.vehiculo else reg.placa_manual
+            if not placa:
+                continue
+            placa = placa.replace('-', '').upper()
+            
+            if placa not in placas_vistas:
+                placas_vistas.add(placa)
+                if reg.tipo_movimiento == "ENTRADA":
+                    vehiculos_quedados += 1
 
         informe = InformeTurno.objects.create(
             vigilante=request.user,
@@ -452,8 +516,7 @@ class MisRegistrosAccesoView(APIView):
         accesos = RegistroAcceso.objects.filter(
             filtro_usuario |
             Q(vehiculo__propietario=request.user) |
-            Q(placa_manual__in=placas_usuario) |
-            Q(nombre_conductor_manual__icontains=request.user.nombre_completo)
+            Q(placa_manual__in=placas_usuario)
         ).select_related("vehiculo").order_by("-fecha_hora").distinct()
 
         serializer = RegistroAccesoSerializer(accesos, many=True)
@@ -477,6 +540,18 @@ class CambiarPasswordView(APIView):
         if not check_password(password_actual, user.password):
             return Response(
                 {"error": "La contraseña actual es incorrecta."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if len(password_nueva) < 8:
+            return Response(
+                {"error": "La nueva contraseña debe tener al menos 8 caracteres."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        regex = r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$'
+        if not re.match(regex, password_nueva):
+            return Response(
+                {"error": "La contraseña debe incluir al menos una mayúscula, una minúscula, un número y un símbolo."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         if hasattr(user, 'estado') and isinstance(user.estado, str):
@@ -718,39 +793,39 @@ class ValidarAccesoPorteriaView(APIView):
 
         placa_evaluar = vehiculo_obj.placa if vehiculo_obj else (placa if placa else "S_PLACA")
         ultimo_registro_usuario = RegistroAcceso.objects.filter(usuario=usuario_identificado).exclude(
-            tipo_movimiento="DENEGADO"
+            tipo_movimiento__in=["DENEGADO", "APERTURA_MANUAL"]
         ).order_by("-fecha_hora").first()
 
         ultimo_registro_vehiculo = None
         if vehiculo_obj:
             ultimo_registro_vehiculo = RegistroAcceso.objects.filter(vehiculo=vehiculo_obj).exclude(
-                tipo_movimiento="DENEGADO"
+                tipo_movimiento__in=["DENEGADO", "APERTURA_MANUAL"]
             ).order_by("-fecha_hora").first()
         elif placa_evaluar not in ["S_PLACA", "N/A", ""]:
             placa_c = placa_evaluar.replace('-', '').upper()
             ultimo_registro_vehiculo = RegistroAcceso.objects.filter(placa_manual=placa_c).exclude(
-                tipo_movimiento="DENEGADO"
+                tipo_movimiento__in=["DENEGADO", "APERTURA_MANUAL"]
             ).order_by("-fecha_hora").first()
 
         if tipo_movimiento == "SALIDA":
-            if ultimo_registro_vehiculo and ultimo_registro_vehiculo.tipo_movimiento not in ["ENTRADA", "APERTURA_MANUAL"]:
+            if ultimo_registro_vehiculo and ultimo_registro_vehiculo.tipo_movimiento != "ENTRADA":
                 return Response(
                     {"mensaje": f"Validación rechazada: El vehículo {placa_evaluar} no registra un ingreso previo activo en las instalaciones."},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-            if not ultimo_registro_vehiculo and (not ultimo_registro_usuario or ultimo_registro_usuario.tipo_movimiento not in ["ENTRADA", "APERTURA_MANUAL"]):
+            if not ultimo_registro_vehiculo and (not ultimo_registro_usuario or ultimo_registro_usuario.tipo_movimiento != "ENTRADA"):
                 return Response(
                     {"mensaje": f"Validación rechazada: '{usuario_identificado.nombre_completo}' no registra un ingreso previo activo en las instalaciones."},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
         elif tipo_movimiento == "ENTRADA":
-            if ultimo_registro_usuario and ultimo_registro_usuario.tipo_movimiento in ["ENTRADA", "APERTURA_MANUAL"]:
+            if ultimo_registro_usuario and ultimo_registro_usuario.tipo_movimiento == "ENTRADA":
                 return Response(
                     {"mensaje": f"Validación rechazada: '{usuario_identificado.nombre_completo}' ya figura con un ingreso registrado dentro del recinto."},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-            if ultimo_registro_vehiculo and ultimo_registro_vehiculo.tipo_movimiento in ["ENTRADA", "APERTURA_MANUAL"]:
+            if ultimo_registro_vehiculo and ultimo_registro_vehiculo.tipo_movimiento == "ENTRADA":
                 return Response(
                     {"mensaje": f"Validación rechazada: El vehículo {placa_evaluar} ya figura con un ingreso registrado dentro del recinto."},
                     status=status.HTTP_400_BAD_REQUEST,
@@ -903,7 +978,19 @@ class DashboardAccesosView(APIView):
                 tipo_movimiento="SALIDA", fecha_hora__date=hoy
             ).count()
 
-            vehiculos_dentro = max(0, ingresos_hoy - salidas_hoy)
+            vehiculos_dentro = 0
+            placas_vistas = set()
+            ultimos_registros = RegistroAcceso.objects.exclude(
+                tipo_movimiento__in=["APERTURA_MANUAL", "DENEGADO"]
+            ).order_by('-fecha_hora')
+            for reg in ultimos_registros:
+                placa = reg.vehiculo.placa if reg.vehiculo else reg.placa_manual
+                if not placa: continue
+                placa = placa.replace('-', '').upper()
+                if placa not in placas_vistas:
+                    placas_vistas.add(placa)
+                    if reg.tipo_movimiento == "ENTRADA":
+                        vehiculos_dentro += 1
 
             aperturas_manuales = RegistroAcceso.objects.filter(
                 motivo_apertura__isnull=False, fecha_hora__date=hoy

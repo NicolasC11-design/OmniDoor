@@ -28,12 +28,32 @@ export class BiometriaCamaraComponent implements OnInit, OnDestroy {
   modelosCargados = false;
   cargandoModelos = true;
   procesandoCaptura = false;
+  
+  // Selección específica de cámara
+  dispositivosVideo: MediaDeviceInfo[] = [];
+  dispositivoSeleccionadoId: string = '';
+  
   private streamMedia: MediaStream | null = null;
 
   constructor(private cdRef: ChangeDetectorRef) { }
 
   async ngOnInit(): Promise<void> {
     await this.cargarModelosIA();
+  }
+
+  // Carga la lista de cámaras disponibles conectadas
+  async obtenerDispositivos(): Promise<void> {
+    try {
+      const dispositivos = await navigator.mediaDevices.enumerateDevices();
+      this.dispositivosVideo = dispositivos.filter(d => d.kind === 'videoinput');
+
+      // Si no hay ninguna seleccionada, tomamos la primera por defecto
+      if (this.dispositivosVideo.length > 0 && !this.dispositivoSeleccionadoId) {
+        this.dispositivoSeleccionadoId = this.dispositivosVideo[0].deviceId;
+      }
+    } catch (error) {
+      console.error('Error al listar dispositivos:', error);
+    }
   }
 
   async cargarModelosIA(): Promise<void> {
@@ -70,14 +90,36 @@ export class BiometriaCamaraComponent implements OnInit, OnDestroy {
     }
   }
 
-  async iniciarCamara(): Promise<void> {
+  // Iniciar cámara aceptando opcionalmente un deviceId exacto
+  async iniciarCamara(deviceId?: string): Promise<void> {
+    this.detenerCamara();
+
+    if (deviceId) {
+      this.dispositivoSeleccionadoId = deviceId;
+    }
+
+    // Restricciones de video: prioriza el deviceId si existe
+    const constraintsVideo: MediaTrackConstraints = {
+      width: { ideal: 640 },
+      height: { ideal: 480 }
+    };
+
+    if (this.dispositivoSeleccionadoId) {
+      constraintsVideo.deviceId = { exact: this.dispositivoSeleccionadoId };
+    } else {
+      constraintsVideo.facingMode = 'user';
+    }
+
     try {
       this.streamMedia = await navigator.mediaDevices.getUserMedia({
-        video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' },
+        video: constraintsVideo,
         audio: false
       });
 
       this.camaraActiva = true;
+
+      // Obtener nombres completos de los dispositivos tras dar permisos
+      await this.obtenerDispositivos();
       this.cdRef.detectChanges();
 
       setTimeout(async () => {
@@ -94,6 +136,15 @@ export class BiometriaCamaraComponent implements OnInit, OnDestroy {
       }, 100);
     } catch (error) {
       console.error('❌ Error al acceder a la cámara:', error);
+    }
+  }
+
+  // Evento cuando el usuario cambia la opción del selector HTML
+  async alCambiarCamara(event: Event): Promise<void> {
+    const select = event.target as HTMLSelectElement;
+    const nuevoDeviceId = select.value;
+    if (nuevoDeviceId) {
+      await this.iniciarCamara(nuevoDeviceId);
     }
   }
 

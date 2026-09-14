@@ -57,7 +57,7 @@ export class AdminDashboardComponent implements OnInit {
   cargandoHistorial = false;
   cargandoInformes = false;
   mensajeExito: string | null = null;
-  
+
   informesTurno: any[] = [];
 
   conductores: Conductor[] = [];
@@ -78,7 +78,8 @@ export class AdminDashboardComponent implements OnInit {
     private adminService: AdminService,
     private cdr: ChangeDetectorRef,
     private router: Router,
-  ) {}
+
+  ) { }
 
   ngOnInit(): void {
     this.cargarKpis();
@@ -313,6 +314,7 @@ export class AdminDashboardComponent implements OnInit {
       ...c,
       tipoVehiculo: this.normalizarTipoVehiculo(c.tipoVehiculo)
     };
+    this.onTipoVehiculoChange(); 
     this.mostrarModalConductor = true;
     this.cdr.detectChanges();
   }
@@ -326,154 +328,154 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   guardarConductor(): void {
-  if (!this.formConductor.nombre || !this.formConductor.nombre.trim()) {
-    alert('Por favor, ingresa el nombre completo.');
-    return;
-  }
+    if (!this.formConductor.nombre || !this.formConductor.nombre.trim()) {
+      alert('Por favor, ingresa el nombre completo.');
+      return;
+    }
 
-  if (!this.formConductor.correo || !this.formConductor.correo.trim()) {
-    alert('Por favor, ingresa el correo electrónico.');
-    return;
-  }
+    if (!this.formConductor.correo || !this.formConductor.correo.trim()) {
+      alert('Por favor, ingresa el correo electrónico.');
+      return;
+    }
 
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.formConductor.correo.trim())) {
-    alert('Por favor, ingresa un correo electrónico válido.');
-    return;
-  }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.formConductor.correo.trim())) {
+      alert('Por favor, ingresa un correo electrónico válido.');
+      return;
+    }
 
-  if (this.formConductor.rol === 'aprendiz' && (!this.formConductor.ficha || !this.formConductor.ficha.trim())) {
-    alert('Por favor, ingresa el número de ficha SENA para el aprendiz.');
-    return;
-  }
+    if (this.formConductor.rol === 'aprendiz' && (!this.formConductor.ficha || !this.formConductor.ficha.trim())) {
+      alert('Por favor, ingresa el número de ficha SENA para el aprendiz.');
+      return;
+    }
 
-  if (this.formConductor.ficha && !/^\d+$/.test(this.formConductor.ficha.trim())) {
-    alert('El número de ficha debe contener solo números.');
-    return;
-  }
+    if (this.formConductor.ficha && !/^\d+$/.test(this.formConductor.ficha.trim())) {
+      alert('El número de ficha debe contener solo números.');
+      return;
+    }
 
-  if (this.formConductor.nombre && !/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(this.formConductor.nombre.trim())) {
-    alert('El nombre debe contener solo letras.');
-    return;
-  }
+    if (this.formConductor.nombre && !/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(this.formConductor.nombre.trim())) {
+      alert('El nombre debe contener solo letras.');
+      return;
+    }
 
-  if (this.formConductor.nombre_emergencia && !/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(this.formConductor.nombre_emergencia.trim())) {
-    alert('El nombre del contacto de emergencia debe contener solo letras.');
-    return;
-  }
+    if (this.formConductor.nombre_emergencia && !/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(this.formConductor.nombre_emergencia.trim())) {
+      alert('El nombre del contacto de emergencia debe contener solo letras.');
+      return;
+    }
 
-  if (this.formConductor.contacto_emergencia && !/^\d+$/.test(this.formConductor.contacto_emergencia.trim())) {
-    alert('El número del contacto de emergencia debe contener solo números.');
-    return;
-  }
+    if (this.formConductor.contacto_emergencia && !/^\d+$/.test(this.formConductor.contacto_emergencia.trim())) {
+      alert('El número del contacto de emergencia debe contener solo números.');
+      return;
+    }
 
-  if (this.formConductor.telefono && !/^\d+$/.test(this.formConductor.telefono.trim())) {
-    alert('El número de teléfono debe contener solo números.');
-    return;
-  }
+    if (this.formConductor.telefono && !/^\d+$/.test(this.formConductor.telefono.trim())) {
+      alert('El número de teléfono debe contener solo números.');
+      return;
+    }
 
-  this.cargandoSolicitudes = true;
+    this.cargandoSolicitudes = true;
 
-  const placaLimpia = this.formConductor.placa
-    ? this.formConductor.placa.trim().replace(/[- ]/g, '').toUpperCase()
-    : '';
+    const placaLimpia = this.formConductor.placa
+      ? this.formConductor.placa.trim().replace(/[- ]/g, '').toUpperCase()
+      : '';
 
-  const idObjetivo = this.conductorEnEdicion?.id_usuario || this.formConductor.id_usuario;
+    const idObjetivo = this.conductorEnEdicion?.id_usuario || this.formConductor.id_usuario;
 
-  if (this.editando && idObjetivo) {
-    const tipoVehiculoNorm = this.normalizarTipoVehiculo(this.formConductor.tipoVehiculo);
-    const usuarioPayload = {
-      id_usuario: idObjetivo,
-      nombre_completo: this.formConductor.nombre.trim(),
-      correo: this.formConductor.correo.trim(),
-      rol: this.formConductor.rol,
-      telefono: this.formConductor.telefono ? this.formConductor.telefono.trim() : '',
-      direccion: this.formConductor.direccion ? this.formConductor.direccion.trim() : '',
-      ficha: this.formConductor.ficha ? this.formConductor.ficha.trim() : '',
-      nombre_emergencia: this.formConductor.nombre_emergencia ? this.formConductor.nombre_emergencia.trim() : '',
-      contacto_emergencia: this.formConductor.contacto_emergencia ? this.formConductor.contacto_emergencia.trim() : '',
-      placa: placaLimpia,
-      tipo_vehiculo: tipoVehiculoNorm
-    };
+    if (this.editando && idObjetivo) {
+      const tipoVehiculoNorm = this.normalizarTipoVehiculo(this.formConductor.tipoVehiculo);
+      const usuarioPayload = {
+        id_usuario: idObjetivo,
+        nombre_completo: this.formConductor.nombre.trim(),
+        correo: this.formConductor.correo.trim(),
+        rol: this.formConductor.rol,
+        telefono: this.formConductor.telefono ? this.formConductor.telefono.trim() : '',
+        direccion: this.formConductor.direccion ? this.formConductor.direccion.trim() : '',
+        ficha: this.formConductor.ficha ? this.formConductor.ficha.trim() : '',
+        nombre_emergencia: this.formConductor.nombre_emergencia ? this.formConductor.nombre_emergencia.trim() : '',
+        contacto_emergencia: this.formConductor.contacto_emergencia ? this.formConductor.contacto_emergencia.trim() : '',
+        placa: placaLimpia,
+        tipo_vehiculo: tipoVehiculoNorm
+      };
 
-    this.authService.actualizarUsuarioAdmin(idObjetivo, usuarioPayload).subscribe({
-      next: (res: any) => {
-        alert('¡Conductor y vehículo actualizados correctamente!');
-        this.finalizarGuardado();
-      },
-      error: (err) => {
-        console.error('Error al actualizar:', err);
-        let mensajeError = 'Error al actualizar los datos en el servidor.';
-        if (err.error) {
-          if (typeof err.error === 'string') {
-            mensajeError = err.error;
-          } else if (err.error.placa) {
-            mensajeError = Array.isArray(err.error.placa) ? err.error.placa[0] : err.error.placa;
-          } else if (err.error.correo) {
-            mensajeError = Array.isArray(err.error.correo) ? err.error.correo[0] : err.error.correo;
-          } else if (err.error.detail) {
-            mensajeError = err.error.detail;
-          } else if (err.error.error) {
-            mensajeError = err.error.error;
-          } else if (typeof err.error === 'object') {
-            const primero = Object.values(err.error)[0];
-            if (primero) mensajeError = Array.isArray(primero) ? primero[0] : String(primero);
-          }
-        }
-        alert(mensajeError);
-        this.cargandoSolicitudes = false;
-        this.cdr.detectChanges();
-      }
-    });
-    
-  } else {
-    const partesNombre = this.formConductor.nombre.trim().split(' ');
-    const nombres = partesNombre[0] || '';
-    const apellidos = partesNombre.slice(1).join(' ') || 'SENA';
-
-    const nuevoPayload = {
-      nombres: nombres,
-      apellidos: apellidos,
-      correo: this.formConductor.correo.trim(),
-      password: 'UsuarioOmniDoor2026*',
-      rol: this.formConductor.rol || 'aprendiz',
-      telefono: this.formConductor.telefono ? this.formConductor.telefono.trim() : '',
-      direccion: this.formConductor.direccion ? this.formConductor.direccion.trim() : '',
-      ficha: this.formConductor.ficha ? this.formConductor.ficha.trim() : '',
-      nombre_emergencia: this.formConductor.nombre_emergencia ? this.formConductor.nombre_emergencia.trim() : '',
-      contacto_emergencia: this.formConductor.contacto_emergencia ? this.formConductor.contacto_emergencia.trim() : '',
-      placa: placaLimpia,
-      tipo_vehiculo: this.formConductor.tipoVehiculo ? this.formConductor.tipoVehiculo.toUpperCase() : 'AUTO'
-    };
-
-    this.authService.register(nuevoPayload).subscribe({
-      next: (res: any) => {
-        const idCreado = res.usuario?.id_usuario;
-        if (idCreado) {
-          this.authService.aprobarUsuario(idCreado).subscribe({
-            next: () => {
-              alert('¡Nuevo conductor registrado y activado con éxito!');
-              this.finalizarGuardado();
-            },
-            error: () => {
-              alert('Conductor creado exitosamente.');
-              this.finalizarGuardado();
-            }
-          });
-        } else {
-          alert('¡Conductor registrado correctamente!');
+      this.authService.actualizarUsuarioAdmin(idObjetivo, usuarioPayload).subscribe({
+        next: (res: any) => {
+          alert('¡Conductor y vehículo actualizados correctamente!');
           this.finalizarGuardado();
+        },
+        error: (err) => {
+          console.error('Error al actualizar:', err);
+          let mensajeError = 'Error al actualizar los datos en el servidor.';
+          if (err.error) {
+            if (typeof err.error === 'string') {
+              mensajeError = err.error;
+            } else if (err.error.placa) {
+              mensajeError = Array.isArray(err.error.placa) ? err.error.placa[0] : err.error.placa;
+            } else if (err.error.correo) {
+              mensajeError = Array.isArray(err.error.correo) ? err.error.correo[0] : err.error.correo;
+            } else if (err.error.detail) {
+              mensajeError = err.error.detail;
+            } else if (err.error.error) {
+              mensajeError = err.error.error;
+            } else if (typeof err.error === 'object') {
+              const primero = Object.values(err.error)[0];
+              if (primero) mensajeError = Array.isArray(primero) ? primero[0] : String(primero);
+            }
+          }
+          alert(mensajeError);
+          this.cargandoSolicitudes = false;
+          this.cdr.detectChanges();
         }
-      },
-      error: (err) => {
-        console.error('Error al crear conductor:', err);
-        const msg = err.error?.correo?.[0] || err.error?.placa?.[0] || 'Error al registrar el nuevo conductor.';
-        alert(msg);
-        this.cargandoSolicitudes = false;
-        this.cdr.detectChanges();
-      }
-    });
+      });
+
+    } else {
+      const partesNombre = this.formConductor.nombre.trim().split(' ');
+      const nombres = partesNombre[0] || '';
+      const apellidos = partesNombre.slice(1).join(' ') || 'SENA';
+
+      const nuevoPayload = {
+        nombres: nombres,
+        apellidos: apellidos,
+        correo: this.formConductor.correo.trim(),
+        password: 'UsuarioOmniDoor2026*',
+        rol: this.formConductor.rol || 'aprendiz',
+        telefono: this.formConductor.telefono ? this.formConductor.telefono.trim() : '',
+        direccion: this.formConductor.direccion ? this.formConductor.direccion.trim() : '',
+        ficha: this.formConductor.ficha ? this.formConductor.ficha.trim() : '',
+        nombre_emergencia: this.formConductor.nombre_emergencia ? this.formConductor.nombre_emergencia.trim() : '',
+        contacto_emergencia: this.formConductor.contacto_emergencia ? this.formConductor.contacto_emergencia.trim() : '',
+        placa: placaLimpia,
+        tipo_vehiculo: this.formConductor.tipoVehiculo ? this.formConductor.tipoVehiculo.toUpperCase() : 'AUTO'
+      };
+
+      this.authService.register(nuevoPayload).subscribe({
+        next: (res: any) => {
+          const idCreado = res.usuario?.id_usuario;
+          if (idCreado) {
+            this.authService.aprobarUsuario(idCreado).subscribe({
+              next: () => {
+                alert('¡Nuevo conductor registrado y activado con éxito!');
+                this.finalizarGuardado();
+              },
+              error: () => {
+                alert('Conductor creado exitosamente.');
+                this.finalizarGuardado();
+              }
+            });
+          } else {
+            alert('¡Conductor registrado correctamente!');
+            this.finalizarGuardado();
+          }
+        },
+        error: (err) => {
+          console.error('Error al crear conductor:', err);
+          const msg = err.error?.correo?.[0] || err.error?.placa?.[0] || 'Error al registrar el nuevo conductor.';
+          alert(msg);
+          this.cargandoSolicitudes = false;
+          this.cdr.detectChanges();
+        }
+      });
+    }
   }
-}
 
   private finalizarGuardado(): void {
     this.cerrarModalConductor();
@@ -615,6 +617,20 @@ export class AdminDashboardComponent implements OnInit {
         this.cdr.detectChanges();
       }
     });
+  }
+  private readonly TIPOS_SIN_PLACA = ['BICICLETA', 'PATIN', 'ELECTRICO'];
+  get placaDeshabilitada(): boolean {
+    return this.TIPOS_SIN_PLACA.includes(
+      this.normalizarTipoVehiculo(this.formConductor.tipoVehiculo)
+    );
+  }
+
+  onTipoVehiculoChange(): void {
+    if (this.placaDeshabilitada) {
+      this.formConductor.placa = 'N/A';
+    } else if (this.formConductor.placa === 'N/A') {
+      this.formConductor.placa = '';
+    }
   }
 
   cerrarSesion(): void {

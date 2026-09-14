@@ -108,8 +108,7 @@
             [class.input-error]="f['rol'].invalid && f['rol'].touched">
             <option value="">— seleccionar rol —</option>
             <option value="aprendiz">Aprendiz</option>
-            <option value="seguridad">Personal de seguridad</option>
-            <option value="admin">Administrador</option>
+            <option value="instructor">Instructor</option>
           </select>
           <span class="error-msg" *ngIf="f['rol'].invalid && f['rol'].touched">selecciona un rol válido</span>
         </div>
@@ -143,11 +142,6 @@
             </span>
           </div>
 
-          <button type="button" class="plate-badge" (click)="captureOCR()"
-            [disabled]="selectedVehicle === 'bici' || selectedVehicle === 'patin' || selectedVehicle === 'electr'">
-            <i class="ti ti-camera"></i>
-            <span>{{ ocrCapturing ? '...' : 'OCR' }}</span>
-          </button>
         </div>
 
         <div class="face-scan-box-container mb-3">

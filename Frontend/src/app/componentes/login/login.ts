@@ -55,6 +55,29 @@ export class LoginComponent implements OnInit {
     this.showPassword = !this.showPassword;
   }
 
+  solicitarRecuperacion(): void {
+    const emailControl = this.loginForm.get('email');
+    if (!emailControl || emailControl.invalid || !emailControl.value) {
+      this.errorMessage = 'Por favor, ingresa un correo válido en el campo superior para recuperar tu contraseña.';
+      return;
+    }
+    
+    this.loading = true;
+    this.errorMessage = null;
+    this.authService.restablecerPassword(emailControl.value).subscribe({
+      next: (res: any) => {
+        this.loading = false;
+        alert(res.mensaje);
+        this.cdr.detectChanges();
+      },
+      error: (err: any) => {
+        this.loading = false;
+        this.errorMessage = err.error?.error || 'No se pudo procesar la solicitud.';
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
   activateBiometric(): void {
     this.errorMessage = null;
     this.coincidencias = [];
