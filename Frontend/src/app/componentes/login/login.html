@@ -51,6 +51,9 @@
         <span class="error-msg" *ngIf="f['password'].invalid && f['password'].touched">
           contraseña requerida
         </span>
+        <div style="text-align: right; margin-top: 5px;">
+          <a href="javascript:void(0)" (click)="solicitarRecuperacion()" style="font-size: 0.75rem; color: #1a8fff; text-decoration: none;">¿Olvidaste tu contraseña?</a>
+        </div>
       </div>
 
       <div class="divider">

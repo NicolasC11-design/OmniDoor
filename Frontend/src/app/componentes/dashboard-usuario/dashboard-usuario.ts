@@ -238,6 +238,16 @@ export class DashboardUsuarioComponent implements OnInit, OnDestroy {
       return;
     }
 
+    if (!/^\d+$/.test(this.formDatos.telefono.trim())) {
+      alert('El teléfono debe contener solo números.');
+      return;
+    }
+
+    if (this.formDatos.ficha && !/^\d+$/.test(this.formDatos.ficha.trim())) {
+      alert('El número de ficha debe contener solo números.');
+      return;
+    }
+
     this.cargando = true;
     const payload = {
       nombre_completo: this.formDatos.nombre_completo.trim(),
@@ -278,6 +288,12 @@ export class DashboardUsuarioComponent implements OnInit, OnDestroy {
 
     if (this.formPassword.nueva.length < 8) {
       alert('La nueva contraseña debe tener al menos 8 caracteres.');
+      return;
+    }
+
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/;
+    if (!passwordRegex.test(this.formPassword.nueva)) {
+      alert('La nueva contraseña debe incluir al menos una mayúscula, una minúscula, un número y un símbolo.');
       return;
     }
 

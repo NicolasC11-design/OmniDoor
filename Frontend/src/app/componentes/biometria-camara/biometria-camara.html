@@ -23,10 +23,24 @@
     </div>
 
     <div class="controls">
+        <!-- Selector desplegable de dispositivos de cámara -->
+        <select 
+          *ngIf="camaraActiva && dispositivosVideo.length > 1" 
+          class="select-camara"
+          [value]="dispositivoSeleccionadoId"
+          (change)="alCambiarCamara($event)"
+          [disabled]="procesandoCaptura">
+          <option *ngFor="let dispositivo of dispositivosVideo; let i = index" [value]="dispositivo.deviceId">
+            {{ dispositivo.label || 'Cámara ' + (i + 1) }}
+          </option>
+        </select>
+
+        <!-- Botón para Encender Cámara -->
         <button *ngIf="!camaraActiva" type="button" class="btn-cyber" [disabled]="cargandoModelos" (click)="iniciarCamara()">
             📷 ENCENDER CÁMARA
         </button>
 
+        <!-- Botón para Capturar Biometría -->
         <button *ngIf="camaraActiva" type="button" class="btn-cyber" [disabled]="!modelosCargados || procesandoCaptura" (click)="capturarRostro()">
             ⚡ CAPTURAR BIOMETRÍA
         </button>

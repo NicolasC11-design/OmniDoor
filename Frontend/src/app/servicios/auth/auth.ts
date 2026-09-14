@@ -20,11 +20,13 @@ export interface AuthResponse {
   mensaje?: string;
 }
 
+import { environment } from '../../../environments/environment';
+
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = 'http://localhost:8000/api';
+  private apiUrl = environment.apiUrl || 'http://localhost:8000/api';
 
   constructor(private http: HttpClient) { }
 
@@ -38,6 +40,10 @@ export class AuthService {
 
   register(payload: any): Observable<any> {
     return this.http.post(`${this.apiUrl}/auth/register/`, payload);
+  }
+
+  restablecerPassword(correo: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/auth/restablecer-password/`, { correo });
   }
 
   login(credentials: any): Observable<AuthResponse> {

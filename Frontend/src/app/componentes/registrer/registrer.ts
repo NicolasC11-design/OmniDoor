@@ -61,7 +61,6 @@ export class RegisterComponent implements OnInit, OnDestroy {
   biometricCaptured = false;
   biometricLabel = 'registrar datos biométricos faciales';
   vectorBiometrico: number[] | null = null;
-  ocrCapturing = false;
   selectedVehicle = 'auto';
   errorMessage = '';
   successMessage = '';
@@ -183,7 +182,7 @@ export class RegisterComponent implements OnInit, OnDestroy {
         this.registerForm.disable();
         this.cdr.detectChanges();
 
-        setTimeout(() => this.router.navigate(['/login']), 8000);
+        setTimeout(() => this.router.navigate(['/login']), 4000);
       },
       error: (err) => {
         this.loading = false;
@@ -205,23 +204,6 @@ export class RegisterComponent implements OnInit, OnDestroy {
         this.cdr.detectChanges();
       }
     });
-  }
-
-  captureOCR(): void {
-    if (this.registroEnviado) return;
-    if (['bici', 'patin', 'electr'].includes(this.selectedVehicle)) return;
-
-    this.ocrCapturing = true;
-    setTimeout(() => {
-      const placaSimulada = this.selectedVehicle === 'moto' ? 'ABC-12D' : 'ABC-123';
-      this.registerForm.patchValue({ placa: placaSimulada });
-      this.registerForm.get('placa')?.markAsTouched();
-      this.registerForm.get('placa')?.markAsDirty();
-      this.registerForm.get('placa')?.updateValueAndValidity();
-
-      this.ocrCapturing = false;
-      this.cdr.detectChanges();
-    }, 1000);
   }
 
   captureBiometric(): void {
