@@ -1,0 +1,19 @@
+name: Keep Supabase Alive
+
+on:
+  schedule:
+    # Se ejecuta automáticamente cada 2 días a las 10:00 AM (UTC)
+    - cron: '0 10 */2 * *'
+  workflow_dispatch: # Permite ejecutarlo manualmente desde GitHub
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Hacer Ping a Supabase
+        run: |
+          echo "Haciendo petición a Supabase para registrar actividad..."
+          # Hacemos una petición GET básica a la API REST de tu proyecto
+          # Incluso si devuelve un error 401 (por no enviar API Key), Supabase 
+          # registra el tráfico en su API Gateway y resetea el contador de inactividad de 7 días.
+          curl -s -o /dev/null -w "Status: %{http_code}\n" https://lfhheiqhptjijodxaedm.supabase.co/rest/v1/
