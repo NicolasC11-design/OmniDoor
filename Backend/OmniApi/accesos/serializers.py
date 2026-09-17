@@ -3,6 +3,7 @@ from django.db import IntegrityError, transaction
 from django.db.models import Q, Value
 from django.db.models.functions import Replace
 from django.utils import timezone
+from django.core import validators
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 from .models import BiometriaUsuario, InformeTurno, RegistroAcceso, Usuario, Vehiculo
@@ -111,6 +112,17 @@ class userSerializer(serializers.ModelSerializer):
             } 
             for v in v_qs
         ]
+
+    def validate(self, data):
+        request_data = {**data}
+        if self.context and self.context.get('request') and hasattr(self.context['request'], 'data'):
+            request_data.update(self.context['request'].data)
+            
+        for campo in ['telefono', 'ficha', 'contacto_emergencia']:
+            val = request_data.get(campo)
+            if val and not re.match(r'^\d+$', str(val).strip()):
+                raise serializers.ValidationError({campo: f"El campo {campo} debe contener solo números."})
+        return data
 
     @transaction.atomic
     def update(self, instance, validated_data):
@@ -236,6 +248,12 @@ class RegisterSerializer(serializers.ModelSerializer):
         validators=[UniqueValidator(queryset=Usuario.objects.all(), message="Este correo electrónico ya está registrado.")]
     )
     placa = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    
+    def validate_correo(self, value):
+        value = value.strip()
+        if value.endswith('.') or ' ' in value:
+            raise serializers.ValidationError("El correo no debe contener espacios ni terminar con un punto.")
+        return value
     tipo_vehiculo = serializers.CharField(write_only=True, required=False, allow_blank=True)
 
     class Meta:
@@ -283,6 +301,17 @@ class RegisterSerializer(serializers.ModelSerializer):
         placa_input = validated_data.pop('placa', None)
         tipo_input = validated_data.pop('tipo_vehiculo', None)
         password = validated_data.pop('password')
+
+        request = self.context.get('request')
+        is_admin_request = False
+        if request and request.user and request.user.is_authenticated:
+            rol_req = str(getattr(request.user, 'rol', '')).lower()
+            if rol_req in ['admin', 'administrador']:
+                is_admin_request = True
+        
+        # Prevenir escalada de privilegios en registros públicos
+        if not is_admin_request:
+            validated_data['rol'] = 'aprendiz'
 
         try:
             user = Usuario.objects.create_user(
@@ -479,17 +508,26 @@ class RegistroAccesoSerializer(serializers.ModelSerializer):
 
         if placa_a_validar and placa_a_validar not in ['', 'S_PLACA', 'N/A'] and tipo_movimiento in ['ENTRADA', 'SALIDA']:
             placa_comparar = placa_a_validar.replace('-', '').upper()
+            
+            # Buscamos el último registro real de ENTRADA o SALIDA (ignoramos aperturas manuales o denegados que no cambian el estado del vehículo adentro/afuera)
             ultimo_registro = RegistroAcceso.objects.annotate(
                 placa_m_sin_guion=Replace('placa_manual', Value('-'), Value('')),
                 placa_v_sin_guion=Replace('vehiculo__placa', Value('-'), Value(''))
             ).filter(
-                Q(placa_v_sin_guion=placa_comparar) | Q(placa_m_sin_guion=placa_comparar)
+                Q(placa_v_sin_guion=placa_comparar) | Q(placa_m_sin_guion=placa_comparar),
+                tipo_movimiento__in=['ENTRADA', 'SALIDA']
             ).order_by('-fecha_hora').first()
 
-            if ultimo_registro and ultimo_registro.tipo_movimiento == tipo_movimiento:
-                raise serializers.ValidationError(
-                    f"Inconsistencia de seguridad: El vehículo con placa {placa_a_validar} ya registró una {tipo_movimiento.lower()} anteriormente."
-                )
+            if not ultimo_registro:
+                if tipo_movimiento == 'SALIDA':
+                    raise serializers.ValidationError(
+                        f"Inconsistencia de seguridad: El vehículo con placa {placa_a_validar} no puede registrar una SALIDA sin haber registrado una ENTRADA previamente."
+                    )
+            else:
+                if ultimo_registro.tipo_movimiento == tipo_movimiento:
+                    raise serializers.ValidationError(
+                        f"Inconsistencia de seguridad: El vehículo con placa {placa_a_validar} ya registró una {tipo_movimiento.lower()} previamente y no ha registrado su movimiento contrario."
+                    )
         
         return data
 
@@ -529,6 +567,15 @@ class InformeTurnoSerializer(serializers.ModelSerializer):
 
 
 class UsuarioUpdateSerializer(serializers.ModelSerializer):
+    telefono = serializers.CharField(
+        required=False, allow_blank=True, allow_null=True,
+        validators=[validators.RegexValidator(regex=r'^\d+$', message="El teléfono debe contener solo números.")]
+    )
+    ficha = serializers.CharField(
+        required=False, allow_blank=True, allow_null=True,
+        validators=[validators.RegexValidator(regex=r'^\d+$', message="La ficha debe contener solo números.")]
+    )
+
     class Meta:
         model = Usuario
         fields = ['nombre_completo', 'telefono', 'direccion', 'ficha']

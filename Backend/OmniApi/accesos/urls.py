@@ -6,7 +6,7 @@ from .views import (
     MisRegistrosAccesoView, CambiarPasswordView, AdminDashboardStatsView,
     UsuarioListCreateView, UsuarioDetailUpdateDeleteView,   
     ValidarPlacaBiometriaView, RegistrarBiometriaView, ValidarAccesoPorteriaView,
-    LoginBiometricoView, DashboardAccesosView, InformeTurnoListView
+    LoginBiometricoView, DashboardAccesosView, InformeTurnoListView, RestablecerPasswordView
 )
 
 urlpatterns = [
@@ -14,6 +14,7 @@ urlpatterns = [
     path('auth/register/', RegisterView.as_view(), name='auth-register'),
     path('auth/login/', LoginView.as_view(), name='auth-login'),
     path('auth/login-biometrico/', LoginBiometricoView.as_view(), name='auth-login-biometrico'),
+    path('auth/restablecer-password/', RestablecerPasswordView.as_view(), name='auth-restablecer-password'),
 
     # Perfil del Usuario
     path('perfil/actualizar/', PerfilUsuarioView.as_view(), name='actualizar-perfil'),
