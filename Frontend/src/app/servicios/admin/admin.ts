@@ -30,23 +30,40 @@ export interface CambiarEstadoPayload {
 
 
 
+import { IndexedDb } from '../indexed/indexed-db';
+import { tap, from } from 'rxjs';
+
 @Injectable({
   providedIn: 'root'
 })
 export class AdminService {
   private apiUrl = `${environment.apiUrl || 'http://127.0.0.1:8000/api'}`;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private indexedDb: IndexedDb) {}
 
   obtenerEstadisticas(): Observable<EstadisticaSistema> {
     return this.http.get<EstadisticaSistema>(`${this.apiUrl}/admin/stats/`).pipe(
-      catchError(this.handleError)
+      tap(data => this.indexedDb.setCache('admin_stats', data)),
+      catchError(error => {
+        if (error.status === 0 || error.status === 504) {
+          return from(this.indexedDb.getCache('admin_stats').then(data => data || {
+            total_usuarios: 0, usuarios_activos: 0, accesos_hoy: 0, vehiculos_registrados: 0
+          }));
+        }
+        return this.handleError(error);
+      })
     );
   }
 
   obtenerTodosLosUsuarios(): Observable<UsuarioAdmin[]> {
     return this.http.get<UsuarioAdmin[]>(`${this.apiUrl}/usuarios/`).pipe(
-      catchError(this.handleError)
+      tap(data => this.indexedDb.setCache('admin_usuarios', data)),
+      catchError(error => {
+        if (error.status === 0 || error.status === 504) {
+          return from(this.indexedDb.getCache('admin_usuarios').then(data => data || []));
+        }
+        return this.handleError(error);
+      })
     );
   }
 
@@ -74,7 +91,13 @@ export class AdminService {
 
   obtenerInformesTurno(): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/admin/informes-turno/`).pipe(
-      catchError(this.handleError)
+      tap(data => this.indexedDb.setCache('admin_informes', data)),
+      catchError(error => {
+        if (error.status === 0 || error.status === 504) {
+          return from(this.indexedDb.getCache('admin_informes').then(data => data || []));
+        }
+        return this.handleError(error);
+      })
     );
   }
 }

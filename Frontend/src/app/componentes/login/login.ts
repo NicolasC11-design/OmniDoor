@@ -55,29 +55,6 @@ export class LoginComponent implements OnInit {
     this.showPassword = !this.showPassword;
   }
 
-  solicitarRecuperacion(): void {
-    const emailControl = this.loginForm.get('email');
-    if (!emailControl || emailControl.invalid || !emailControl.value) {
-      this.errorMessage = 'Por favor, ingresa un correo válido en el campo superior para recuperar tu contraseña.';
-      return;
-    }
-    
-    this.loading = true;
-    this.errorMessage = null;
-    this.authService.restablecerPassword(emailControl.value).subscribe({
-      next: (res: any) => {
-        this.loading = false;
-        alert(res.mensaje);
-        this.cdr.detectChanges();
-      },
-      error: (err: any) => {
-        this.loading = false;
-        this.errorMessage = err.error?.error || 'No se pudo procesar la solicitud.';
-        this.cdr.detectChanges();
-      }
-    });
-  }
-
   activateBiometric(): void {
     this.errorMessage = null;
     this.coincidencias = [];
@@ -165,10 +142,16 @@ export class LoginComponent implements OnInit {
           this.errorMessage = err.error.detail;
         } else if (err.error?.mensaje) {
           this.errorMessage = err.error.mensaje;
-        } else if (err.error && typeof err.error === 'object') {
+        } else if (err.error && typeof err.error === 'object' && Object.keys(err.error).length > 0) {
           const primerCampo = Object.keys(err.error)[0];
-          const msg = Array.isArray(err.error[primerCampo]) ? err.error[primerCampo][0] : err.error[primerCampo];
-          this.errorMessage = `${primerCampo.toUpperCase()}: ${msg}`;
+          if (primerCampo) {
+            const msg = Array.isArray(err.error[primerCampo]) ? err.error[primerCampo][0] : err.error[primerCampo];
+            this.errorMessage = `${primerCampo.toUpperCase()}: ${msg}`;
+          } else {
+            this.errorMessage = 'Error de conexión o autenticación.';
+          }
+        } else if (err.status === 0) {
+          this.errorMessage = 'Error de red. Verifica tu conexión a internet o el estado del servidor.';
         } else {
           this.errorMessage = 'Error de autenticación. Verifica tus credenciales.';
         }
