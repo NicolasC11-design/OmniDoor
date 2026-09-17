@@ -23,6 +23,11 @@ export const routes: Routes = [
   },
 
   {
+    path: 'recuperar',
+    loadComponent: () => import('./componentes/recuperar-password/recuperar-password').then(m => m.RecuperarPasswordComponent)
+  },
+
+  {
     path: 'control-accesos',
     loadComponent: () => import('./componentes/control-accesos/control-accesos').then(m => m.ControlAccesosComponent),
     canActivate: [authGuard]
@@ -31,19 +36,22 @@ export const routes: Routes = [
   {
     path: 'dashboardAdministrador',
     loadComponent: () => import('./componentes/dashboard-administrador/dashboard-administrador').then(m => m.AdminDashboardComponent),
-    canActivate: [authGuard]
+    canActivate: [authGuard],
+    data: { role: 'administrador' }
   },
   
   {
     path: 'dashboardVigilante',
     loadComponent: () => import('./componentes/dashboard-vigilante/dashboard-vigilante').then(m => m.DashboardVigilanteComponent),
-    canActivate: [authGuard]
+    canActivate: [authGuard],
+    data: { role: 'vigilante' }
   },
 
   {
     path: 'dashboardUsuario',
     loadComponent: () => import('./componentes/dashboard-usuario/dashboard-usuario').then(m => m.DashboardUsuarioComponent),
-    canActivate: [authGuard]
+    canActivate: [authGuard],
+    data: { role: 'usuario' }
   },
 
   { path: '**', redirectTo: '' }

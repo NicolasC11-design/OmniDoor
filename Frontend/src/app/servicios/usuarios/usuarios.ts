@@ -40,13 +40,16 @@ export interface CambiarPasswordPayload {
   password_nueva?: string;
 }
 
+import { IndexedDb } from '../indexed/indexed-db';
+import { tap, from } from 'rxjs';
+
 @Injectable({
   providedIn: 'root'
 })
 export class UsuarioService {
   private apiUrl = environment.apiUrl;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private indexedDb: IndexedDb) {}
 
   private getAuthHeaders(): { headers: HttpHeaders } {
     const token = localStorage.getItem('accesos') || localStorage.getItem('token');
@@ -61,7 +64,13 @@ export class UsuarioService {
 
   obtenerTodosLosVehiculos(): Observable<Vehiculo[]> {
     return this.http.get<Vehiculo[]>(`${this.apiUrl}/usuarios/vehiculos/todos/`, this.getAuthHeaders()).pipe(
-      catchError(this.handleError)
+      tap(data => this.indexedDb.setCache('vehiculos_todos', data)),
+      catchError(error => {
+        if (error.status === 0 || error.status === 504) {
+          return from(this.indexedDb.getCache('vehiculos_todos').then(data => data || []));
+        }
+        return this.handleError(error);
+      })
     );
   }
 
@@ -86,7 +95,13 @@ export class UsuarioService {
 
   getUsuarios(): Observable<PerfilUsuario[]> { 
     return this.http.get<PerfilUsuario[]>(`${this.apiUrl}/admin/usuarios-pendientes/`, this.getAuthHeaders()).pipe(
-      catchError(this.handleError)
+      tap(data => this.indexedDb.setCache('usuarios_pendientes', data)),
+      catchError(error => {
+        if (error.status === 0 || error.status === 504) {
+          return from(this.indexedDb.getCache('usuarios_pendientes').then(data => data || []));
+        }
+        return this.handleError(error);
+      })
     ); 
   }
 
@@ -116,7 +131,13 @@ export class UsuarioService {
 
   obtenerMiHistorial(): Observable<HistorialPersonal[]> {
     return this.http.get<HistorialPersonal[]>(`${this.apiUrl}/usuarios/historial/mio/`, this.getAuthHeaders()).pipe(
-      catchError(this.handleError)
+      tap(data => this.indexedDb.setCache('mi_historial', data)),
+      catchError(error => {
+        if (error.status === 0 || error.status === 504) {
+          return from(this.indexedDb.getCache('mi_historial').then(data => data || []));
+        }
+        return this.handleError(error);
+      })
     );
   }
 
