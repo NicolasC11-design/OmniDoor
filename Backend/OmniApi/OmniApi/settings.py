@@ -27,13 +27,11 @@ load_dotenv(os.path.join(BASE_DIR, '.env'))
 load_dotenv()
 
 
-SECRET_KEY = 'django-insecure-!(mfl77tb=h%7ut6h=@(i_s5#=8i6*nhpr2)$)=-z)zm9vx+$q'
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-!(mfl77tb=h%7ut6h=@(i_s5#=8i6*nhpr2)$)=-z)zm9vx+$q')
 
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = [
-    '*'
-]
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '*').split(',')
 
 
 INSTALLED_APPS = [
@@ -53,6 +51,7 @@ AUTH_USER_MODEL = 'accesos.Usuario'
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -126,6 +125,8 @@ USE_TZ = True
 
 
 STATIC_URL = 'static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 
 
@@ -133,6 +134,9 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:4200",
     "http://127.0.0.1:4200",
 ]
+frontend_url = os.getenv('FRONTEND_URL')
+if frontend_url:
+    CORS_ALLOWED_ORIGINS.append(frontend_url)
 
 CORS_ALLOW_CREDENTIALS = True
 
@@ -171,6 +175,14 @@ REST_FRAMEWORK = {
         'accesos.authentication.UUIDJWTAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.AllowAny',
+        'rest_framework.permissions.IsAuthenticated',
     ),
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle'
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '5/min',   # 5 intentos por minuto para anónimos (Login, recuperación)
+        'user': '100/min'  # 100 por minuto para usuarios autenticados
+    }
 }
