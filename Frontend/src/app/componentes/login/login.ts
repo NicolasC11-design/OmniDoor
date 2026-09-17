@@ -142,10 +142,16 @@ export class LoginComponent implements OnInit {
           this.errorMessage = err.error.detail;
         } else if (err.error?.mensaje) {
           this.errorMessage = err.error.mensaje;
-        } else if (err.error && typeof err.error === 'object') {
+        } else if (err.error && typeof err.error === 'object' && Object.keys(err.error).length > 0) {
           const primerCampo = Object.keys(err.error)[0];
-          const msg = Array.isArray(err.error[primerCampo]) ? err.error[primerCampo][0] : err.error[primerCampo];
-          this.errorMessage = `${primerCampo.toUpperCase()}: ${msg}`;
+          if (primerCampo) {
+            const msg = Array.isArray(err.error[primerCampo]) ? err.error[primerCampo][0] : err.error[primerCampo];
+            this.errorMessage = `${primerCampo.toUpperCase()}: ${msg}`;
+          } else {
+            this.errorMessage = 'Error de conexión o autenticación.';
+          }
+        } else if (err.status === 0) {
+          this.errorMessage = 'Error de red. Verifica tu conexión a internet o el estado del servidor.';
         } else {
           this.errorMessage = 'Error de autenticación. Verifica tus credenciales.';
         }

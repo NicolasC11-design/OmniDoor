@@ -65,7 +65,8 @@
         <button class="module-row-card" (click)="irA('solicitudes')">
           <div class="module-row-icon"><i class="ti ti-user-check" aria-hidden="true"></i></div>
           <div class="module-row-content">
-            <div class="module-title">Autorizaciones pendientes <span class="badge" *ngIf="usuariosPendientes.length > 0">{{ usuariosPendientes.length }} nuevas</span></div>
+            <div class="module-title">Autorizaciones pendientes <span class="badge"
+                *ngIf="usuariosPendientes.length > 0">{{ usuariosPendientes.length }} nuevas</span></div>
             <div class="module-desc">Revisa y aprueba o rechaza solicitudes de registro de nuevos usuarios.</div>
           </div>
           <div class="module-row-arrow"><i class="ti ti-chevron-right"></i></div>
@@ -337,7 +338,8 @@
         <div class="input-row">
           <div class="field-group">
             <label class="field-label">tipo de vehículo</label>
-            <select class="od-select" [(ngModel)]="formConductor.tipoVehiculo" name="tipo_vehiculo">
+            <select class="od-select" [(ngModel)]="formConductor.tipoVehiculo" name="tipo_vehiculo"
+              (ngModelChange)="onTipoVehiculoChange()">
               <option value="AUTOMOVIL">Automóvil</option>
               <option value="MOTOCICLETA">Motocicleta</option>
               <option value="BICICLETA">Bicicleta</option>
@@ -347,7 +349,8 @@
           </div>
           <div class="field-group">
             <label class="field-label">placa del vehículo</label>
-            <input type="text" class="od-input" [(ngModel)]="formConductor.placa" name="placa" placeholder="ABC124" />
+            <input type="text" class="od-input" [(ngModel)]="formConductor.placa" name="placa"
+              [disabled]="placaDeshabilitada" placeholder="ABC124" />
           </div>
         </div>
 

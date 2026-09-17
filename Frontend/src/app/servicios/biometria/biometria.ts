@@ -28,12 +28,14 @@ export interface ResultadoBiometria {
   distancia: number;
 }
 
+import { environment } from '../../../environments/environment';
+
 @Injectable({
   providedIn: 'root'
 })
 export class BiometriaService {
   private modelosCargados = false;
-  private apiUrl = 'http://localhost:8000/api';
+  private apiUrl = environment.apiUrl || 'http://localhost:8000/api';
 
   constructor(private http: HttpClient) {}
 

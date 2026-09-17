@@ -20,13 +20,16 @@ export interface AuthResponse {
   mensaje?: string;
 }
 
+import { environment } from '../../../environments/environment';
+import { IndexedDb } from '../indexed/indexed-db';
+
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = 'http://localhost:8000/api';
+  private apiUrl = environment.apiUrl || 'http://localhost:8000/api';
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient, private indexedDb: IndexedDb) { }
 
   private getHeaders(): HttpHeaders {
     const token = localStorage.getItem('access');
@@ -38,6 +41,14 @@ export class AuthService {
 
   register(payload: any): Observable<any> {
     return this.http.post(`${this.apiUrl}/auth/register/`, payload);
+  }
+
+  restablecerPassword(correo: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/auth/restablecer-password/`, { correo });
+  }
+
+  restablecerPasswordSeguro(payload: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}/auth/restablecer-password/`, payload);
   }
 
   login(credentials: any): Observable<AuthResponse> {
@@ -127,7 +138,12 @@ export class AuthService {
     return user ? user.rol : null;
   }
 
-  logout(): void {
+  async logout(): Promise<void> {
     localStorage.clear();
+    try {
+      await this.indexedDb.clearAll();
+    } catch (e) {
+      console.warn('No se pudo limpiar IndexedDB al hacer logout', e);
+    }
   }
 }

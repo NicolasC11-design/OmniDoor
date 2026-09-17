@@ -80,12 +80,26 @@ export class DashboardVigilanteComponent implements OnInit, OnDestroy {
   horaInicioTurno!: string;
 
   private resetTimer: any = null;
+  private onlineListener: () => void;
+  private offlineListener: () => void;
 
   constructor(
     private router: Router,
     private vigilanteService: VigilanteService,
     private cdRef: ChangeDetectorRef
-  ) { }
+  ) {
+    this.onlineListener = () => {
+      this.online = true;
+      this.cdRef.detectChanges();
+      this.vigilanteService.sincronizarPendientes().then(() => {
+        this.cargarDatosDashboard();
+      });
+    };
+    this.offlineListener = () => {
+      this.online = false;
+      this.cdRef.detectChanges();
+    };
+  }
 
   ngOnInit(): void {
     const savedTime = localStorage.getItem('horaInicioTurno');
@@ -98,13 +112,25 @@ export class DashboardVigilanteComponent implements OnInit, OnDestroy {
       localStorage.setItem('horaInicioTurno', this.horaInicioTurno);
     }
 
-    this.cargarDatosDashboard();
+    this.online = navigator.onLine;
+    window.addEventListener('online', this.onlineListener);
+    window.addEventListener('offline', this.offlineListener);
+
+    if (this.online) {
+      this.vigilanteService.sincronizarPendientes().then(() => {
+        this.cargarDatosDashboard();
+      });
+    } else {
+      this.cargarDatosDashboard();
+    }
   }
 
   ngOnDestroy(): void {
     if (this.resetTimer) {
       clearTimeout(this.resetTimer);
     }
+    window.removeEventListener('online', this.onlineListener);
+    window.removeEventListener('offline', this.offlineListener);
   }
 
   private obtenerMensajeError(err: any): string {

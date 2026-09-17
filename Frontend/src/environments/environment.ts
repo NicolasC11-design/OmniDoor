@@ -1,5 +1,6 @@
 export const environment = {
     production: false,
     supabaseUrl: 'https://lfhheiqhptjijodxaedm.supabase.co',
-    supabaseKey: 'undefined'
+    supabaseKey: 'undefined',
+    apiUrl: 'http://127.0.0.1:8000/api'
 };
