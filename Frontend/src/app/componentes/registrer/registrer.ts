@@ -132,7 +132,7 @@ export class RegisterComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe(rolSeleccionado => {
         const fichaControl = this.registerForm.get('ficha');
-        if (rolSeleccionado === 'aprendiz' || rolSeleccionado === 'instructor') {
+        if (rolSeleccionado === 'aprendiz') {
           fichaControl?.setValidators([Validators.required, Validators.pattern(/^\d+$/)]);
         } else {
           fichaControl?.clearValidators();
