@@ -248,6 +248,12 @@ class RegisterSerializer(serializers.ModelSerializer):
         validators=[UniqueValidator(queryset=Usuario.objects.all(), message="Este correo electrónico ya está registrado.")]
     )
     placa = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    
+    def validate_correo(self, value):
+        value = value.strip()
+        if value.endswith('.') or ' ' in value:
+            raise serializers.ValidationError("El correo no debe contener espacios ni terminar con un punto.")
+        return value
     tipo_vehiculo = serializers.CharField(write_only=True, required=False, allow_blank=True)
 
     class Meta:

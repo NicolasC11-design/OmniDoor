@@ -16,6 +16,7 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.throttling import AnonRateThrottle
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import BiometriaUsuario, InformeTurno, RegistroAcceso, Usuario, Vehiculo
@@ -60,33 +61,72 @@ class RegisterView(APIView):
 class RestablecerPasswordView(APIView):
     permission_classes = [AllowAny]
     authentication_classes = []
+    throttle_classes = [AnonRateThrottle]
 
     def post(self, request):
+        metodo = request.data.get('metodo')
         correo = request.data.get('correo')
-        if not correo:
-            return Response({"error": "Debe proporcionar un correo."}, status=status.HTTP_400_BAD_REQUEST)
-        
+        nueva_password = request.data.get('nueva_password')
+
+        if not correo or not nueva_password or not metodo:
+            return Response({"error": "Faltan datos obligatorios (correo, método, nueva contraseña)."}, status=status.HTTP_400_BAD_REQUEST)
+
+        regex = r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$'
+        if not re.match(regex, nueva_password):
+            return Response({"error": "La contraseña debe incluir mayúscula, minúscula, número, símbolo y mínimo 8 caracteres."}, status=status.HTTP_400_BAD_REQUEST)
+
         try:
             usuario = Usuario.objects.get(correo=correo)
-            for campo in ['estado', 'is_active', 'is_admin', 'is_staff']:
-                valor = getattr(usuario, campo)
-                if isinstance(valor, str):
-                    setattr(usuario, campo, valor.strip().lower() in ['true', '1', 'activo'])
-
-            nueva_password = "OmniDoor123*"
-            usuario.set_password(nueva_password)
-            usuario.save()
-            return Response(
-                {"mensaje": f"Se ha restablecido la contraseña a: {nueva_password}. Inicie sesión y cámbiela en su perfil."},
-                status=status.HTTP_200_OK
-            )
         except Usuario.DoesNotExist:
-            return Response({"error": "No existe un usuario con este correo."}, status=status.HTTP_404_NOT_FOUND)
+            # Mensaje genérico por seguridad (evita enumeración de usuarios)
+            return Response({"error": "Los datos ingresados son incorrectos o el usuario no existe."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if metodo == 'biometria':
+            vector_recibido = request.data.get("vector_biometrico")
+            if not vector_recibido:
+                return Response({"error": "No se recibió el escaneo facial."}, status=status.HTTP_400_BAD_REQUEST)
+            try:
+                biometria = BiometriaUsuario.objects.get(usuario=usuario, activo=True)
+                descriptor = biometria.get_descriptor() if hasattr(biometria, 'get_descriptor') else json.loads(biometria.vector_facial)
+                
+                vector_guardado = np.array(descriptor, dtype=np.float32)
+                vec_input = np.array(vector_recibido, dtype=np.float32)
+                distancia = np.linalg.norm(vector_guardado - vec_input)
+                
+                if distancia > 0.60:
+                    return Response({"error": "El rostro no coincide con el registrado en el sistema."}, status=status.HTTP_401_UNAUTHORIZED)
+            except BiometriaUsuario.DoesNotExist:
+                return Response({"error": "No tienes un rostro registrado. Usa la opción de Datos Personales."}, status=status.HTTP_400_BAD_REQUEST)
+
+        elif metodo == 'datos':
+            ficha = request.data.get('ficha')
+            telefono = request.data.get('telefono')
+            
+            if not ficha or not telefono:
+                return Response({"error": "Debe proporcionar ficha y teléfono para esta validación."}, status=status.HTTP_400_BAD_REQUEST)
+            
+            val_ficha = str(usuario.ficha).strip() if usuario.ficha else ""
+            val_tel = str(usuario.telefono).strip() if usuario.telefono else ""
+            
+            if val_ficha != str(ficha).strip() or val_tel != str(telefono).strip():
+                return Response({"error": "Los datos de validación no coinciden con nuestros registros."}, status=status.HTTP_401_UNAUTHORIZED)
+        else:
+            return Response({"error": "Método de recuperación inválido."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Si supera las validaciones, cambiamos la contraseña
+        usuario.set_password(nueva_password)
+        usuario.save(update_fields=['password'])
+        
+        return Response(
+            {"mensaje": "Contraseña restablecida con éxito. Ya puedes iniciar sesión de forma segura."},
+            status=status.HTTP_200_OK
+        )
 
 
 class LoginView(APIView):
     permission_classes = [AllowAny]
     authentication_classes = []
+    throttle_classes = [AnonRateThrottle]
 
     def post(self, request, *args, **kwargs):
         serializer = LoginSerializer(data=request.data)
@@ -318,16 +358,19 @@ class RegistroAccesoListCreateView(APIView):
 
             vehiculos_dentro = 0
             placas_vistas = set()
+            
+            # OPTIMIZACIÓN: Se usa .values() para no instanciar miles de objetos en memoria y se pre-calcula
             ultimos_registros = RegistroAcceso.objects.exclude(
                 tipo_movimiento__in=["APERTURA_MANUAL", "DENEGADO"]
-            ).order_by('-fecha_hora')
+            ).values('vehiculo__placa', 'placa_manual', 'tipo_movimiento').order_by('-fecha_hora')
+            
             for reg in ultimos_registros:
-                placa = reg.vehiculo.placa if reg.vehiculo else reg.placa_manual
+                placa = reg['vehiculo__placa'] if reg['vehiculo__placa'] else reg['placa_manual']
                 if not placa: continue
                 placa = placa.replace('-', '').upper()
                 if placa not in placas_vistas:
                     placas_vistas.add(placa)
-                    if reg.tipo_movimiento == "ENTRADA":
+                    if reg['tipo_movimiento'] == "ENTRADA":
                         vehiculos_dentro += 1
 
             aperturas_manuales = RegistroAcceso.objects.filter(
