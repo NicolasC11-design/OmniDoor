@@ -52,7 +52,7 @@ export class BiometriaService {
 
     try {
       await this.inicializarBackendTensorFlow();
-      const MODEL_URL = '/assets/models'; 
+      const MODEL_URL = '/models'; 
 
       await Promise.all([
         faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
