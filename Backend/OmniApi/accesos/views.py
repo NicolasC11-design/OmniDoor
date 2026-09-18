@@ -4,6 +4,8 @@ from django.http import JsonResponse
 import numpy as np
 import re
 
+import time as time_module
+
 from django.contrib.auth.hashers import check_password
 from django.db import transaction, models
 from django.db.models import Q, F
@@ -37,16 +39,16 @@ from .serializers import (
 
 class DBHealthCheckView(View):
     def get(self, request):
-        start = time.time()
+        start = time_module.time()
         try:
             connection.ensure_connection()
-            elapsed = time.time() - start
+            elapsed = time_module.time() - start
             return JsonResponse({
                 "status": "ok",
                 "elapsed_seconds": round(elapsed, 2)
             })
         except Exception as e:
-            elapsed = time.time() - start
+            elapsed = time_module.time() - start
             return JsonResponse({
                 "status": "error",
                 "elapsed_seconds": round(elapsed, 2),
