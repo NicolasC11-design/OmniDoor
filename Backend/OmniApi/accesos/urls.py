@@ -6,10 +6,13 @@ from .views import (
     MisRegistrosAccesoView, CambiarPasswordView, AdminDashboardStatsView,
     UsuarioListCreateView, UsuarioDetailUpdateDeleteView,   
     ValidarPlacaBiometriaView, RegistrarBiometriaView, ValidarAccesoPorteriaView,
-    LoginBiometricoView, DashboardAccesosView, InformeTurnoListView, RestablecerPasswordView
+    LoginBiometricoView, DashboardAccesosView, InformeTurnoListView, RestablecerPasswordView, DBHealthCheckView
 )
 
 urlpatterns = [
+
+
+    path('db-check/', DBHealthCheckView.as_view()),
     # Autenticación
     path('auth/register/', RegisterView.as_view(), name='auth-register'),
     path('auth/login/', LoginView.as_view(), name='auth-login'),

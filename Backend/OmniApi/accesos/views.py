@@ -1,4 +1,6 @@
+from datetime import time
 import json
+from django.http import JsonResponse
 import numpy as np
 import re
 
@@ -6,6 +8,7 @@ from django.contrib.auth.hashers import check_password
 from django.db import transaction, models
 from django.db.models import Q, F
 from django.db.models import Value
+from django.db import connection
 from django.db.models.functions import Replace
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -15,7 +18,7 @@ from rest_framework import generics, permissions, status
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.views import APIView
+from rest_framework.views import APIView, View
 from rest_framework.throttling import AnonRateThrottle
 from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -31,6 +34,24 @@ from .serializers import (
     UsuarioUpdateSerializer
 )
 
+
+class DBHealthCheckView(View):
+    def get(self, request):
+        start = time.time()
+        try:
+            connection.ensure_connection()
+            elapsed = time.time() - start
+            return JsonResponse({
+                "status": "ok",
+                "elapsed_seconds": round(elapsed, 2)
+            })
+        except Exception as e:
+            elapsed = time.time() - start
+            return JsonResponse({
+                "status": "error",
+                "elapsed_seconds": round(elapsed, 2),
+                "error": str(e)
+            }, status=500)
 
 class RegisterView(APIView):
     permission_classes = [AllowAny]
