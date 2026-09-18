@@ -89,8 +89,10 @@ DATABASES = {
         'PASSWORD': os.getenv('DB_PASSWORD'),
         'HOST': os.getenv('DB_HOST'),
         'PORT': os.getenv('DB_PORT'),
+        'CONN_MAX_AGE': 0,
+        'DISABLE_SERVER_SIDE_CURSORS': True,
         'OPTIONS': {
-            'sslmode': 'prefer',
+            'sslmode': 'require',
             'connect_timeout': 10,
         },
     }
