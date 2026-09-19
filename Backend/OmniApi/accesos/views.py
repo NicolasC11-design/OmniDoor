@@ -93,7 +93,7 @@ class RestablecerPasswordView(APIView):
                 vec_input = np.array(vector_recibido, dtype=np.float32)
                 distancia = np.linalg.norm(vector_guardado - vec_input)
                 
-                if distancia > 0.60:
+                if distancia > 0.43:
                     return Response({"error": "El rostro no coincide con el registrado en el sistema."}, status=status.HTTP_401_UNAUTHORIZED)
             except BiometriaUsuario.DoesNotExist:
                 return Response({"error": "No tienes un rostro registrado. Usa la opción de Datos Personales."}, status=status.HTTP_400_BAD_REQUEST)
@@ -139,7 +139,7 @@ class LoginView(APIView):
         user = serializer.validated_data["user"]
         if not user.is_active or not user.estado:
             return Response(
-                {"error": "Cuenta inactiva. El administrador aún no ha aprobado tu registro."},
+                {"error": "Cuenta inactiva o deshabilitada. Por favor, contacta al administrador."},
                 status=status.HTTP_403_FORBIDDEN,
             )
 
@@ -153,7 +153,7 @@ class LoginView(APIView):
                 vector_guardado = np.array(descriptor, dtype=np.float32)
                 vec_input = np.array(vector_recibido, dtype=np.float32)
                 distancia = np.linalg.norm(vector_guardado - vec_input)
-                UMBRAL_TOLERANCIA = 0.60
+                UMBRAL_TOLERANCIA = 0.43
 
                 if distancia > UMBRAL_TOLERANCIA:
                     return Response(
@@ -183,10 +183,17 @@ class AdminGestionCuentasView(APIView):
     permission_classes = [IsAdmin]
 
     def get(self, request):
-        usuarios_pendientes = Usuario.objects.filter(is_active=False)
+        usuarios_pendientes = Usuario.objects.filter(is_active=False).exclude(rol='eliminado')
         serializer = userSerializer(usuarios_pendientes, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+class AdminUsuariosEliminadosView(APIView):
+    permission_classes = [IsAdmin]
+
+    def get(self, request):
+        usuarios_eliminados = Usuario.objects.filter(rol='eliminado')
+        serializer = userSerializer(usuarios_eliminados, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 class AdminDashboardStatsView(APIView):
     permission_classes = [IsSeguridadOrAdmin]
@@ -199,7 +206,7 @@ class AdminDashboardStatsView(APIView):
         ingresos_hoy = RegistroAcceso.objects.filter(
             tipo_movimiento="ENTRADA", fecha_hora__date=hoy
         ).count()
-        solicitudes_pendientes = Usuario.objects.filter(is_active=False).count()
+        solicitudes_pendientes = Usuario.objects.filter(is_active=False).exclude(rol='eliminado').count()
         accesos_denegados = RegistroAcceso.objects.filter(
             Q(tipo_movimiento="DENEGADO") | Q(motivo_apertura__icontains="RECHAZADO"),
             fecha_hora__date__gte=primer_dia_mes,
@@ -223,6 +230,8 @@ class AprobarUsuarioView(APIView):
         usuario = get_object_or_404(Usuario, id_usuario=id_usuario)
         usuario.is_active = True
         usuario.estado = True
+        if usuario.rol == 'eliminado':
+            usuario.rol = 'aprendiz'
         usuario.save()
         return Response({"message": "Usuario aprobado correctamente."}, status=status.HTTP_200_OK)
 
@@ -319,6 +328,7 @@ class UsuarioDetailUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     def perform_destroy(self, instance):
         instance.is_active = False
         instance.estado = False
+        instance.rol = 'eliminado'
         instance.save()
 
     def update(self, request, *args, **kwargs):
@@ -699,7 +709,7 @@ class ValidarAccesoPorteriaView(APIView):
 
         usuario_identificado = None
         vehiculo_obj = None
-        UMBRAL = 0.68
+        UMBRAL = 0.43
         vec_input = np.array(vector_capturado, dtype=np.float32).flatten()
         if placa and str(placa).strip().upper() not in ["N/A", "S_PLACA", "SIN_PLACA", ""]:
             placa_clean = str(placa).strip().replace('-', '').replace(' ', '').upper()
@@ -830,7 +840,7 @@ class ValidarAccesoPorteriaView(APIView):
 
         if not usuario_identificado.is_active or not getattr(usuario_identificado, 'estado', True):
             return Response(
-                {"mensaje": "Usuario inactivo o pendiente de aprobación por administración."},
+                {"mensaje": "Usuario inactivo, eliminado o pendiente de aprobación por administración."},
                 status=status.HTTP_403_FORBIDDEN,
             )
 
@@ -947,7 +957,7 @@ class LoginBiometricoView(APIView):
             if estado_str in ['activo', 'true', '1']:
                 biometrias_validas.append(bio)
 
-        UMBRAL_TOLERANCIA = 0.68
+        UMBRAL_TOLERANCIA = 0.43
         coincidencias = []
 
         for bio in biometrias_validas:

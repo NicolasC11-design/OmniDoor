@@ -53,6 +53,7 @@ export class AdminDashboardComponent implements OnInit {
   };
 
   usuariosPendientes: any[] = [];
+  usuariosEliminados: any[] = [];
   cargandoSolicitudes = false;
   cargandoHistorial = false;
   cargandoInformes = false;
@@ -84,6 +85,7 @@ export class AdminDashboardComponent implements OnInit {
   ngOnInit(): void {
     this.cargarKpis();
     this.cargarUsuariosPendientes();
+    this.cargarUsuariosEliminados();
     this.cargarHistorial();
   }
 
@@ -201,11 +203,28 @@ export class AdminDashboardComponent implements OnInit {
     });
   }
 
+  cargarUsuariosEliminados(): void {
+    this.authService.getUsuariosEliminados().subscribe({
+      next: (data: any) => {
+        if (Array.isArray(data)) {
+          this.usuariosEliminados = data;
+        } else if (data && Array.isArray(data.usuarios)) {
+          this.usuariosEliminados = data.usuarios;
+        } else {
+          this.usuariosEliminados = [];
+        }
+        this.cdr.detectChanges();
+      },
+      error: (err) => console.error('Error al cargar usuarios eliminados:', err)
+    });
+  }
+
   aceptarCuenta(idUsuario: string): void {
     this.authService.aprobarUsuario(idUsuario).subscribe({
       next: (res: any) => {
         this.mensajeExito = res.message || res.mensaje || 'Usuario aprobado con éxito';
         this.usuariosPendientes = this.usuariosPendientes.filter((u) => u.id_usuario !== idUsuario);
+        this.usuariosEliminados = this.usuariosEliminados.filter((u) => u.id_usuario !== idUsuario);
         this.cdr.detectChanges();
         setTimeout(() => {
           this.mensajeExito = null;

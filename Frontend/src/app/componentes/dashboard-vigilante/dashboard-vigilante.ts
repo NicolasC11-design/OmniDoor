@@ -423,18 +423,24 @@ export class DashboardVigilanteComponent implements OnInit, OnDestroy {
     });
   }
 
+  guardandoTurno: boolean = false;
+
   confirmarCierreTurno(): void {
+    if (this.guardandoTurno) return;
+    this.guardandoTurno = true;
     this.vigilanteService.enviarInformeTurno(
       this.horaInicioTurno,
       this.novedadesTexto,
       this.sinNovedadCheck
     ).subscribe({
       next: (res) => {
+        this.guardandoTurno = false;
         alert(`¡Informe de turno generado con éxito!\nEntradas: ${res.total_entradas}\nRemanentes: ${res.vehiculos_quedados}`);
         this.mostrarModalInforme = false;
         this.cerrarSesion();
       },
       error: (err) => {
+        this.guardandoTurno = false;
         console.error(err);
         alert('Error al procesar el informe en el servidor.');
       }
@@ -509,14 +515,14 @@ export class DashboardVigilanteComponent implements OnInit, OnDestroy {
   }
 
   seleccionarUsuarioBiometrico(cuentaSeleccionada: any): void {
-  this.mostrarModalSeleccionCuentas = false;
-  this.evaluandoBiometria = true;
+    if (this.evaluandoBiometria) return;
+    this.mostrarModalSeleccionCuentas = false;
+    this.evaluandoBiometria = true;
 
-  const placaLimpia = (this.placaInput || this.placaEscaneoInput || '').trim().replace(/[- ]/g, '').toUpperCase();
+    const placaLimpia = (this.placaInput || this.placaEscaneoInput || '').trim().replace(/[- ]/g, '').toUpperCase();
+    const movimientoElegido = (this.tipoMovimientoSeleccionado || this.tipoMovimientoCamara || 'ENTRADA').toUpperCase();
 
-  const movimientoElegido = (this.tipoMovimientoSeleccionado || this.tipoMovimientoCamara || 'ENTRADA').toUpperCase();
-
-  const payloadConfirmado = {
+    const payloadConfirmado = {
     placa: cuentaSeleccionada.placa && cuentaSeleccionada.placa !== 'S_PLACA' ? cuentaSeleccionada.placa : placaLimpia,
     id_usuario: cuentaSeleccionada.id_usuario,
     vector_biometrico: this.vectorBiometricoCapturado || this.vectorBiometricoPendiente,

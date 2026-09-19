@@ -150,6 +150,7 @@ export class BiometriaCamaraComponent implements OnInit, OnDestroy {
 
   async capturarRostro(): Promise<void> {
     if (!this.videoElement || !this.videoElement.nativeElement) return;
+    if (this.procesandoCaptura) return;
 
     this.procesandoCaptura = true;
     this.cdRef.detectChanges();

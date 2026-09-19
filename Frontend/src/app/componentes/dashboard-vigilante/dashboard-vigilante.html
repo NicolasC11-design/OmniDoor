@@ -293,8 +293,8 @@
             <div class="modal-actions">
                 <button type="button" class="od-btn" (click)="cerrarModales()">Volver al Panel</button>
                 <button type="button" class="od-btn success" (click)="confirmarCierreTurno()"
-                    [disabled]="!sinNovedadCheck && !novedadesTexto.trim()">
-                    Firmar y Cerrar Turno
+                    [disabled]="(!sinNovedadCheck && !novedadesTexto.trim()) || guardandoTurno">
+                    {{ guardandoTurno ? 'Procesando...' : 'Firmar y Cerrar Turno' }}
                 </button>
             </div>
         </div>
@@ -381,8 +381,10 @@
                         </div>
                     </div>
 
-                    <button type="button" class="od-btn primary btn-seleccionar">
-                        SELECCIONAR
+                    <button type="button" class="od-btn primary btn-seleccionar" 
+                        [disabled]="evaluandoBiometria"
+                        (click)="confirmarSeleccionPorteria(c)">
+                        {{ evaluandoBiometria ? 'PROCESANDO...' : 'SELECCIONAR' }}
                     </button>
                 </div>
             </div>

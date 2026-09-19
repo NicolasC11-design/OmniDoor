@@ -105,6 +105,18 @@ export class UsuarioService {
     ); 
   }
 
+  getUsuariosEliminados(): Observable<PerfilUsuario[]> { 
+    return this.http.get<PerfilUsuario[]>(`${this.apiUrl}/admin/usuarios-eliminados/`, this.getAuthHeaders()).pipe(
+      tap(data => this.indexedDb.setCache('usuarios_eliminados', data)),
+      catchError(error => {
+        if (error.status === 0 || error.status === 504) {
+          return from(this.indexedDb.getCache('usuarios_eliminados').then(data => data || []));
+        }
+        return this.handleError(error);
+      })
+    ); 
+  }
+
   deleteUsuario(id: number | string): Observable<any> { 
     return this.http.delete<any>(`${this.apiUrl}/usuarios/${id}/`, this.getAuthHeaders()).pipe(
       catchError(this.handleError)
