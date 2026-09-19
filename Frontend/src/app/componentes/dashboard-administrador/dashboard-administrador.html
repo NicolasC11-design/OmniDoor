@@ -153,6 +153,48 @@
           que proporcionó durante el registro.
         </div>
       </div>
+
+      <div class="od-panel mt-4">
+        <div class="corner c-tl"></div>
+        <div class="corner c-tr"></div>
+        <div class="corner c-bl"></div>
+        <div class="corner c-br"></div>
+
+        <div class="panel-header">
+          <div>
+            <div class="panel-title">Usuarios Inactivos / Eliminados</div>
+            <div class="panel-subtitle">Historial de cuentas desactivadas o eliminadas del sistema</div>
+          </div>
+        </div>
+
+        <div class="empty-state" *ngIf="usuariosEliminados.length === 0">
+          <i class="ti ti-users" aria-hidden="true"></i>
+          <p>No hay usuarios eliminados en el sistema</p>
+        </div>
+
+        <div class="table-wrap" *ngIf="usuariosEliminados.length > 0">
+          <table class="od-table">
+            <thead>
+              <tr>
+                <th>Nombre completo</th>
+                <th>Correo</th>
+                <th>Estado</th>
+                <th>Acción</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let usuario of usuariosEliminados">
+                <td style="opacity: 0.6;">{{ usuario.nombre_completo }}</td>
+                <td style="opacity: 0.6;">{{ usuario.correo }}</td>
+                <td><span class="badge" style="background: #ef4444; color: white;">ELIMINADO</span></td>
+                <td>
+                  <button class="btn-approve" style="font-size: 0.75rem; padding: 4px 8px;" (click)="aceptarCuenta(usuario.id_usuario)">Restaurar Cuenta</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </ng-container>
 
     <ng-container *ngIf="vistaActual === 'usuarios'">

@@ -6,12 +6,11 @@ from .views import (
     MisRegistrosAccesoView, CambiarPasswordView, AdminDashboardStatsView,
     UsuarioListCreateView, UsuarioDetailUpdateDeleteView,   
     ValidarPlacaBiometriaView, RegistrarBiometriaView, ValidarAccesoPorteriaView,
-    LoginBiometricoView, DashboardAccesosView, InformeTurnoListView, RestablecerPasswordView, DBHealthCheckView
+    LoginBiometricoView, DashboardAccesosView, InformeTurnoListView, RestablecerPasswordView, DBHealthCheckView,
+    AdminUsuariosEliminadosView
 )
 
 urlpatterns = [
-
-
     path('db-check/', DBHealthCheckView.as_view()),
     # Autenticación
     path('auth/register/', RegisterView.as_view(), name='auth-register'),
@@ -45,6 +44,7 @@ urlpatterns = [
     # Administración
     path('admin/stats/', AdminDashboardStatsView.as_view(), name='admin-stats'),
     path('admin/usuarios-pendientes/', AdminGestionCuentasView.as_view(), name='usuarios-pendientes'),
+    path('admin/usuarios-eliminados/', AdminUsuariosEliminadosView.as_view(), name='usuarios-eliminados'),
     path('admin/aprobar-usuario/<uuid:id_usuario>/', AprobarUsuarioView.as_view(), name='aprobar-usuario'),
     path('admin/informes-turno/', InformeTurnoListView.as_view(), name='admin-informes-turno'),
     path('usuarios/', UsuarioListCreateView.as_view(), name='usuarios-list'),

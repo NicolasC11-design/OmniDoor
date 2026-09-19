@@ -40,7 +40,9 @@ export class AuthService {
   }
 
   register(payload: any): Observable<any> {
-    return this.http.post(`${this.apiUrl}/auth/register/`, payload);
+    const token = localStorage.getItem('access');
+    const headers = token ? new HttpHeaders({ 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }) : new HttpHeaders({ 'Content-Type': 'application/json' });
+    return this.http.post(`${this.apiUrl}/auth/register/`, payload, { headers });
   }
 
   restablecerPassword(correo: string): Observable<any> {
@@ -87,6 +89,10 @@ export class AuthService {
 
   getUsuariosPendientes(): Observable<Usuario[]> {
     return this.http.get<Usuario[]>(`${this.apiUrl}/admin/usuarios-pendientes/`, { headers: this.getHeaders() });
+  }
+
+  getUsuariosEliminados(): Observable<Usuario[]> {
+    return this.http.get<Usuario[]>(`${this.apiUrl}/admin/usuarios-eliminados/`, { headers: this.getHeaders() });
   }
 
   aprobarUsuario(idUsuario: string): Observable<any> {
