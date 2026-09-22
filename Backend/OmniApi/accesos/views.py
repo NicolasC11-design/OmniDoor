@@ -9,6 +9,7 @@ from django.db.models import Value
 from django.db.models.functions import Replace
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from datetime import timedelta
 from django.utils.dateparse import parse_datetime
 
 from rest_framework import generics, permissions, status
@@ -153,7 +154,7 @@ class LoginView(APIView):
                 vector_guardado = np.array(descriptor, dtype=np.float32)
                 vec_input = np.array(vector_recibido, dtype=np.float32)
                 distancia = np.linalg.norm(vector_guardado - vec_input)
-                UMBRAL_TOLERANCIA = 0.43
+                UMBRAL_TOLERANCIA = 0.35
 
                 if distancia > UMBRAL_TOLERANCIA:
                     return Response(
@@ -370,7 +371,9 @@ class RegistroAccesoListCreateView(APIView):
             placas_vistas = set()
             
             # OPTIMIZACIÓN: Se usa .values() para no instanciar miles de objetos en memoria y se pre-calcula
-            ultimos_registros = RegistroAcceso.objects.exclude(
+            ultimos_registros = RegistroAcceso.objects.filter(
+                fecha_hora__gte=timezone.now() - timedelta(hours=72)
+            ).exclude(
                 tipo_movimiento__in=["APERTURA_MANUAL", "DENEGADO"]
             ).values('vehiculo__placa', 'placa_manual', 'tipo_movimiento').order_by('-fecha_hora')
             
@@ -521,20 +524,22 @@ class InformeTurnoCreateView(APIView):
         vehiculos_quedados = 0
         placas_vistas = set()
         
-        # Obtenemos los últimos movimientos de todos los vehículos
-        ultimos_registros = RegistroAcceso.objects.exclude(
+        # Obtenemos los últimos movimientos de todos los vehículos (optimizados)
+        ultimos_registros = RegistroAcceso.objects.filter(
+            fecha_hora__gte=timezone.now() - timedelta(hours=72)
+        ).exclude(
             tipo_movimiento__in=["APERTURA_MANUAL", "DENEGADO"]
-        ).order_by('-fecha_hora')
+        ).values('vehiculo__placa', 'placa_manual', 'tipo_movimiento').order_by('-fecha_hora')
         
         for reg in ultimos_registros:
-            placa = reg.vehiculo.placa if reg.vehiculo else reg.placa_manual
+            placa = reg['vehiculo__placa'] if reg['vehiculo__placa'] else reg['placa_manual']
             if not placa:
                 continue
             placa = placa.replace('-', '').upper()
             
             if placa not in placas_vistas:
                 placas_vistas.add(placa)
-                if reg.tipo_movimiento == "ENTRADA":
+                if reg['tipo_movimiento'] == "ENTRADA":
                     vehiculos_quedados += 1
 
         informe = InformeTurno.objects.create(
@@ -709,7 +714,7 @@ class ValidarAccesoPorteriaView(APIView):
 
         usuario_identificado = None
         vehiculo_obj = None
-        UMBRAL = 0.43
+        UMBRAL = 0.35
         vec_input = np.array(vector_capturado, dtype=np.float32).flatten()
         if placa and str(placa).strip().upper() not in ["N/A", "S_PLACA", "SIN_PLACA", ""]:
             placa_clean = str(placa).strip().replace('-', '').replace(' ', '').upper()
@@ -957,7 +962,7 @@ class LoginBiometricoView(APIView):
             if estado_str in ['activo', 'true', '1']:
                 biometrias_validas.append(bio)
 
-        UMBRAL_TOLERANCIA = 0.43
+        UMBRAL_TOLERANCIA = 0.35
         coincidencias = []
 
         for bio in biometrias_validas:
@@ -1033,16 +1038,18 @@ class DashboardAccesosView(APIView):
 
             vehiculos_dentro = 0
             placas_vistas = set()
-            ultimos_registros = RegistroAcceso.objects.exclude(
+            ultimos_registros = RegistroAcceso.objects.filter(
+                fecha_hora__gte=timezone.now() - timedelta(hours=72)
+            ).exclude(
                 tipo_movimiento__in=["APERTURA_MANUAL", "DENEGADO"]
-            ).order_by('-fecha_hora')
+            ).values('vehiculo__placa', 'placa_manual', 'tipo_movimiento').order_by('-fecha_hora')
             for reg in ultimos_registros:
-                placa = reg.vehiculo.placa if reg.vehiculo else reg.placa_manual
+                placa = reg['vehiculo__placa'] if reg['vehiculo__placa'] else reg['placa_manual']
                 if not placa: continue
                 placa = placa.replace('-', '').upper()
                 if placa not in placas_vistas:
                     placas_vistas.add(placa)
-                    if reg.tipo_movimiento == "ENTRADA":
+                    if reg['tipo_movimiento'] == "ENTRADA":
                         vehiculos_dentro += 1
 
             aperturas_manuales = RegistroAcceso.objects.filter(

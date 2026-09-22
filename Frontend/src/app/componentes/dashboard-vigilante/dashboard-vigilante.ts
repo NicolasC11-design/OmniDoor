@@ -564,11 +564,9 @@ export class DashboardVigilanteComponent implements OnInit, OnDestroy {
 
   procesarAccesoDenegado(err: any): void {
     this.estadoAcceso = 'deny';
-    let mensajeError = 'ACCESO DENEGADO / NO AUTORIZADO';
-    if (err?.error) {
-      if (typeof err.error === 'string') mensajeError = err.error;
-      else if (err.error.mensaje) mensajeError = err.error.mensaje;
-      else if (err.error.detail) mensajeError = err.error.detail;
+    let mensajeError = this.obtenerMensajeError(err);
+    if (mensajeError === 'Error desconocido.' || mensajeError === 'Error del servidor.') {
+      mensajeError = 'ACCESO DENEGADO / NO AUTORIZADO';
     }
 
     const placaMostrar = (this.placaInput || this.placaEscaneoInput).trim();

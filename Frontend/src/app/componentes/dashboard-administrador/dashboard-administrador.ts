@@ -286,10 +286,10 @@ export class AdminDashboardComponent implements OnInit {
           contacto_emergencia: u.contacto_emergencia || '',
           tipoVehiculo: this.normalizarTipoVehiculo(
             u.vehiculos && u.vehiculos.length > 0
-              ? u.vehiculos[0].tipo_vehiculo || u.vehiculos[0].tipoVehiculo
+              ? u.vehiculos.map((v: any) => v.tipo_vehiculo || v.tipoVehiculo).join(', ')
               : 'AUTOMOVIL'
           ),
-          placa: u.vehiculos && u.vehiculos.length > 0 ? u.vehiculos[0].placa : 'N/A',
+          placa: u.vehiculos && u.vehiculos.length > 0 ? u.vehiculos.map((v: any) => v.placa).join(', ') : 'N/A',
           biometriaCapturada: u.estado === 'activo' || u.is_active === true,
         }));
         this.conductores = [...this.conductores];

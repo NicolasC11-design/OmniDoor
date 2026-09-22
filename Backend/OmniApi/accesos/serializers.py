@@ -53,17 +53,18 @@ class VehiculoSerializer(serializers.ModelSerializer):
             placa_limpia = validar_formato_placa(placa, tipo)
             data['placa'] = placa_limpia
             
-            vehiculos_queryset = Vehiculo.objects.annotate(
-                placa_sin_guion=Replace('placa', Value('-'), Value(''))
-            ).filter(placa_sin_guion=placa_limpia, activo=True)
-            
-            if self.instance:
-                vehiculos_queryset = vehiculos_queryset.exclude(id_vehiculo=self.instance.id_vehiculo)
+            if placa_limpia:
+                vehiculos_queryset = Vehiculo.objects.annotate(
+                    placa_sin_guion=Replace('placa', Value('-'), Value(''))
+                ).filter(placa_sin_guion=placa_limpia, activo=True)
                 
-            if vehiculos_queryset.exists():
-                raise serializers.ValidationError(
-                    {"placa": f"La placa '{placa}' ya está registrada en el sistema por otro usuario."}
-                )
+                if self.instance:
+                    vehiculos_queryset = vehiculos_queryset.exclude(id_vehiculo=self.instance.id_vehiculo)
+                    
+                if vehiculos_queryset.exists():
+                    raise serializers.ValidationError(
+                        {"placa": f"La placa '{placa}' ya está registrada en el sistema por otro usuario."}
+                    )
             
         return data
 
@@ -281,14 +282,16 @@ class RegisterSerializer(serializers.ModelSerializer):
 
         if placa_input and str(placa_input).strip():
             placa_limpia = validar_formato_placa(placa_input, tipo_input)
-            placa_duplicada = Vehiculo.objects.annotate(
-                placa_sin_guion=Replace('placa', Value('-'), Value(''))
-            ).filter(placa_sin_guion=placa_limpia, activo=True).exists()
+            
+            if placa_limpia:
+                placa_duplicada = Vehiculo.objects.annotate(
+                    placa_sin_guion=Replace('placa', Value('-'), Value(''))
+                ).filter(placa_sin_guion=placa_limpia, activo=True).exists()
 
-            if placa_duplicada:
-                raise serializers.ValidationError(
-                    {"placa": f"Inconsistencia de seguridad: La placa '{placa_limpia}' ya está registrada por otro usuario vehicular."}
-                )
+                if placa_duplicada:
+                    raise serializers.ValidationError(
+                        {"placa": f"Inconsistencia de seguridad: La placa '{placa_limpia}' ya está registrada por otro usuario vehicular."}
+                    )
 
             data['placa'] = placa_limpia
 

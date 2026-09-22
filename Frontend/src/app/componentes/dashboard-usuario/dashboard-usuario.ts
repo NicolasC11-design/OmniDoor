@@ -91,6 +91,28 @@ export class DashboardUsuarioComponent implements OnInit, OnDestroy {
     };
   }
 
+  private obtenerMensajeError(err: any): string {
+    if (!err) return 'Error desconocido.';
+    if (typeof err === 'string') return err;
+    if (err.error) {
+      const errorBody = err.error;
+      if (typeof errorBody === 'string') return errorBody;
+      if (Array.isArray(errorBody)) return errorBody[0];
+      if (typeof errorBody === 'object') {
+        if (errorBody.detail) return errorBody.detail;
+        if (errorBody.mensaje) return errorBody.mensaje;
+        if (errorBody.message) return errorBody.message;
+        const keys = Object.keys(errorBody);
+        if (keys.length > 0) {
+          const firstVal = errorBody[keys[0]];
+          if (Array.isArray(firstVal) && firstVal.length > 0) return firstVal[0];
+          if (typeof firstVal === 'string') return firstVal;
+        }
+      }
+    }
+    return err.message || 'Error del servidor.';
+  }
+
   cargarVehiculos(): void {
     this.usuarioService.obtenerTodosLosVehiculos()
       .pipe(takeUntil(this.destroy$))
@@ -198,7 +220,8 @@ export class DashboardUsuarioComponent implements OnInit, OnDestroy {
     },
     error: (err) => {
       console.error('Error del servidor:', err);
-      alert('Error al guardar el vehículo. Revisa que los datos ingresados sean válidos.');
+      const msj = this.obtenerMensajeError(err);
+      alert(msj !== 'Error desconocido.' && msj !== 'Error del servidor.' ? msj : 'Error al guardar el vehículo. Revisa que los datos ingresados sean válidos.');
       this.cargando = false;
       this.cdr.detectChanges();
     }
@@ -268,7 +291,8 @@ export class DashboardUsuarioComponent implements OnInit, OnDestroy {
         },
         error: (err) => {
           console.error('Error al actualizar datos:', err);
-          alert('No se pudieron actualizar los datos del perfil.');
+          const msj = this.obtenerMensajeError(err);
+          alert(msj !== 'Error desconocido.' && msj !== 'Error del servidor.' ? msj : 'No se pudieron actualizar los datos del perfil.');
           this.cargando = false;
           this.cdr.detectChanges();
         }
