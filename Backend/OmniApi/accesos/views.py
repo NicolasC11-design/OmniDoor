@@ -1101,3 +1101,9 @@ class InformeTurnoListView(generics.ListAPIView):
     queryset = InformeTurno.objects.all().order_by('-fecha_hora_fin')
     serializer_class = InformeTurnoSerializer
     permission_classes = [IsAdmin]
+
+class DBHealthCheckView(APIView):
+    permission_classes = [AllowAny]
+    
+    def get(self, request):
+        return Response({"status": "ok"})
