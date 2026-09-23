@@ -792,7 +792,7 @@ class ValidarAccesoPorteriaView(APIView):
                         "mensaje": "Múltiples coincidencias biométricas detectadas. Selecciona el usuario correspondiente.",
                         "cuentas": cuentas,
                     },
-                    status=status.HTTP_300_MULTIPLE_CHOICES,
+                    status=status.HTTP_200_OK,
                 )
             elif len(coincidencias) == 1:
                 usr = coincidencias[0]["usuario"]
@@ -815,7 +815,7 @@ class ValidarAccesoPorteriaView(APIView):
                             "mensaje": "El usuario tiene múltiples vehículos. Selecciona con cuál va a ingresar.",
                             "cuentas": cuentas,
                         },
-                        status=status.HTTP_300_MULTIPLE_CHOICES,
+                        status=status.HTTP_200_OK,
                     )
                 else:
                     usuario_identificado = usr
@@ -999,7 +999,7 @@ class LoginBiometricoView(APIView):
                     "mensaje": "Se encontraron múltiples coincidencias biométricas. Por favor selecciona tu cuenta e ingresa tu contraseña.",
                     "cuentas": cuentas,
                 },
-                status=status.HTTP_300_MULTIPLE_CHOICES,
+                status=status.HTTP_200_OK,
             )
 
         elif len(coincidencias) == 1:
