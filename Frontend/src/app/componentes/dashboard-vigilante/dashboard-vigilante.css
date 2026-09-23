@@ -817,6 +817,10 @@ textarea.od-input {
 }
 
 .coincidencia-details {
+    flex: 1;
+    padding: 0 12px;
+    overflow: hidden;
+    white-space: nowrap;
     display: flex;
     flex-direction: column;
     gap: 4px;
@@ -829,12 +833,15 @@ textarea.od-input {
 }
 
 .coincidencia-meta {
+    overflow: hidden;
+    text-overflow: ellipsis;
     color: var(--muted);
     font-family: var(--mono);
     font-size: 0.8rem;
 }
 
 .btn-seleccionar {
+    flex-shrink: 0;
     font-family: var(--mono) !important;
     background: transparent !important;
     border: 1px solid var(--accent2) !important;
@@ -847,6 +854,7 @@ textarea.od-input {
 }
 
 .coincidencia-card:hover .btn-seleccionar {
+    flex-shrink: 0;
     background: var(--accent2) !important;
     color: var(--bg) !important;
 }

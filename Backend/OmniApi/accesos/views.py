@@ -216,7 +216,7 @@ class AdminDashboardStatsView(APIView):
     permission_classes = [IsSeguridadOrAdmin]
 
     def get(self, request):
-        hoy = timezone.now().date()
+        hoy = timezone.localtime(timezone.now()).date()
         primer_dia_mes = hoy.replace(day=1)
 
         total_vehiculos = Vehiculo.objects.filter(activo=True).count()
