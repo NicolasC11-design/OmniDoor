@@ -154,7 +154,7 @@ class LoginView(APIView):
                 vector_guardado = np.array(descriptor, dtype=np.float32)
                 vec_input = np.array(vector_recibido, dtype=np.float32)
                 distancia = np.linalg.norm(vector_guardado - vec_input)
-                UMBRAL_TOLERANCIA = 0.35
+                UMBRAL_TOLERANCIA = 0.38
 
                 if distancia > UMBRAL_TOLERANCIA:
                     return Response(
@@ -714,7 +714,7 @@ class ValidarAccesoPorteriaView(APIView):
 
         usuario_identificado = None
         vehiculo_obj = None
-        UMBRAL = 0.35
+        UMBRAL = 0.38
         vec_input = np.array(vector_capturado, dtype=np.float32).flatten()
         if placa and str(placa).strip().upper() not in ["N/A", "S_PLACA", "SIN_PLACA", ""]:
             placa_clean = str(placa).strip().replace('-', '').replace(' ', '').upper()
@@ -962,7 +962,7 @@ class LoginBiometricoView(APIView):
             if estado_str in ['activo', 'true', '1']:
                 biometrias_validas.append(bio)
 
-        UMBRAL_TOLERANCIA = 0.35
+        UMBRAL_TOLERANCIA = 0.38
         coincidencias = []
 
         for bio in biometrias_validas:
