@@ -1016,8 +1016,22 @@ class LoginBiometricoView(APIView):
                 status=status.HTTP_200_OK,
             )
 
+        menor_dist = 'N/A'
+        if biometrias_validas:
+            distancias = []
+            for b in biometrias_validas:
+                v_guardado = b.get_descriptor() if hasattr(b, 'get_descriptor') else json.loads(b.vector_facial)
+                if v_guardado:
+                    try:
+                        d = np.linalg.norm(np.array(v_guardado, dtype=np.float32).flatten() - vec_input)
+                        distancias.append(d)
+                    except Exception:
+                        pass
+            if distancias:
+                menor_dist = round(float(min(distancias)), 4)
+
         return Response(
-            {"error": "Rostro no reconocido. Utiliza tu correo y contraseña o vuelve a intentarlo."},
+            {"error": f"Rostro no reconocido o cuenta inactiva. (Distancia más cercana: {menor_dist} | Límite: {UMBRAL_TOLERANCIA})"},
             status=status.HTTP_401_UNAUTHORIZED,
         )
 
