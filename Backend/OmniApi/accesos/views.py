@@ -42,13 +42,28 @@ class RegisterView(APIView):
 
         serializer = RegisterSerializer(data=data, context={'request': request})
         if serializer.is_valid():
+            vector_biometrico = request.data.get("vector_biometrico")
+            if vector_biometrico and isinstance(vector_biometrico, list):
+                from django.conf import settings
+                import numpy as np
+                vec_input = np.array(vector_biometrico, dtype=np.float32).flatten()
+                biometrias = BiometriaUsuario.objects.filter(activo=True)
+                for bio in biometrias:
+                    v_guardado = bio.get_descriptor()
+                    if v_guardado:
+                        try:
+                            d = np.linalg.norm(np.array(v_guardado, dtype=np.float32).flatten() - vec_input)
+                            if d < 0.25:
+                                return Response({"vector_biometrico": ["Rostro ya registrado por otra persona."]}, status=status.HTTP_409_CONFLICT)
+                        except Exception:
+                            pass
             with transaction.atomic():
                 user = serializer.save()
                 if vector_biometrico and isinstance(vector_biometrico, list):
-                    vector_json = json.dumps(vector_biometrico)
-                    BiometriaUsuario.objects.update_or_create(
-                        usuario=user, defaults={"vector_facial": vector_json, "activo": True}
-                    )
+                    bio, _ = BiometriaUsuario.objects.get_or_create(usuario=user)
+                    bio.set_descriptor(vector_biometrico)
+                    bio.activo = True
+                    bio.save()
 
             return Response(
                 {
@@ -154,7 +169,8 @@ class LoginView(APIView):
                 vector_guardado = np.array(descriptor, dtype=np.float32)
                 vec_input = np.array(vector_recibido, dtype=np.float32)
                 distancia = np.linalg.norm(vector_guardado - vec_input)
-                UMBRAL_TOLERANCIA = 0.38
+                from django.conf import settings
+                UMBRAL_TOLERANCIA = settings.UMBRAL_BIOMETRICO
 
                 if distancia > UMBRAL_TOLERANCIA:
                     return Response(
@@ -641,10 +657,10 @@ class RegistrarBiometriaView(APIView):
         else:
             target_user = request.user
 
-        vector_json = json.dumps(vector_biometrico)
-        biometria, created = BiometriaUsuario.objects.update_or_create(
-            usuario=target_user, defaults={"vector_facial": vector_json, "activo": True}
-        )
+        bio, created = BiometriaUsuario.objects.get_or_create(usuario=target_user)
+        bio.set_descriptor(vector_biometrico)
+        bio.activo = True
+        bio.save()
 
         mensaje = "Rostro registrado exitosamente." if created else "Rostro actualizado exitosamente."
         return Response(
@@ -714,7 +730,8 @@ class ValidarAccesoPorteriaView(APIView):
 
         usuario_identificado = None
         vehiculo_obj = None
-        UMBRAL = 0.38
+        from django.conf import settings
+        UMBRAL = settings.UMBRAL_BIOMETRICO
         vec_input = np.array(vector_capturado, dtype=np.float32).flatten()
         if placa and str(placa).strip().upper() not in ["N/A", "S_PLACA", "SIN_PLACA", ""]:
             placa_clean = str(placa).strip().replace('-', '').replace(' ', '').upper()
@@ -962,7 +979,8 @@ class LoginBiometricoView(APIView):
             if estado_str in ['activo', 'true', '1']:
                 biometrias_validas.append(bio)
 
-        UMBRAL_TOLERANCIA = 0.38
+        from django.conf import settings
+        UMBRAL_TOLERANCIA = settings.UMBRAL_BIOMETRICO
         coincidencias = []
 
         for bio in biometrias_validas:

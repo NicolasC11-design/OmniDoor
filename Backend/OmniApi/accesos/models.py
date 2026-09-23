@@ -136,13 +136,24 @@ class BiometriaUsuario(models.Model):
 
     def set_descriptor(self, lista_floats):
         if isinstance(lista_floats, list):
-            self.vector_facial = json.dumps(lista_floats)
+            from django.conf import settings
+            from cryptography.fernet import Fernet
+            fernet = Fernet(settings.FERNET_KEY)
+            json_str = json.dumps(lista_floats)
+            self.vector_facial = fernet.encrypt(json_str.encode()).decode()
 
     def get_descriptor(self):
         if self.vector_facial:
+            from django.conf import settings
+            from cryptography.fernet import Fernet
             try:
-                return json.loads(self.vector_facial)
-            except json.JSONDecodeError:
+                # If it's old unencrypted JSON, it starts with '['
+                if self.vector_facial.strip().startswith('['):
+                    return json.loads(self.vector_facial)
+                fernet = Fernet(settings.FERNET_KEY)
+                decrypted = fernet.decrypt(self.vector_facial.encode()).decode()
+                return json.loads(decrypted)
+            except Exception:
                 return []
         return []
 
