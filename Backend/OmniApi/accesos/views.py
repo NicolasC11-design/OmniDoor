@@ -833,7 +833,7 @@ class ValidarAccesoPorteriaView(APIView):
                 if descriptor:
                     vec_guardado = np.array(descriptor, dtype=np.float32).flatten()
                     distancia = np.linalg.norm(vec_guardado - vec_input)
-                    umbral_verif = 0.78 if id_usuario_forzado else 0.70
+                    umbral_verif = 0.45 if id_usuario_forzado else 0.43
 
                     if distancia > umbral_verif:
                         return Response(

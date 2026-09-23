@@ -158,23 +158,48 @@ export class BiometriaCamaraComponent implements OnInit, OnDestroy {
     const video = this.videoElement.nativeElement;
     const opcionesDeteccion = new faceapi.TinyFaceDetectorOptions({
       inputSize: 320,
-      scoreThreshold: 0.35
+      scoreThreshold: 0.5
     });
 
     try {
-      const deteccion = await faceapi
-        .detectSingleFace(video, opcionesDeteccion)
-        .withFaceLandmarks()
-        .withFaceDescriptor();
-
-      if (!deteccion) {
-        alert('No se detectó ningún rostro. Por favor, enfócate de frente a la cámara.');
-        this.procesandoCaptura = false;
-        this.cdRef.detectChanges();
-        return;
+      const descriptores: Float32Array[] = [];
+      
+      // Tomar 5 capturas para estabilizar el vector
+      for (let i = 0; i < 5; i++) {
+        const deteccion = await faceapi
+          .detectSingleFace(video, opcionesDeteccion)
+          .withFaceLandmarks()
+          .withFaceDescriptor();
+          
+        if (deteccion) {
+          descriptores.push(deteccion.descriptor);
+        } else if (i === 0) {
+          alert('No se detectó ningún rostro. Por favor, enfócate de frente a la cámara.');
+          this.procesandoCaptura = false;
+          this.cdRef.detectChanges();
+          return;
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, 150));
+      }
+      
+      if (descriptores.length === 0) {
+          alert('No se detectó un rostro estable.');
+          this.procesandoCaptura = false;
+          this.cdRef.detectChanges();
+          return;
+      }
+      
+      const vectorPromedio = new Float32Array(128);
+      for (let i = 0; i < 128; i++) {
+        let suma = 0;
+        for (let d = 0; d < descriptores.length; d++) {
+           suma += descriptores[d][i];
+        }
+        vectorPromedio[i] = suma / descriptores.length;
       }
 
-      const vectorBiometrico = Array.from(deteccion.descriptor);
+      const vectorBiometrico = Array.from(vectorPromedio);
       console.log('Vector biométrico capturado (128 posiciones):', vectorBiometrico);
       this.detenerCamara();
       this.alCapturarBiometria.emit(vectorBiometrico);
