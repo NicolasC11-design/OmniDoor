@@ -315,7 +315,9 @@ class RegisterSerializer(serializers.ModelSerializer):
         
         # Prevenir escalada de privilegios en registros públicos
         if not is_admin_request:
-            validated_data['rol'] = 'aprendiz'
+            rol_solicitado = str(validated_data.get('rol', 'aprendiz')).lower()
+            if rol_solicitado not in ['aprendiz', 'instructor', 'visitante']:
+                validated_data['rol'] = 'aprendiz'
 
         try:
             user = Usuario.objects.create_user(

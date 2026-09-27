@@ -442,7 +442,8 @@ export class DashboardVigilanteComponent implements OnInit, OnDestroy {
       error: (err) => {
         this.guardandoTurno = false;
         console.error(err);
-        alert('Error al procesar el informe en el servidor.');
+        const mensajeError = this.obtenerMensajeError(err);
+        alert(`Error al procesar el informe: ${mensajeError}`);
       }
     });
   }
