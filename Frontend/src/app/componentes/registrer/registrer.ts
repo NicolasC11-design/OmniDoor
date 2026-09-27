@@ -106,7 +106,7 @@ export class RegisterComponent implements OnInit, OnDestroy {
       password: ['', [
         Validators.required,
         Validators.minLength(8),
-        Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/)
+        Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/)
       ]],
       confirmPassword: ['', Validators.required],
       tipoVehiculo: [tipoInicial]

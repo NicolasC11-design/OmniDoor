@@ -315,7 +315,7 @@ export class DashboardUsuarioComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/;
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
     if (!passwordRegex.test(this.formPassword.nueva)) {
       alert('La nueva contraseña debe incluir al menos una mayúscula, una minúscula, un número y un símbolo.');
       return;

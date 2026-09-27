@@ -87,7 +87,7 @@ class RestablecerPasswordView(APIView):
         if not correo or not nueva_password or not metodo:
             return Response({"error": "Faltan datos obligatorios (correo, método, nueva contraseña)."}, status=status.HTTP_400_BAD_REQUEST)
 
-        regex = r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$'
+        regex = r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$'
         if not re.match(regex, nueva_password):
             return Response({"error": "La contraseña debe incluir mayúscula, minúscula, número, símbolo y mínimo 8 caracteres."}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -558,26 +558,29 @@ class InformeTurnoCreateView(APIView):
                 if reg['tipo_movimiento'] == "ENTRADA":
                     vehiculos_quedados += 1
 
-        informe = InformeTurno.objects.create(
-            vigilante=request.user,
-            fecha_hora_inicio=fecha_hora_inicio,
-            fecha_hora_fin=timezone.now(),
-            total_entradas=total_entradas,
-            total_salidas=total_salidas,
-            vehiculos_quedados=vehiculos_quedados,
-            novedades_observaciones=novedades,
-            entrega_sin_novedad=sin_novedad,
-        )
+        try:
+            informe = InformeTurno.objects.create(
+                vigilante=request.user,
+                fecha_hora_inicio=fecha_hora_inicio,
+                fecha_hora_fin=timezone.now(),
+                total_entradas=total_entradas,
+                total_salidas=total_salidas,
+                vehiculos_quedados=vehiculos_quedados,
+                novedades_observaciones=novedades,
+                entrega_sin_novedad=sin_novedad,
+            )
 
-        return Response(
-            {
-                "message": "Informe de turno generado con éxito",
-                "id_informe": informe.pk,
-                "total_entradas": total_entradas,
-                "vehiculos_quedados": vehiculos_quedados,
-            },
-            status=status.HTTP_201_CREATED,
-        )
+            return Response(
+                {
+                    "message": "Informe de turno generado con éxito",
+                    "id_informe": informe.pk,
+                    "total_entradas": total_entradas,
+                    "vehiculos_quedados": vehiculos_quedados,
+                },
+                status=status.HTTP_201_CREATED,
+            )
+        except Exception as e:
+            return Response({"error": f"Error al crear informe: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     
 class MisRegistrosAccesoView(APIView):
@@ -622,7 +625,7 @@ class CambiarPasswordView(APIView):
                 {"error": "La nueva contraseña debe tener al menos 8 caracteres."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        regex = r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$'
+        regex = r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$'
         if not re.match(regex, password_nueva):
             return Response(
                 {"error": "La contraseña debe incluir al menos una mayúscula, una minúscula, un número y un símbolo."},
@@ -755,15 +758,11 @@ class ValidarAccesoPorteriaView(APIView):
 
         elif not usuario_identificado:
             biometrias = BiometriaUsuario.objects.select_related("usuario").filter(
-                activo=True, usuario__is_active=True
+                activo=True
             )
 
             coincidencias = []
             for bio in biometrias:
-                estado_usr = str(getattr(bio.usuario, 'estado', '')).strip().lower()
-                if estado_usr not in ['activo', 'true', '1']:
-                    continue
-
                 descriptor = bio.get_descriptor() if hasattr(bio, 'get_descriptor') else json.loads(bio.vector_facial)
                 if not descriptor:
                     continue
@@ -775,6 +774,15 @@ class ValidarAccesoPorteriaView(APIView):
                         coincidencias.append({"usuario": bio.usuario, "distancia": dist})
 
             coincidencias.sort(key=lambda x: x["distancia"])
+            
+            if len(coincidencias) > 0:
+                mejor_coincidencia = coincidencias[0]["usuario"]
+                estado_str = str(getattr(mejor_coincidencia, 'estado', '')).strip().lower()
+                if not mejor_coincidencia.is_active or estado_str not in ['activo', 'true', '1']:
+                    return Response({"mensaje": "Tu cuenta se encuentra inactiva. Acércate a administración."}, status=status.HTTP_403_FORBIDDEN)
+
+            # Filtrar coincidencias activas
+            coincidencias = [c for c in coincidencias if c["usuario"].is_active and str(getattr(c["usuario"], 'estado', '')).strip().lower() in ['activo', 'true', '1']]
 
             if len(coincidencias) > 1:
                 cuentas = []
@@ -841,7 +849,7 @@ class ValidarAccesoPorteriaView(APIView):
             else:
                 return Response(
                     {"mensaje": "Rostro no reconocido en la base de datos."},
-                    status=status.HTTP_401_UNAUTHORIZED,
+                    status=status.HTTP_404_NOT_FOUND,
                 )
         else:
             try:
@@ -855,7 +863,7 @@ class ValidarAccesoPorteriaView(APIView):
                     if distancia > umbral_verif:
                         return Response(
                             {"mensaje": f"Sustitución detectada: El conductor enfocado no coincide con el propietario del vehículo ({placa})."},
-                            status=status.HTTP_401_UNAUTHORIZED,
+                            status=status.HTTP_404_NOT_FOUND,
                         )
             except BiometriaUsuario.DoesNotExist:
                 pass
@@ -969,21 +977,14 @@ class LoginBiometricoView(APIView):
 
         vec_input = np.array(vector_capturado, dtype=np.float32).flatten()
         biometrias = BiometriaUsuario.objects.select_related("usuario").filter(
-            activo=True,
-            usuario__is_active=True
+            activo=True
         )
-
-        biometrias_validas = []
-        for bio in biometrias:
-            estado_str = str(getattr(bio.usuario, 'estado', '')).strip().lower()
-            if estado_str in ['activo', 'true', '1']:
-                biometrias_validas.append(bio)
 
         from django.conf import settings
         UMBRAL_TOLERANCIA = settings.UMBRAL_BIOMETRICO
         coincidencias = []
 
-        for bio in biometrias_validas:
+        for bio in biometrias:
             vec_guardado_list = bio.get_descriptor() if hasattr(bio, 'get_descriptor') else json.loads(bio.vector_facial)
             if not vec_guardado_list:
                 continue
@@ -998,6 +999,17 @@ class LoginBiometricoView(APIView):
                 continue
 
         coincidencias.sort(key=lambda x: x["distancia"])
+
+        if len(coincidencias) > 0:
+            mejor_coincidencia = coincidencias[0]["usuario"]
+            estado_str = str(getattr(mejor_coincidencia, 'estado', '')).strip().lower()
+            if not mejor_coincidencia.is_active or estado_str not in ['activo', 'true', '1']:
+                return Response(
+                    {"mensaje": "Tu cuenta se encuentra inactiva. Espera la aprobación del administrador para poder iniciar sesión."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
+        coincidencias = [c for c in coincidencias if c["usuario"].is_active and str(getattr(c["usuario"], 'estado', '')).strip().lower() in ['activo', 'true', '1']]
 
         if len(coincidencias) > 1:
             cuentas = [

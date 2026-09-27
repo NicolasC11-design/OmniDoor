@@ -11,7 +11,7 @@ from .models import BiometriaUsuario, InformeTurno, RegistroAcceso, Usuario, Veh
 
 def validar_formato_placa(placa, tipo_vehiculo):
     if not placa or str(placa).strip().upper() in ['N/A', 'S_PLACA', 'SIN_PLACA', 'NONE', '']:
-        return None
+        return "N/A"
 
     placa_limpia = str(placa).strip().replace('-', '').replace(' ', '').upper()
     tipo = str(tipo_vehiculo).strip().upper() if tipo_vehiculo else "AUTOMOVIL"
@@ -53,7 +53,7 @@ class VehiculoSerializer(serializers.ModelSerializer):
             placa_limpia = validar_formato_placa(placa, tipo)
             data['placa'] = placa_limpia
             
-            if placa_limpia:
+            if placa_limpia and placa_limpia != "N/A":
                 vehiculos_queryset = Vehiculo.objects.annotate(
                     placa_sin_guion=Replace('placa', Value('-'), Value(''))
                 ).filter(placa_sin_guion=placa_limpia, activo=True)
@@ -256,20 +256,21 @@ class RegisterSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("El correo no debe contener espacios ni terminar con un punto.")
         return value
     tipo_vehiculo = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    tipoVehiculo = serializers.CharField(write_only=True, required=False, allow_blank=True)
 
     class Meta:
         model = Usuario
         fields = [
             'nombres', 'apellidos', 'correo', 'password', 'rol', 'ficha', 
             'telefono', 'contacto_emergencia', 'nombre_emergencia', 'direccion',
-            'placa', 'tipo_vehiculo'
+            'placa', 'tipo_vehiculo', 'tipoVehiculo'
         ]
         extra_kwargs = {'password': {'write_only': True}}
 
     def validate_password(self, value):
         if len(value) < 8:
             raise serializers.ValidationError("La contraseña debe tener al menos 8 caracteres.")
-        regex = r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$'
+        regex = r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$'
         if not re.match(regex, value):
             raise serializers.ValidationError(
                 "La contraseña debe incluir al menos una mayúscula, una minúscula, un número y un símbolo."
@@ -278,12 +279,12 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         placa_input = data.get('placa')
-        tipo_input = data.get('tipo_vehiculo')
+        tipo_input = data.get('tipo_vehiculo') or data.get('tipoVehiculo')
 
         if placa_input and str(placa_input).strip():
             placa_limpia = validar_formato_placa(placa_input, tipo_input)
             
-            if placa_limpia:
+            if placa_limpia and placa_limpia != "N/A":
                 placa_duplicada = Vehiculo.objects.annotate(
                     placa_sin_guion=Replace('placa', Value('-'), Value(''))
                 ).filter(placa_sin_guion=placa_limpia, activo=True).exists()
@@ -302,7 +303,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         apellidos = validated_data.pop('apellidos')
         correo = validated_data.pop('correo')
         placa_input = validated_data.pop('placa', None)
-        tipo_input = validated_data.pop('tipo_vehiculo', None)
+        tipo_input = validated_data.pop('tipo_vehiculo', None) or validated_data.pop('tipoVehiculo', None)
         password = validated_data.pop('password')
 
         request = self.context.get('request')
@@ -323,8 +324,8 @@ class RegisterSerializer(serializers.ModelSerializer):
                 nombre_completo=f"{nombres} {apellidos}".strip(),
                 **validated_data
             )
-            user.is_active = False
-            user.estado = False
+            user.is_active = is_admin_request
+            user.estado = is_admin_request
             user.save()
 
             if placa_input and str(placa_input).strip():

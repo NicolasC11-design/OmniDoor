@@ -392,6 +392,22 @@ export class AdminDashboardComponent implements OnInit {
       return;
     }
 
+    if (!this.placaDeshabilitada) {
+      if (!this.formConductor.placa || !this.formConductor.placa.trim()) {
+        alert('Por favor, ingresa la placa del vehículo.');
+        return;
+      }
+      const placaValidacion = this.formConductor.placa.trim().toUpperCase();
+      const tipo = this.normalizarTipoVehiculo(this.formConductor.tipoVehiculo);
+      if (tipo === 'MOTOCICLETA' && !/^[A-Za-z]{3}-?\d{2}[A-Za-z]$/.test(placaValidacion)) {
+        alert('Formato de placa de MOTO inválido (ej. ABC12D o ABC-12D).');
+        return;
+      } else if (tipo === 'AUTOMOVIL' && !/^[A-Za-z]{3}-?\d{3}$/.test(placaValidacion)) {
+        alert('Formato de placa de AUTO inválido (ej. ABC123 o ABC-123).');
+        return;
+      }
+    }
+
     this.cargandoSolicitudes = true;
 
     const placaLimpia = this.formConductor.placa

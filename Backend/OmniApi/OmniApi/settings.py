@@ -184,4 +184,4 @@ from cryptography.fernet import Fernet
 FERNET_KEY = os.environ.get('FERNET_KEY', Fernet.generate_key().decode())
 
 # Umbral Biometrico General
-UMBRAL_BIOMETRICO = 0.43
+UMBRAL_BIOMETRICO = 0.38

@@ -5,7 +5,8 @@
     width: 100%;
 }
 
-html, body {
+html,
+body {
     margin: 0;
     padding: 0;
     background-color: #05090f;
@@ -39,6 +40,7 @@ html, body {
     box-sizing: border-box;
     overflow-x: hidden;
 }
+
 .grid-bg {
     position: absolute;
     inset: 0;
@@ -63,6 +65,7 @@ html, body {
     0% {
         top: -2px;
     }
+
     100% {
         top: 100%;
     }
@@ -186,9 +189,12 @@ html, body {
 }
 
 @keyframes pulse {
-    0%, 100% {
+
+    0%,
+    100% {
         opacity: 1;
     }
+
     50% {
         opacity: 0.3;
     }
@@ -342,9 +348,12 @@ html, body {
 }
 
 @keyframes alert-flash {
-    0%, 100% {
+
+    0%,
+    100% {
         box-shadow: 0 0 0 rgba(226, 75, 74, 0);
     }
+
     50% {
         box-shadow: 0 0 18px rgba(226, 75, 74, 0.35);
     }
@@ -642,46 +651,63 @@ textarea.od-input:focus {
 }
 
 .modal-info {
-    margin-bottom: 15px; 
-    font-size: 0.9rem; 
+    margin-bottom: 15px;
+    font-size: 0.9rem;
     color: rgba(255, 255, 255, 0.342);
     line-height: 1.4;
 }
 
 .modal-checkbox-row {
-    display: flex; 
-    align-items: center; 
-    gap: 10px; 
+    display: flex;
+    align-items: center;
+    gap: 10px;
     margin-bottom: 20px;
     color: var(--text-bright);
 }
 
 .modal-checkbox-row input {
-    cursor: pointer; 
+    cursor: pointer;
     transform: scale(1.2);
 }
 
 .modal-checkbox-row label {
-    margin: 0; 
+    margin: 0;
     cursor: pointer;
 }
 
 textarea.od-input {
     font-family: var(--mono);
-    resize: none; 
+    resize: none;
     padding: 8px;
     color: var(--muted) !important;
 }
 
 @keyframes parpadeoVerde {
-    0% { background-color: rgba(40, 167, 69, 0.2); }
-    50% { background-color: rgba(40, 167, 69, 0.7); }
-    100% { background-color: rgba(40, 167, 69, 0.2); }
+    0% {
+        background-color: rgba(40, 167, 69, 0.2);
+    }
+
+    50% {
+        background-color: rgba(40, 167, 69, 0.7);
+    }
+
+    100% {
+        background-color: rgba(40, 167, 69, 0.2);
+    }
 }
+
 @keyframes parpadeoRojo {
-    0% { background-color: rgba(220, 53, 69, 0.2); }
-    50% { background-color: rgba(220, 53, 69, 0.7); }
-    100% { background-color: rgba(220, 53, 69, 0.2); }
+    0% {
+        background-color: rgba(220, 53, 69, 0.2);
+    }
+
+    50% {
+        background-color: rgba(220, 53, 69, 0.7);
+    }
+
+    100% {
+        background-color: rgba(220, 53, 69, 0.2);
+    }
 }
 
 .alerta-pantalla-contingencia {
@@ -798,6 +824,15 @@ textarea.od-input {
     padding-right: 4px;
 }
 
+.coincidencia-meta {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 0.8rem;
+}
+
 .coincidencia-card {
     display: flex;
     align-items: center;
@@ -818,6 +853,7 @@ textarea.od-input {
 
 .coincidencia-details {
     flex: 1;
+    min-width: 0;
     padding: 0 12px;
     overflow: hidden;
     white-space: nowrap;
@@ -830,6 +866,8 @@ textarea.od-input {
     color: #ffffff;
     font-weight: 600;
     font-size: 0.95rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .coincidencia-meta {
