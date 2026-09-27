@@ -253,6 +253,26 @@ export class AdminDashboardComponent implements OnInit {
     });
   }
 
+  eliminarCuentaPermanente(idUsuario: string): void {
+    if (confirm('¿Estás seguro de eliminar permanentemente esta cuenta? Esta acción no se puede deshacer.')) {
+      this.authService.rechazarUsuario(idUsuario).subscribe({
+        next: () => {
+          this.usuariosEliminados = this.usuariosEliminados.filter((u) => u.id_usuario !== idUsuario);
+          this.mensajeExito = 'Cuenta eliminada permanentemente del sistema';
+          this.cdr.detectChanges();
+          setTimeout(() => {
+            this.mensajeExito = null;
+            this.cdr.detectChanges();
+          }, 3000);
+        },
+        error: (err) => {
+          console.error('Error al eliminar permanentemente:', err);
+          alert('Hubo un error al eliminar permanentemente la cuenta.');
+        }
+      });
+    }
+  }
+
   normalizarTipoVehiculo(tipo?: string): string {
     if (!tipo) return 'AUTOMOVIL';
     const clean = tipo.trim().toUpperCase();

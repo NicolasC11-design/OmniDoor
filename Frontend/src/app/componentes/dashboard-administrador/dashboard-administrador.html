@@ -188,7 +188,8 @@
                 <td style="opacity: 0.6;">{{ usuario.correo }}</td>
                 <td><span class="badge" style="background: #ef4444; color: white;">ELIMINADO</span></td>
                 <td>
-                  <button class="btn-approve" style="font-size: 0.75rem; padding: 4px 8px;" (click)="aceptarCuenta(usuario.id_usuario)">Restaurar Cuenta</button>
+                  <button class="btn-approve" style="font-size: 0.75rem; padding: 4px 8px; margin-right: 8px;" (click)="aceptarCuenta(usuario.id_usuario)">Restaurar Cuenta</button>
+                  <button class="btn-deny" style="font-size: 0.75rem; padding: 4px 8px;" (click)="eliminarCuentaPermanente(usuario.id_usuario)">Eliminar Permanente</button>
                 </td>
               </tr>
             </tbody>

@@ -775,14 +775,12 @@ class ValidarAccesoPorteriaView(APIView):
 
             coincidencias.sort(key=lambda x: x["distancia"])
             
-            if len(coincidencias) > 0:
-                mejor_coincidencia = coincidencias[0]["usuario"]
-                estado_str = str(getattr(mejor_coincidencia, 'estado', '')).strip().lower()
-                if not mejor_coincidencia.is_active or estado_str not in ['activo', 'true', '1']:
-                    return Response({"mensaje": "Tu cuenta se encuentra inactiva. Acércate a administración."}, status=status.HTTP_403_FORBIDDEN)
+            activas = [c for c in coincidencias if c["usuario"].is_active and str(getattr(c["usuario"], 'estado', '')).strip().lower() in ['activo', 'true', '1']]
 
-            # Filtrar coincidencias activas
-            coincidencias = [c for c in coincidencias if c["usuario"].is_active and str(getattr(c["usuario"], 'estado', '')).strip().lower() in ['activo', 'true', '1']]
+            if not activas and len(coincidencias) > 0:
+                return Response({"mensaje": "Tu cuenta se encuentra inactiva. Acércate a administración."}, status=status.HTTP_403_FORBIDDEN)
+
+            coincidencias = activas
 
             if len(coincidencias) > 1:
                 cuentas = []
@@ -1000,18 +998,15 @@ class LoginBiometricoView(APIView):
 
         coincidencias.sort(key=lambda x: x["distancia"])
 
-        if len(coincidencias) > 0:
-            mejor_coincidencia = coincidencias[0]["usuario"]
-            estado_str = str(getattr(mejor_coincidencia, 'estado', '')).strip().lower()
-            if not mejor_coincidencia.is_active or estado_str not in ['activo', 'true', '1']:
-                return Response(
-                    {"mensaje": "Tu cuenta se encuentra inactiva. Espera la aprobación del administrador para poder iniciar sesión."},
-                    status=status.HTTP_403_FORBIDDEN
-                )
+        activas = [c for c in coincidencias if c["usuario"].is_active and str(getattr(c["usuario"], 'estado', '')).strip().lower() in ['activo', 'true', '1']]
 
-        coincidencias = [c for c in coincidencias if c["usuario"].is_active and str(getattr(c["usuario"], 'estado', '')).strip().lower() in ['activo', 'true', '1']]
+        if not activas and len(coincidencias) > 0:
+            return Response(
+                {"mensaje": "Tu cuenta se encuentra inactiva. Espera la aprobación del administrador para poder iniciar sesión."},
+                status=status.HTTP_403_FORBIDDEN
+            )
 
-        if len(coincidencias) > 1:
+        if len(activas) > 1:
             cuentas = [
                 {
                     "id_usuario": c["usuario"].id_usuario,
@@ -1021,7 +1016,7 @@ class LoginBiometricoView(APIView):
                     "ficha": getattr(c["usuario"], "ficha", None),
                     "distancia": round(float(c["distancia"]), 4),
                 }
-                for c in coincidencias
+                for c in activas
             ]
             return Response(
                 {
@@ -1032,8 +1027,8 @@ class LoginBiometricoView(APIView):
                 status=status.HTTP_200_OK,
             )
 
-        elif len(coincidencias) == 1:
-            user = coincidencias[0]["usuario"]
+        elif len(activas) == 1:
+            user = activas[0]["usuario"]
             refresh = RefreshToken.for_user(user)
             return Response(
                 {
@@ -1047,9 +1042,9 @@ class LoginBiometricoView(APIView):
             )
 
         menor_dist = 'N/A'
-        if biometrias_validas:
+        if biometrias:
             distancias = []
-            for b in biometrias_validas:
+            for b in biometrias:
                 v_guardado = b.get_descriptor() if hasattr(b, 'get_descriptor') else json.loads(b.vector_facial)
                 if v_guardado:
                     try:

@@ -326,8 +326,8 @@ class RegisterSerializer(serializers.ModelSerializer):
                 nombre_completo=f"{nombres} {apellidos}".strip(),
                 **validated_data
             )
-            user.is_active = is_admin_request
-            user.estado = is_admin_request
+            user.is_active = False
+            user.estado = False
             user.save()
 
             if placa_input and str(placa_input).strip():
