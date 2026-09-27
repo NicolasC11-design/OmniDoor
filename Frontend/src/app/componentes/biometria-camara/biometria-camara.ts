@@ -158,7 +158,7 @@ export class BiometriaCamaraComponent implements OnInit, OnDestroy {
     const video = this.videoElement.nativeElement;
     const opcionesDeteccion = new faceapi.TinyFaceDetectorOptions({
       inputSize: 320,
-      scoreThreshold: 0.5
+      scoreThreshold: 0.75
     });
 
     try {
